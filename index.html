@@ -169,7 +169,14 @@
         let currentListenerRef = null;
         let isCurrentDayDisabled = false;
 
-        dateInput.value = new Date().toISOString().split('T')[0];
+        // --- CORRECTION: Utiliser l'heure LOCALE et non UTC ---
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
+        // -----------------------------------------------------
+
         dateInput.addEventListener('change', updateDashboard);
         updateDashboard();
 
