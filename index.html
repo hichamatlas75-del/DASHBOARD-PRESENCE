@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervision Grey Corner - Live</title>
+    <title>Supervision Grey Corner - Précision</title>
     <style>
         :root { --primary: #2c3e50; --accent: #c5a059; --bg: #fdfaf6; --white: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--primary); }
@@ -22,6 +22,7 @@
         .status-off { background: #ffebee; color: #c62828; }
         .late { color: #e67e22; font-weight: bold; }
         .on-time { color: #27ae60; font-size: 0.8rem; }
+        .no-data { color: #ccc; font-style: italic; font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -54,8 +55,9 @@
                 <th>Membre de l'équipe</th>
                 <th>Poste</th>
                 <th>Statut</th>
-                <th>Heure Arrivée</th>
-                <th>Suivi Ponctualité</th>
+                <th>H. Prévue</th>
+                <th>H. Arrivée</th>
+                <th>Ponctualité</th>
             </tr>
         </thead>
         <tbody id="dashBody"></tbody>
@@ -70,37 +72,24 @@
         const database = firebase.database();
 
         const equipe = [
-            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE', hT: '06:45'},
-            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE', hT: '15:00'},
-            {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT', hT: '08:00'},
-            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR', hT: '06:45'},
-            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR', hT: '15:00'},
-            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR', hT: '06:45'},
-            {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR', hT: '06:45'},
-            {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE', hT: '07:00'},
-            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE', hT: '07:00'},
-            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE', hT: '07:00'},
-            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE', hT: '07:00'},
-            {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE', hT: '07:00'},
-            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE', hT: '08:00'},
-            {nom: 'EL MOEDEN', prenom: 'HASSAN', poste: 'SERVICE', hT: '08:00'},
-            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE', hT: '08:00'},
-            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE', hT: '08:00'},
-            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE', hT: '08:00'},
-            {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE', hT: '08:00'}
+            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'}, {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'},
+            {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT'}, {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
+            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'},
+            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'}, {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
+            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'},
+            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'},
+            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'}, {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'},
+            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
+            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'}, {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'},
+            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'}, {nom: 'EL MOEDEN', prenom: 'HASSAN', poste: 'SERVICE'},
+            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'}, {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
+            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'}, {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'}
         ];
 
         const dateInput = document.getElementById('dashDate');
 
         function updateDashboard() {
-            const date = dateInput.value;
-            database.ref('presences/' + date).on('value', (snap) => {
+            database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
                 const tbody = document.getElementById('dashBody');
                 tbody.innerHTML = '';
@@ -116,12 +105,14 @@
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
                     const statusText = d.on ? 'PRÉSENT' : (d.off ? 'ABSENT' : 'NON POINTÉ');
                     
-                    const lateStatus = getLateStatus(d.hA, emp.hT);
+                    // CALCUL STRICTEMENT BASÉ SUR LA SAISIE (hP)
+                    const lateStatus = getLateStatus(d.hA, d.hP);
 
                     tr.innerHTML = `
                         <td><b>${emp.nom}</b> ${emp.prenom}</td>
                         <td>${emp.poste}</td>
                         <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+                        <td>${d.hP || '--:--'}</td>
                         <td>${d.hA || '--:--'}</td>
                         <td>${lateStatus}</td>
                     `;
@@ -134,24 +125,20 @@
             });
         }
 
-        function getLateStatus(hA, hT) {
-            if(!hA || !hT) return "";
+        function getLateStatus(hA, hP) {
+            // Si l'une des deux heures n'est pas saisie, on n'affiche rien
+            if(!hA || !hP) return `<span class="no-data">Attente saisie</span>`;
             
-            const [hArrivee, mArrivee] = hA.split(':').map(Number);
-            const [hTheorique, mTheorique] = hT.split(':').map(Number);
+            const [hArr, mArr] = hA.split(':').map(Number);
+            const [hPre, mPre] = hP.split(':').map(Number);
             
-            const totalArrivee = hArrivee * 60 + mArrivee;
-            const totalTheorique = hTheorique * 60 + mTheorique;
-            const difference = totalArrivee - totalTheorique;
+            const totalArr = hArr * 60 + mArr;
+            const totalPre = hPre * 60 + mPre;
+            const diff = totalArr - totalPre;
 
-            // Logique de tolérance 15mn
-            if (difference > 15) {
-                return `<span class="late">⚠️ Retard (${difference} min)</span>`;
-            } else if (difference > 0) {
-                return `<span class="on-time">✓ Tolérance (${difference} min)</span>`;
-            } else {
-                return `<span class="on-time">✓ À l'heure</span>`;
-            }
+            if (diff <= 0) return `<span class="on-time">✓ À l'heure</span>`;
+            if (diff <= 15) return `<span class="on-time">✓ Tolérance (${diff} min)</span>`;
+            return `<span class="late">⚠️ Retard (${diff} min)</span>`;
         }
 
         dateInput.value = new Date().toISOString().split('T')[0];
