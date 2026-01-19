@@ -3,23 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Supervision Grey Corner - Mobile</title>
+    <title>Supervision Grey Corner - Bilan</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #c5a059; --bg: #fdfaf6; --white: #ffffff; }
+        :root { --primary: #2c3e50; --accent: #c5a059; --bg: #fdfaf6; --white: #ffffff; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--primary); -webkit-tap-highlight-color: transparent; }
         
-        header { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin-bottom: 15px; }
+        header { text-align: center; padding: 5px 0; border-bottom: 2px solid var(--accent); margin-bottom: 15px; }
         h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; margin: 5px 0; }
 
+        /* ONGLETS DE NAVIGATION */
+        .view-tabs { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; background: #eee; padding: 4px; border-radius: 25px; }
+        .view-btn { flex: 1; border: none; background: transparent; padding: 8px 5px; border-radius: 20px; font-weight: 600; color: #777; font-size: 0.75rem; cursor: pointer; transition: 0.3s; white-space: nowrap; }
+        .view-btn.active { background: var(--white); color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .view-btn.btn-alert { color: var(--danger); }
+        .view-btn.btn-alert.active { background: var(--danger); color: white; }
+
+        /* INPUT DATE */
+        .date-selector { margin-bottom: 15px; text-align: center; }
+        input[type="date"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; background: white; text-align: center; font-weight: bold; color: var(--primary); }
+
+        /* STATS GENERALES */
         .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
         .stat-card { background: var(--white); padding: 10px 5px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .stat-number { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         .stat-label { font-size: 0.55rem; text-transform: uppercase; color: #888; font-weight: bold; }
 
-        .date-selector { margin-bottom: 15px; }
-        input[type="date"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; background: white; }
+        #dashBody { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px;}
 
-        #dashBody { display: flex; flex-direction: column; gap: 10px; }
+        /* CARTE EMPLOYE STANDARD */
         .staff-row { 
             background: var(--white); 
             padding: 15px; 
@@ -29,49 +40,78 @@
             grid-template-columns: 1fr auto;
             align-items: center;
             border-left: 4px solid transparent;
+            position: relative;
         }
 
         .staff-info b { font-size: 0.95rem; display: block; color: var(--primary); }
         .staff-info i { font-size: 0.75rem; color: #888; font-style: normal; text-transform: uppercase; }
 
+        /* DETAILS VUE JOUR */
         .time-details { margin-top: 8px; font-size: 0.8rem; display: flex; gap: 15px; color: #555; }
         .time-box { background: #f8f9fa; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
+        
+        /* DETAILS VUE SEMAINE/MOIS */
+        .summary-details { margin-top: 8px; display: flex; gap: 10px; font-size: 0.75rem; }
+        .summary-pill { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .pill-pres { background: #e8f5e9; color: #2e7d32; }
+        .pill-off { background: #f1f5f9; color: #64748b; }
 
-        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: bold; text-align: center; min-width: 80px; display: inline-block; }
+        /* STATUS BADGES */
+        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: bold; min-width: 80px; display: inline-block; text-align: center;}
         .status-on { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32 !important; }
         .status-off { background: #f1f5f9; color: #64748b; border-left: 4px solid #94a3b8 !important; }
-        
-        .punctuality { margin-top: 8px; font-size: 0.8rem; font-weight: 500; }
-        .late { color: #e67e22; }
+        .late { color: #e67e22; font-weight: bold; }
         .on-time { color: #27ae60; }
-        .no-data { color: #bbb; font-size: 0.7rem; }
+
+        /* STYLE RAPPORT RETARDATAIRES */
+        .rank-badge { position: absolute; top: -5px; left: -5px; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background: white; z-index: 10;}
+        .rank-1 { background: #FFD700; color: #fff; border: 2px solid #fff; }
+        .rank-2 { background: #C0C0C0; color: #fff; border: 2px solid #fff; }
+        .rank-3 { background: #CD7F32; color: #fff; border: 2px solid #fff; }
+        
+        .late-stats { text-align: right; }
+        .late-minutes { font-size: 1.1rem; font-weight: 800; color: var(--danger); display: block; }
+        .late-count { font-size: 0.7rem; color: #666; background: #fff0f0; padding: 2px 6px; border-radius: 4px; }
+        
+        .clean-slate { text-align: center; padding: 30px; color: #27ae60; background: white; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🌿 Supervision Live</h1>
+        <h1>📊 Supervision & Rapports</h1>
+        
+        <div class="view-tabs">
+            <button class="view-btn active" onclick="switchMode('day', this)">JOUR</button>
+            <button class="view-btn" onclick="switchMode('week', this)">SEMAINE</button>
+            <button class="view-btn" onclick="switchMode('month', this)">MOIS</button>
+            <button class="view-btn btn-alert" onclick="switchMode('report', this)">⚠️ BILAN</button>
+        </div>
+
         <div class="date-selector">
             <input type="date" id="dashDate">
         </div>
     </header>
 
-    <div class="stats-container">
+    <!-- Zone Stats (Change dynamiquement) -->
+    <div class="stats-container" id="statsHeader">
         <div class="stat-card">
-            <span id="totalOn" class="stat-number">0</span>
-            <span class="stat-label">Présents</span>
+            <span id="stat1-val" class="stat-number">0</span>
+            <span id="stat1-label" class="stat-label">Présents</span>
         </div>
         <div class="stat-card">
-            <span id="totalOff" class="stat-number">0</span>
-            <span class="stat-label">OFF / CONGÉ</span>
+            <span id="stat2-val" class="stat-number">0</span>
+            <span id="stat2-label" class="stat-label">OFF / CONGÉ</span>
         </div>
         <div class="stat-card">
-            <span id="presenceRate" class="stat-number">0%</span>
-            <span class="stat-label">Taux</span>
+            <span id="stat3-val" class="stat-number">0%</span>
+            <span id="stat3-label" class="stat-label">Taux</span>
         </div>
     </div>
 
-    <div id="dashBody"></div>
+    <div id="dashBody">
+        <!-- Contenu injecté ici -->
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -97,9 +137,46 @@
         ];
 
         const dateInput = document.getElementById('dashDate');
+        let currentMode = 'day'; 
+        let currentListenerRef = null;
+
+        dateInput.value = new Date().toISOString().split('T')[0];
+        dateInput.addEventListener('change', updateDashboard);
+        updateDashboard();
+
+        function switchMode(mode, btn) {
+            currentMode = mode;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateDashboard();
+        }
 
         function updateDashboard() {
-            database.ref('presences/' + dateInput.value).on('value', (snap) => {
+            if(currentListenerRef) { database.ref(currentListenerRef).off(); currentListenerRef = null; }
+            
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Chargement...</div>';
+
+            if (currentMode === 'day') {
+                document.getElementById('statsHeader').style.display = "grid";
+                renderDayView();
+            } else if (currentMode === 'report') {
+                // Pour le rapport, on cache les stats habituelles ou on les adapte
+                document.getElementById('statsHeader').style.display = "none";
+                renderReportView();
+            } else {
+                document.getElementById('statsHeader').style.display = "grid";
+                renderRangeView(currentMode);
+            }
+        }
+
+        // --- VUE JOUR (LIVE) ---
+        function renderDayView() {
+            setLabels("Présents", "OFF / CONGÉ", "Taux");
+            const path = 'presences/' + dateInput.value;
+            currentListenerRef = path;
+
+            database.ref(path).on('value', (snap) => {
                 const data = snap.val() || {};
                 const container = document.getElementById('dashBody');
                 container.innerHTML = '';
@@ -112,7 +189,7 @@
                     if(d.off) countOff++;
 
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
-                    const statusText = d.on ? 'PRÉSENT' : (d.off ? 'OFF / CONGÉ' : 'NON POINTÉ');
+                    const statusText = d.on ? 'PRÉSENT' : (d.off ? 'OFF' : 'ABSENT');
                     const lateStatus = getLateStatus(d.hA, d.hP);
 
                     const card = document.createElement('div');
@@ -125,7 +202,7 @@
                                 <span class="time-box">Prévu: ${d.hP || '--:--'}</span>
                                 <span class="time-box">Arr: ${d.hA || '--:--'}</span>
                             </div>
-                            <div class="punctuality">${lateStatus}</div>
+                            <div style="margin-top:5px; font-size:0.8rem;">${lateStatus}</div>
                         </div>
                         <div>
                             <span class="status-pill ${statusClass}">${statusText}</span>
@@ -133,27 +210,187 @@
                     `;
                     container.appendChild(card);
                 });
-
-                document.getElementById('totalOn').innerText = countOn;
-                document.getElementById('totalOff').innerText = countOff;
-                document.getElementById('presenceRate').innerText = Math.round((countOn / equipe.length) * 100) + '%';
+                updateStats(countOn, countOff, Math.round((countOn / equipe.length) * 100) + '%');
             });
         }
 
-        function getLateStatus(hA, hP) {
-            if(!hA || !hP) return `<span class="no-data">Pointage...</span>`;
-            const [hArr, mArr] = hA.split(':').map(Number);
-            const [hPre, mPre] = hP.split(':').map(Number);
-            const diff = (hArr * 60 + mArr) - (hPre * 60 + mPre);
+        // --- VUE SEMAINE / MOIS (Classique) ---
+        async function renderRangeView(mode) {
+            setLabels("Présences", "Jours OFF", "Retard Cumul");
+            const dates = getDatesInRange(dateInput.value, mode);
+            const stats = await calculateStats(dates);
 
-            if (diff <= 0) return `<span class="on-time">✓ À l'heure</span>`;
-            if (diff <= 10) return `<span class="on-time">✓ Tolérance (${diff} min)</span>`;
-            return `<span class="late">⚠️ Retard (${diff} min)</span>`;
+            // Mise à jour header stats
+            let totalPres = 0, totalOff = 0, totalLate = 0;
+            Object.values(stats).forEach(s => { totalPres+=s.present; totalOff+=s.off; totalLate+=s.lateMinutes; });
+            updateStats(totalPres, totalOff, totalLate + " min");
+
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '';
+
+            equipe.forEach(emp => {
+                const s = stats[emp.nom + '_' + emp.prenom];
+                const card = document.createElement('div');
+                card.className = `staff-row`;
+                card.innerHTML = `
+                    <div class="staff-info">
+                        <b>${emp.nom} ${emp.prenom}</b>
+                        <i>${emp.poste}</i>
+                        <div class="summary-details">
+                            <span class="summary-pill pill-pres">${s.present}j Prés</span>
+                            <span class="summary-pill pill-off">${s.off}j Off</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-size:0.7rem; color:#888;">Retard</span><br>
+                        <b style="color:${s.lateMinutes > 0 ? '#e67e22' : '#27ae60'}">${s.lateMinutes} min</b>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        dateInput.value = new Date().toISOString().split('T')[0];
-        dateInput.addEventListener('change', updateDashboard);
-        updateDashboard();
+        // --- NOUVEAU : VUE RAPPORT (BILAN RETARDS) ---
+        async function renderReportView() {
+            const container = document.getElementById('dashBody');
+            
+            // On prend toujours le mois complet de la date sélectionnée pour le rapport
+            const dates = getDatesInRange(dateInput.value, 'month');
+            const stats = await calculateStats(dates);
+
+            // Conversion en tableau pour tri
+            let reportList = Object.values(stats).filter(s => s.lateMinutes > 0);
+            
+            // TRI : Du plus grand retard au plus petit
+            reportList.sort((a, b) => b.lateMinutes - a.lateMinutes);
+
+            container.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; color:#e74c3c;">🏆 Top Retardataires (Mois)</h3>`;
+
+            if (reportList.length === 0) {
+                container.innerHTML += `<div class="clean-slate">👏 Aucun retard ce mois-ci !</div>`;
+                return;
+            }
+
+            reportList.forEach((s, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let rankIcon = rank;
+                
+                if(rank === 1) { rankClass = 'rank-1'; rankIcon = '🥇'; }
+                else if(rank === 2) { rankClass = 'rank-2'; rankIcon = '🥈'; }
+                else if(rank === 3) { rankClass = 'rank-3'; rankIcon = '🥉'; }
+                else { rankClass = 'rank-other'; }
+
+                const card = document.createElement('div');
+                card.className = `staff-row`;
+                // Bordure rouge pour les gros retards
+                if(s.lateMinutes >= 60) card.style.borderLeft = "4px solid #e74c3c";
+
+                // Badge de rang seulement pour top 3
+                const badgeHtml = rank <= 3 ? `<div class="rank-badge ${rankClass}">${rankIcon}</div>` : `<div style="font-size:0.8rem; color:#999; margin-right:5px;">#${rank}</div>`;
+
+                card.innerHTML = `
+                    ${rank <= 3 ? badgeHtml : ''}
+                    <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}">
+                         ${rank > 3 ? badgeHtml : ''}
+                        <b>${s.info.nom} ${s.info.prenom}</b>
+                        <i>${s.info.poste}</i>
+                    </div>
+                    <div class="late-stats">
+                        <span class="late-minutes">-${s.lateMinutes} min</span>
+                        <span class="late-count">${s.lateCount} fois en retard</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- CALCULS COMMUNS ---
+        async function calculateStats(dates) {
+            const stats = {};
+            equipe.forEach(emp => {
+                stats[emp.nom + '_' + emp.prenom] = { 
+                    info: emp, present: 0, off: 0, lateMinutes: 0, lateCount: 0 
+                };
+            });
+
+            const promises = dates.map(dateStr => 
+                database.ref('presences/' + dateStr).once('value').then(snap => ({ date: dateStr, data: snap.val() || {} }))
+            );
+
+            const results = await Promise.all(promises);
+
+            results.forEach(day => {
+                const dayData = day.data;
+                Object.keys(stats).forEach(id => {
+                    const empData = dayData[id];
+                    if (empData) {
+                        if (empData.on) {
+                            stats[id].present++;
+                            if(empData.hA && empData.hP) {
+                                const diff = getTimeDiff(empData.hA, empData.hP);
+                                // Tolérance 5 minutes avant de compter le retard
+                                if(diff > 5) { 
+                                    stats[id].lateMinutes += diff;
+                                    stats[id].lateCount++;
+                                }
+                            }
+                        }
+                        if (empData.off) stats[id].off++;
+                    }
+                });
+            });
+            return stats;
+        }
+
+        function getLateStatus(hA, hP) {
+            if(!hA || !hP) return `<span class="no-data">--</span>`;
+            const diff = getTimeDiff(hA, hP);
+            if (diff <= 5) return `<span class="on-time">✓ À l'heure</span>`;
+            return `<span class="late">⚠️ +${diff} min</span>`;
+        }
+
+        function getTimeDiff(hA, hP) {
+            const [hArr, mArr] = hA.split(':').map(Number);
+            const [hPre, mPre] = hP.split(':').map(Number);
+            return (hArr * 60 + mArr) - (hPre * 60 + mPre);
+        }
+
+        function getDatesInRange(dateStr, mode) {
+            const current = new Date(dateStr);
+            const dates = [];
+            
+            if (mode === 'week') {
+                const day = current.getDay() || 7; 
+                if(day !== 1) current.setHours(-24 * (day - 1));
+                for (let i = 0; i < 7; i++) {
+                    dates.push(current.toISOString().split('T')[0]);
+                    current.setDate(current.getDate() + 1);
+                }
+            } 
+            else { // Month & Report
+                const year = current.getFullYear();
+                const month = current.getMonth();
+                const date = new Date(year, month, 1);
+                while (date.getMonth() === month) {
+                    dates.push(date.toISOString().split('T')[0]);
+                    date.setDate(date.getDate() + 1);
+                }
+            }
+            return dates;
+        }
+
+        function setLabels(l1, l2, l3) {
+            document.getElementById('stat1-label').innerText = l1;
+            document.getElementById('stat2-label').innerText = l2;
+            document.getElementById('stat3-label').innerText = l3;
+        }
+
+        function updateStats(v1, v2, v3) {
+            document.getElementById('stat1-val').innerText = v1;
+            document.getElementById('stat2-val').innerText = v2;
+            document.getElementById('stat3-val').innerText = v3;
+        }
     </script>
 </body>
 </html>
