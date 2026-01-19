@@ -18,15 +18,14 @@
         .view-btn.btn-alert { color: var(--danger); }
         .view-btn.btn-alert.active { background: var(--danger); color: white; }
 
-        /* CONTROLES DATE & ACTION */
+        /* CONTROLES */
         .controls-wrapper { background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
         .date-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
         input[type="date"] { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 1rem; background: #f9f9f9; text-align: center; font-weight: bold; color: var(--primary); }
         
-        /* BOUTON DESACTIVER */
         #toggleDayBtn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; color: white; transition: 0.3s; }
-        .btn-is-active { background: var(--danger); } /* Couleur quand on veut désactiver */
-        .btn-is-disabled { background: var(--success); } /* Couleur quand on veut réactiver */
+        .btn-is-active { background: var(--danger); }
+        .btn-is-disabled { background: var(--success); }
 
         /* STATS */
         .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
@@ -43,7 +42,11 @@
             align-items: center; border-left: 4px solid transparent; position: relative;
         }
 
-        .staff-info b { font-size: 0.95rem; display: block; color: var(--primary); }
+        /* RENDRE LE NOM CLIQUABLE */
+        .staff-info { cursor: pointer; } 
+        .staff-info:active { opacity: 0.7; }
+        
+        .staff-info b { font-size: 0.95rem; display: block; color: var(--primary); text-decoration: underline; text-decoration-color: #ddd; }
         .staff-info i { font-size: 0.75rem; color: #888; font-style: normal; text-transform: uppercase; }
 
         .time-details { margin-top: 8px; font-size: 0.8rem; display: flex; gap: 15px; color: #555; }
@@ -60,7 +63,6 @@
         .late { color: #e67e22; font-weight: bold; }
         .on-time { color: #27ae60; }
 
-        /* CLASSEMENT */
         .rank-badge { position: absolute; top: -5px; left: -5px; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background: white; z-index: 10;}
         .rank-1 { background: #FFD700; color: #fff; border: 2px solid #fff; }
         .rank-2 { background: #C0C0C0; color: #fff; border: 2px solid #fff; }
@@ -70,11 +72,26 @@
         .late-minutes { font-size: 1.1rem; font-weight: 800; color: var(--danger); display: block; }
         .late-count { font-size: 0.7rem; color: #666; background: #fff0f0; padding: 2px 6px; border-radius: 4px; }
         
-        /* MSG JOURNÉE DESACTIVÉE */
-        .day-disabled-overlay { 
-            text-align: center; padding: 40px 20px; background: #eee; border-radius: 10px; color: #777; 
-            border: 2px dashed #ccc; margin-top: 20px;
-        }
+        .day-disabled-overlay { text-align: center; padding: 40px 20px; background: #eee; border-radius: 10px; color: #777; border: 2px dashed #ccc; margin-top: 20px; }
+
+        /* --- STYLES MODAL HISTORIQUE --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fdfaf6; margin: 10% auto; padding: 0; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from {transform: translateY(50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+        
+        .modal-header { background: var(--primary); color: white; padding: 15px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; font-size: 1rem; text-transform: uppercase; }
+        .close-btn { color: white; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 20px; }
+        
+        .modal-body { padding: 15px; max-height: 60vh; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .history-date { font-weight: bold; font-size: 0.85rem; color: #555; }
+        .history-status { font-size: 0.8rem; text-align: right; }
+        .hist-late { color: var(--danger); font-weight: bold; }
+        .hist-ok { color: var(--success); }
+        .hist-off { color: #999; }
+        
+        .history-summary { background: #eee; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 0.8rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -92,33 +109,32 @@
         <div class="controls-wrapper">
             <div class="date-row">
                 <input type="date" id="dashDate">
-                <!-- BOUTON DESACTIVER UNIQUEMENT VISIBLE EN MODE JOUR -->
-                <button id="toggleDayBtn" class="btn-is-active" style="display:none;" onclick="toggleDayStatus()">
-                    🚫 Exclure
-                </button>
+                <button id="toggleDayBtn" class="btn-is-active" style="display:none;" onclick="toggleDayStatus()">🚫 Exclure</button>
             </div>
-            <div id="dayStatusMsg" style="font-size:0.7rem; text-align:center; color:#e74c3c; margin-top:5px; display:none;">
-                Cette journée est exclue des statistiques.
-            </div>
+            <div id="dayStatusMsg" style="font-size:0.7rem; text-align:center; color:#e74c3c; margin-top:5px; display:none;">Cette journée est exclue des statistiques.</div>
         </div>
     </header>
 
     <div class="stats-container" id="statsHeader">
-        <div class="stat-card">
-            <span id="stat1-val" class="stat-number">0</span>
-            <span id="stat1-label" class="stat-label">Présents</span>
-        </div>
-        <div class="stat-card">
-            <span id="stat2-val" class="stat-number">0</span>
-            <span id="stat2-label" class="stat-label">OFF / CONGÉ</span>
-        </div>
-        <div class="stat-card">
-            <span id="stat3-val" class="stat-number">0%</span>
-            <span id="stat3-label" class="stat-label">Taux</span>
-        </div>
+        <div class="stat-card"><span id="stat1-val" class="stat-number">0</span><span id="stat1-label" class="stat-label">Présents</span></div>
+        <div class="stat-card"><span id="stat2-val" class="stat-number">0</span><span id="stat2-label" class="stat-label">OFF / CONGÉ</span></div>
+        <div class="stat-card"><span id="stat3-val" class="stat-number">0%</span><span id="stat3-label" class="stat-label">Taux</span></div>
     </div>
 
     <div id="dashBody"></div>
+
+    <!-- MODAL HISTORIQUE -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Historique</h2>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalList">
+                <!-- Liste injectée ici -->
+            </div>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -162,10 +178,109 @@
             updateDashboard();
         }
 
-        // --- GESTION DESACTIVATION ---
+        // --- FONCTIONS MODAL HISTORIQUE ---
+        function closeModal() {
+            document.getElementById('historyModal').style.display = "none";
+        }
+        
+        // Fermer si on clique en dehors
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target == modal) modal.style.display = "none";
+        }
+
+        async function openHistory(nom, prenom) {
+            const modal = document.getElementById('historyModal');
+            const listContainer = document.getElementById('modalList');
+            const title = document.getElementById('modalTitle');
+            
+            modal.style.display = "block";
+            title.innerText = `${nom} ${prenom}`;
+            listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Chargement de l\'historique...</div>';
+
+            // On récupère tout le mois sélectionné
+            const dates = getDatesInRange(dateInput.value, 'month');
+            const promises = dates.map(dateStr => 
+                database.ref('presences/' + dateStr).once('value').then(snap => ({ date: dateStr, data: snap.val() || {} }))
+            );
+            
+            const results = await Promise.all(promises);
+            const id = nom + '_' + prenom;
+            
+            let html = '';
+            let totalLate = 0;
+            let countLate = 0;
+            
+            // Inverser pour avoir les dates récentes en haut
+            results.reverse();
+
+            let historyRows = '';
+
+            results.forEach(day => {
+                const dateParts = day.date.split('-');
+                const dateDisplay = `${dateParts[2]}/${dateParts[1]}`;
+                const dayData = day.data;
+
+                // Ignorer si journée désactivée
+                if(dayData.disabled === true) return;
+
+                const empData = dayData[id];
+
+                if(empData) {
+                    let statusHtml = '';
+                    let details = '';
+
+                    if(empData.on) {
+                        // Calcul retard
+                        let isLate = false;
+                        let diff = 0;
+                        if(empData.hA && empData.hP) {
+                            diff = getTimeDiff(empData.hA, empData.hP);
+                            if(diff > 5) {
+                                isLate = true;
+                                totalLate += diff;
+                                countLate++;
+                            }
+                        }
+
+                        if(isLate) {
+                            statusHtml = `<span class="hist-late">⚠️ Retard ${diff} min</span>`;
+                            details = `<br><span style="font-size:0.7rem; color:#888;">Arr: ${empData.hA} (Prévu ${empData.hP})</span>`;
+                        } else {
+                            statusHtml = `<span class="hist-ok">✅ Présent</span>`;
+                            details = `<br><span style="font-size:0.7rem; color:#888;">Arr: ${empData.hA || '?'}</span>`;
+                        }
+                    } else if (empData.off) {
+                        statusHtml = `<span class="hist-off">🏖️ OFF</span>`;
+                    } else {
+                        statusHtml = `<span style="color:#ccc;">Absent</span>`;
+                    }
+
+                    historyRows += `
+                        <div class="history-item">
+                            <span class="history-date">${dateDisplay}</span>
+                            <div class="history-status">
+                                ${statusHtml}
+                                ${details}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            const summary = `
+                <div class="history-summary">
+                    <span style="color:#e74c3c">Total Retard: ${totalLate} min</span>
+                    <span>Fréquence: ${countLate} fois</span>
+                </div>
+            `;
+
+            listContainer.innerHTML = summary + (historyRows || '<div style="text-align:center; padding:20px;">Aucune donnée ce mois-ci.</div>');
+        }
+
+        // --- LOGIQUE PRINCIPALE ---
         function toggleDayStatus() {
             const path = 'presences/' + dateInput.value + '/disabled';
-            // On inverse la valeur actuelle
             database.ref(path).set(!isCurrentDayDisabled);
         }
 
@@ -192,8 +307,7 @@
             if(currentListenerRef) { database.ref(currentListenerRef).off(); currentListenerRef = null; }
             const container = document.getElementById('dashBody');
             container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Chargement...</div>';
-
-            updateToggleUI(false); // Reset UI temporaire
+            updateToggleUI(false); 
 
             if (currentMode === 'day') {
                 document.getElementById('statsHeader').style.display = "grid";
@@ -207,7 +321,6 @@
             }
         }
 
-        // --- VUE JOUR (LIVE) ---
         function renderDayView() {
             setLabels("Présents", "OFF / CONGÉ", "Taux");
             const path = 'presences/' + dateInput.value;
@@ -218,27 +331,19 @@
                 const container = document.getElementById('dashBody');
                 container.innerHTML = '';
                 
-                // Gestion du status "Désactivé"
                 const disabled = data.disabled === true;
                 updateToggleUI(disabled);
 
                 if (disabled) {
-                    container.innerHTML = `
-                        <div class="day-disabled-overlay">
-                            <h3>🚫 Journée Exclue</h3>
-                            <p>Les données de cette journée ne seront pas comptabilisées dans les rapports.</p>
-                        </div>
-                    `;
+                    container.innerHTML = `<div class="day-disabled-overlay"><h3>🚫 Journée Exclue</h3><p>Pas de statistiques.</p></div>`;
                     updateStats('-', '-', '-');
                     return; 
                 }
 
                 let countOn = 0, countOff = 0;
-
                 equipe.forEach(emp => {
                     const id = emp.nom + '_' + emp.prenom;
                     const d = data[id] || {};
-                    // Ne pas compter 'disabled' key comme employé
                     if(id === 'disabled') return;
 
                     if(d.on) countOn++;
@@ -251,7 +356,7 @@
                     const card = document.createElement('div');
                     card.className = `staff-row ${statusClass}`;
                     card.innerHTML = `
-                        <div class="staff-info">
+                        <div class="staff-info" onclick="openHistory('${emp.nom}', '${emp.prenom}')">
                             <b>${emp.nom} ${emp.prenom}</b>
                             <i>${emp.poste}</i>
                             <div class="time-details">
@@ -270,7 +375,6 @@
             });
         }
 
-        // --- VUE SEMAINE / MOIS ---
         async function renderRangeView(mode) {
             setLabels("Présences", "Jours OFF", "Retard Cumul");
             const dates = getDatesInRange(dateInput.value, mode);
@@ -288,7 +392,7 @@
                 const card = document.createElement('div');
                 card.className = `staff-row`;
                 card.innerHTML = `
-                    <div class="staff-info">
+                    <div class="staff-info" onclick="openHistory('${emp.nom}', '${emp.prenom}')">
                         <b>${emp.nom} ${emp.prenom}</b>
                         <i>${emp.poste}</i>
                         <div class="summary-details">
@@ -305,7 +409,6 @@
             });
         }
 
-        // --- VUE RAPPORT ---
         async function renderReportView() {
             const container = document.getElementById('dashBody');
             const dates = getDatesInRange(dateInput.value, 'month');
@@ -335,7 +438,7 @@
 
                 card.innerHTML = `
                     ${rank <= 3 ? badgeHtml : ''}
-                    <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}">
+                    <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}" onclick="openHistory('${s.info.nom}', '${s.info.prenom}')">
                         <b>${s.info.nom} ${s.info.prenom}</b>
                         <i>${s.info.poste}</i>
                     </div>
@@ -348,25 +451,19 @@
             });
         }
 
-        // --- CALCULS (Avec exclusion jour désactivé) ---
         async function calculateStats(dates) {
             const stats = {};
             equipe.forEach(emp => {
-                stats[emp.nom + '_' + emp.prenom] = { 
-                    info: emp, present: 0, off: 0, lateMinutes: 0, lateCount: 0 
-                };
+                stats[emp.nom + '_' + emp.prenom] = { info: emp, present: 0, off: 0, lateMinutes: 0, lateCount: 0 };
             });
 
             const promises = dates.map(dateStr => 
                 database.ref('presences/' + dateStr).once('value').then(snap => ({ date: dateStr, data: snap.val() || {} }))
             );
-
             const results = await Promise.all(promises);
 
             results.forEach(day => {
                 const dayData = day.data;
-
-                // IMPORTANT : Si la journée est désactivée, on saute ce jour
                 if (dayData.disabled === true) return; 
 
                 Object.keys(stats).forEach(id => {
