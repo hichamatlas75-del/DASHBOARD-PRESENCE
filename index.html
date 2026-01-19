@@ -2,33 +2,60 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervision Grey Corner - Précision</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Supervision Grey Corner - Mobile</title>
     <style>
         :root { --primary: #2c3e50; --accent: #c5a059; --bg: #fdfaf6; --white: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--primary); }
-        header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--white); padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .stat-number { font-size: 2rem; font-weight: bold; color: var(--accent); display: block; }
-        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #888; }
-        .date-selector { margin-bottom: 20px; text-align: center; }
-        input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; }
-        .report-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; font-size: 0.75rem; text-transform: uppercase; color: #7f8c8d; }
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
-        .status-on { background: #e8f5e9; color: #2e7d32; }
-        .status-off { background: #ffebee; color: #c62828; }
-        .late { color: #e67e22; font-weight: bold; }
-        .on-time { color: #27ae60; font-size: 0.8rem; }
-        .no-data { color: #ccc; font-style: italic; font-size: 0.75rem; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--primary); -webkit-tap-highlight-color: transparent; }
+        
+        header { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin-bottom: 15px; }
+        h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; margin: 5px 0; }
+
+        /* Stats compactes pour Mobile */
+        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .stat-card { background: var(--white); padding: 10px 5px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-number { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
+        .stat-label { font-size: 0.55rem; text-transform: uppercase; color: #888; font-weight: bold; }
+
+        .date-selector { margin-bottom: 15px; }
+        input[type="date"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; background: white; }
+
+        /* Style Liste/Cartes pour Mobile */
+        #dashBody { display: flex; flex-direction: column; gap: 10px; }
+        .staff-row { 
+            background: var(--white); 
+            padding: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            border-left: 4px solid transparent;
+        }
+
+        .staff-info b { font-size: 0.95rem; display: block; color: var(--primary); }
+        .staff-info i { font-size: 0.75rem; color: #888; font-style: normal; text-transform: uppercase; }
+
+        .time-details { margin-top: 8px; font-size: 0.8rem; display: flex; gap: 15px; color: #555; }
+        .time-box { background: #f8f9fa; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
+
+        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: bold; text-align: center; min-width: 70px; display: inline-block; }
+        .status-on { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32 !important; }
+        .status-off { background: #ffebee; color: #c62828; border-left: 4px solid #c62828 !important; }
+        
+        .punctuality { margin-top: 8px; font-size: 0.8rem; font-weight: 500; }
+        .late { color: #e67e22; }
+        .on-time { color: #27ae60; }
+        .no-data { color: #bbb; font-size: 0.7rem; }
+
+        /* Masquer l'en-tête de tableau sur mobile */
+        thead { display: none; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🌿 Supervision Grey Corner</h1>
+        <h1>🌿 Supervision Live</h1>
         <div class="date-selector">
             <input type="date" id="dashDate">
         </div>
@@ -37,31 +64,20 @@
     <div class="stats-container">
         <div class="stat-card">
             <span id="totalOn" class="stat-number">0</span>
-            <span class="stat-label">Présents (ON)</span>
+            <span class="stat-label">Présents</span>
         </div>
         <div class="stat-card">
             <span id="totalOff" class="stat-number">0</span>
-            <span class="stat-label">Absents (OFF)</span>
+            <span class="stat-label">Absents</span>
         </div>
         <div class="stat-card">
             <span id="presenceRate" class="stat-number">0%</span>
-            <span class="stat-label">Taux de présence</span>
+            <span class="stat-label">Taux</span>
         </div>
     </div>
 
-    <table class="report-table">
-        <thead>
-            <tr>
-                <th>Membre de l'équipe</th>
-                <th>Poste</th>
-                <th>Statut</th>
-                <th>H. Prévue</th>
-                <th>H. Arrivée</th>
-                <th>Ponctualité</th>
-            </tr>
-        </thead>
-        <tbody id="dashBody"></tbody>
-    </table>
+    <div id="dashBody">
+        </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -91,8 +107,8 @@
         function updateDashboard() {
             database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
-                const tbody = document.getElementById('dashBody');
-                tbody.innerHTML = '';
+                const container = document.getElementById('dashBody');
+                container.innerHTML = '';
                 let countOn = 0, countOff = 0;
 
                 equipe.forEach(emp => {
@@ -101,22 +117,27 @@
                     if(d.on) countOn++;
                     if(d.off) countOff++;
 
-                    const tr = document.createElement('tr');
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
                     const statusText = d.on ? 'PRÉSENT' : (d.off ? 'ABSENT' : 'NON POINTÉ');
-                    
-                    // CALCUL STRICTEMENT BASÉ SUR LA SAISIE (hP)
                     const lateStatus = getLateStatus(d.hA, d.hP);
 
-                    tr.innerHTML = `
-                        <td><b>${emp.nom}</b> ${emp.prenom}</td>
-                        <td>${emp.poste}</td>
-                        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-                        <td>${d.hP || '--:--'}</td>
-                        <td>${d.hA || '--:--'}</td>
-                        <td>${lateStatus}</td>
+                    const card = document.createElement('div');
+                    card.className = `staff-row ${statusClass}`;
+                    card.innerHTML = `
+                        <div class="staff-info">
+                            <b>${emp.nom} ${emp.prenom}</b>
+                            <i>${emp.poste}</i>
+                            <div class="time-details">
+                                <span class="time-box">Prévu: ${d.hP || '--:--'}</span>
+                                <span class="time-box">Arr: ${d.hA || '--:--'}</span>
+                            </div>
+                            <div class="punctuality">${lateStatus}</div>
+                        </div>
+                        <div>
+                            <span class="status-pill ${statusClass}">${statusText}</span>
+                        </div>
                     `;
-                    tbody.appendChild(tr);
+                    container.appendChild(card);
                 });
 
                 document.getElementById('totalOn').innerText = countOn;
@@ -126,15 +147,10 @@
         }
 
         function getLateStatus(hA, hP) {
-            // Si l'une des deux heures n'est pas saisie, on n'affiche rien
-            if(!hA || !hP) return `<span class="no-data">Attente saisie</span>`;
-            
+            if(!hA || !hP) return `<span class="no-data">Pointage en cours...</span>`;
             const [hArr, mArr] = hA.split(':').map(Number);
             const [hPre, mPre] = hP.split(':').map(Number);
-            
-            const totalArr = hArr * 60 + mArr;
-            const totalPre = hPre * 60 + mPre;
-            const diff = totalArr - totalPre;
+            const diff = (hArr * 60 + mArr) - (hPre * 60 + mPre);
 
             if (diff <= 0) return `<span class="on-time">✓ À l'heure</span>`;
             if (diff <= 15) return `<span class="on-time">✓ Tolérance (${diff} min)</span>`;
