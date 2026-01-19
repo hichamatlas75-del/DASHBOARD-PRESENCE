@@ -3,26 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Grey Corner</title>
+    <title>Supervision Grey Corner - Live</title>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #c5a059;
-            --bg: #fdfaf6;
-            --white: #ffffff;
-        }
-
+        :root { --primary: #2c3e50; --accent: #c5a059; --bg: #fdfaf6; --white: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--primary); }
         header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        
         .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: var(--white); padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .stat-number { font-size: 2rem; font-weight: bold; color: var(--accent); display: block; }
-        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #888; letter-spacing: 1px; }
-
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #888; }
         .date-selector { margin-bottom: 20px; text-align: center; }
         input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; }
-
         .report-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; font-size: 0.75rem; text-transform: uppercase; color: #7f8c8d; }
@@ -66,8 +57,7 @@
                 <th>Retard / Note</th>
             </tr>
         </thead>
-        <tbody id="dashBody">
-            </tbody>
+        <tbody id="dashBody"></tbody>
     </table>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -78,12 +68,32 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Votre liste d'équipe pour le croisement des données
+        // LISTE COMPLÈTE CORRIGÉE (24 membres)
         const equipe = [
-            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE', hTheorique: '06:45'},
-            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE', hTheorique: '06:45'},
-            {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT', hTheorique: '07:45'},
-            // ... Ajoutez les autres ici avec leur heure théorique
+            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE', hT: '06:45'},
+            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE', hT: '15:00'},
+            {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT', hT: '08:00'},
+            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR', hT: '06:45'},
+            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR', hT: '15:00'},
+            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR', hT: '06:45'},
+            {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR', hT: '06:45'}, // Ajouté
+            {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE', hT: '07:00'},
+            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE', hT: '07:00'},
+            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE', hT: '07:00'},
+            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE', hT: '07:00'},
+            {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE', hT: '07:00'},
+            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE', hT: '08:00'},
+            {nom: 'EL MOEDEN', prenom: 'HASSAN', poste: 'SERVICE', hT: '08:00'},
+            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE', hT: '08:00'},
+            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE', hT: '08:00'},
+            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE', hT: '08:00'},
+            {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE', hT: '08:00'}
         ];
 
         const dateInput = document.getElementById('dashDate');
@@ -94,43 +104,39 @@
                 const data = snap.val() || {};
                 const tbody = document.getElementById('dashBody');
                 tbody.innerHTML = '';
-
-                let countOn = 0;
-                let countOff = 0;
+                let countOn = 0, countOff = 0;
 
                 equipe.forEach(emp => {
                     const id = emp.nom + '_' + emp.prenom;
                     const d = data[id] || {};
-                    
                     if(d.on) countOn++;
                     if(d.off) countOff++;
 
                     const tr = document.createElement('tr');
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
                     const statusText = d.on ? 'PRÉSENT' : (d.off ? 'ABSENT' : 'NON POINTÉ');
+                    const isLate = checkLate(d.hA, emp.hT); // Logique corrigée
 
                     tr.innerHTML = `
                         <td><b>${emp.nom}</b> ${emp.prenom}</td>
                         <td>${emp.poste}</td>
                         <td><span class="status-pill ${statusClass}">${statusText}</span></td>
                         <td>${d.hA || '--:--'}</td>
-                        <td class="${checkLate(d.hA, emp.hTheorique) ? 'late' : ''}">
-                            ${checkLate(d.hA, emp.hTheorique) ? '⚠️ Retard' : ''}
-                        </td>
+                        <td class="${isLate ? 'late' : ''}">${isLate ? '⚠️ Retard' : ''}</td>
                     `;
                     tbody.appendChild(tr);
                 });
 
                 document.getElementById('totalOn').innerText = countOn;
                 document.getElementById('totalOff').innerText = countOff;
-                const rate = equipe.length > 0 ? Math.round((countOn / equipe.length) * 100) : 0;
-                document.getElementById('presenceRate').innerText = rate + '%';
+                document.getElementById('presenceRate').innerText = Math.round((countOn / equipe.length) * 100) + '%';
             });
         }
 
-        function checkLate(hArrivee, hTheorique) {
-            if(!hArrivee || !hTheorique) return false;
-            return hArrivee > hTheorique;
+        // LOGIQUE CORRIGÉE : Pas de retard si Arrivée == Théorique
+        function checkLate(hA, hT) {
+            if(!hA || !hT) return false;
+            return hA > hT; 
         }
 
         dateInput.value = new Date().toISOString().split('T')[0];
