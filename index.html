@@ -116,7 +116,6 @@
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
                     const statusText = d.on ? 'PRÉSENT' : (d.off ? 'ABSENT' : 'NON POINTÉ');
                     
-                    // Calcul du retard avec tolérance
                     const lateStatus = getLateStatus(d.hA, emp.hT);
 
                     tr.innerHTML = `
@@ -138,15 +137,14 @@
         function getLateStatus(hA, hT) {
             if(!hA || !hT) return "";
             
-            // Conversion en minutes pour le calcul
             const [hArrivee, mArrivee] = hA.split(':').map(Number);
             const [hTheorique, mTheorique] = hT.split(':').map(Number);
             
             const totalArrivee = hArrivee * 60 + mArrivee;
             const totalTheorique = hTheorique * 60 + mTheorique;
-            
             const difference = totalArrivee - totalTheorique;
 
+            // Logique de tolérance 15mn
             if (difference > 15) {
                 return `<span class="late">⚠️ Retard (${difference} min)</span>`;
             } else if (difference > 0) {
