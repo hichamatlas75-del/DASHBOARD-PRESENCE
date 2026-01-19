@@ -11,7 +11,6 @@
         header { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin-bottom: 15px; }
         h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; margin: 5px 0; }
 
-        /* Stats compactes pour Mobile */
         .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
         .stat-card { background: var(--white); padding: 10px 5px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .stat-number { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
@@ -20,7 +19,6 @@
         .date-selector { margin-bottom: 15px; }
         input[type="date"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; background: white; }
 
-        /* Style Liste/Cartes pour Mobile */
         #dashBody { display: flex; flex-direction: column; gap: 10px; }
         .staff-row { 
             background: var(--white); 
@@ -39,17 +37,14 @@
         .time-details { margin-top: 8px; font-size: 0.8rem; display: flex; gap: 15px; color: #555; }
         .time-box { background: #f8f9fa; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
 
-        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: bold; text-align: center; min-width: 70px; display: inline-block; }
+        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: bold; text-align: center; min-width: 80px; display: inline-block; }
         .status-on { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32 !important; }
-        .status-off { background: #ffebee; color: #c62828; border-left: 4px solid #c62828 !important; }
+        .status-off { background: #f1f5f9; color: #64748b; border-left: 4px solid #94a3b8 !important; }
         
         .punctuality { margin-top: 8px; font-size: 0.8rem; font-weight: 500; }
         .late { color: #e67e22; }
         .on-time { color: #27ae60; }
         .no-data { color: #bbb; font-size: 0.7rem; }
-
-        /* Masquer l'en-tête de tableau sur mobile */
-        thead { display: none; }
     </style>
 </head>
 <body>
@@ -68,7 +63,7 @@
         </div>
         <div class="stat-card">
             <span id="totalOff" class="stat-number">0</span>
-            <span class="stat-label">Absents</span>
+            <span class="stat-label">OFF / CONGÉ</span>
         </div>
         <div class="stat-card">
             <span id="presenceRate" class="stat-number">0%</span>
@@ -76,8 +71,7 @@
         </div>
     </div>
 
-    <div id="dashBody">
-        </div>
+    <div id="dashBody"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -118,7 +112,7 @@
                     if(d.off) countOff++;
 
                     const statusClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
-                    const statusText = d.on ? 'PRÉSENT' : (d.off ? 'ABSENT' : 'NON POINTÉ');
+                    const statusText = d.on ? 'PRÉSENT' : (d.off ? 'OFF / CONGÉ' : 'NON POINTÉ');
                     const lateStatus = getLateStatus(d.hA, d.hP);
 
                     const card = document.createElement('div');
@@ -147,13 +141,13 @@
         }
 
         function getLateStatus(hA, hP) {
-            if(!hA || !hP) return `<span class="no-data">Pointage en cours...</span>`;
+            if(!hA || !hP) return `<span class="no-data">Pointage...</span>`;
             const [hArr, mArr] = hA.split(':').map(Number);
             const [hPre, mPre] = hP.split(':').map(Number);
             const diff = (hArr * 60 + mArr) - (hPre * 60 + mPre);
 
             if (diff <= 0) return `<span class="on-time">✓ À l'heure</span>`;
-            if (diff <= 15) return `<span class="on-time">✓ Tolérance (${diff} min)</span>`;
+            if (diff <= 10) return `<span class="on-time">✓ Tolérance (${diff} min)</span>`;
             return `<span class="late">⚠️ Retard (${diff} min)</span>`;
         }
 
