@@ -42,7 +42,6 @@
             align-items: center; border-left: 4px solid transparent; position: relative;
         }
 
-        /* RENDRE LE NOM CLIQUABLE */
         .staff-info { cursor: pointer; } 
         .staff-info:active { opacity: 0.7; }
         
@@ -63,26 +62,32 @@
         .late { color: #e67e22; font-weight: bold; }
         .on-time { color: #27ae60; }
 
+        /* BADGES PODIUM */
         .rank-badge { position: absolute; top: -5px; left: -5px; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background: white; z-index: 10;}
         .rank-1 { background: #FFD700; color: #fff; border: 2px solid #fff; }
         .rank-2 { background: #C0C0C0; color: #fff; border: 2px solid #fff; }
         .rank-3 { background: #CD7F32; color: #fff; border: 2px solid #fff; }
         
+        /* Stats Retards */
         .late-stats { text-align: right; }
         .late-minutes { font-size: 1.1rem; font-weight: 800; color: var(--danger); display: block; }
         .late-count { font-size: 0.7rem; color: #666; background: #fff0f0; padding: 2px 6px; border-radius: 4px; }
         
+        /* Stats Disciplinés */
+        .good-stats { text-align: right; }
+        .good-days { font-size: 1.1rem; font-weight: 800; color: var(--success); display: block; }
+        .good-label { font-size: 0.7rem; color: #666; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; }
+
         .day-disabled-overlay { text-align: center; padding: 40px 20px; background: #eee; border-radius: 10px; color: #777; border: 2px dashed #ccc; margin-top: 20px; }
+        .section-title { text-align: center; margin: 30px 0 10px 0; color: var(--primary); font-size: 1rem; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; }
 
         /* --- STYLES MODAL HISTORIQUE --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fdfaf6; margin: 10% auto; padding: 0; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from {transform: translateY(50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-        
         .modal-header { background: var(--primary); color: white; padding: 15px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
         .modal-header h2 { margin: 0; font-size: 1rem; text-transform: uppercase; }
         .close-btn { color: white; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 20px; }
-        
         .modal-body { padding: 15px; max-height: 60vh; overflow-y: auto; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .history-date { font-weight: bold; font-size: 0.85rem; color: #555; }
@@ -90,7 +95,6 @@
         .hist-late { color: var(--danger); font-weight: bold; }
         .hist-ok { color: var(--success); }
         .hist-off { color: #999; }
-        
         .history-summary { background: #eee; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 0.8rem; font-weight: bold; }
     </style>
 </head>
@@ -130,9 +134,7 @@
                 <h2 id="modalTitle">Historique</h2>
                 <span class="close-btn" onclick="closeModal()">&times;</span>
             </div>
-            <div class="modal-body" id="modalList">
-                <!-- Liste injectée ici -->
-            </div>
+            <div class="modal-body" id="modalList"></div>
         </div>
     </div>
 
@@ -178,15 +180,11 @@
             updateDashboard();
         }
 
-        // --- FONCTIONS MODAL HISTORIQUE ---
         function closeModal() {
             document.getElementById('historyModal').style.display = "none";
         }
-        
-        // Fermer si on clique en dehors
         window.onclick = function(event) {
-            const modal = document.getElementById('historyModal');
-            if (event.target == modal) modal.style.display = "none";
+            if (event.target == document.getElementById('historyModal')) closeModal();
         }
 
         async function openHistory(nom, prenom) {
@@ -196,9 +194,8 @@
             
             modal.style.display = "block";
             title.innerText = `${nom} ${prenom}`;
-            listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Chargement de l\'historique...</div>';
+            listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Chargement...</div>';
 
-            // On récupère tout le mois sélectionné
             const dates = getDatesInRange(dateInput.value, 'month');
             const promises = dates.map(dateStr => 
                 database.ref('presences/' + dateStr).once('value').then(snap => ({ date: dateStr, data: snap.val() || {} }))
@@ -207,12 +204,8 @@
             const results = await Promise.all(promises);
             const id = nom + '_' + prenom;
             
-            let html = '';
-            let totalLate = 0;
-            let countLate = 0;
-            
-            // Inverser pour avoir les dates récentes en haut
-            results.reverse();
+            let totalLate = 0, countLate = 0;
+            results.reverse(); // Plus récent en haut
 
             let historyRows = '';
 
@@ -221,17 +214,14 @@
                 const dateDisplay = `${dateParts[2]}/${dateParts[1]}`;
                 const dayData = day.data;
 
-                // Ignorer si journée désactivée
                 if(dayData.disabled === true) return;
 
                 const empData = dayData[id];
 
                 if(empData) {
-                    let statusHtml = '';
-                    let details = '';
+                    let statusHtml = '', details = '';
 
                     if(empData.on) {
-                        // Calcul retard
                         let isLate = false;
                         let diff = 0;
                         if(empData.hA && empData.hP) {
@@ -259,10 +249,7 @@
                     historyRows += `
                         <div class="history-item">
                             <span class="history-date">${dateDisplay}</span>
-                            <div class="history-status">
-                                ${statusHtml}
-                                ${details}
-                            </div>
+                            <div class="history-status">${statusHtml}${details}</div>
                         </div>
                     `;
                 }
@@ -270,15 +257,13 @@
 
             const summary = `
                 <div class="history-summary">
-                    <span style="color:#e74c3c">Total Retard: ${totalLate} min</span>
+                    <span style="color:${totalLate > 0 ? '#e74c3c' : '#27ae60'}">Total Retard: ${totalLate} min</span>
                     <span>Fréquence: ${countLate} fois</span>
                 </div>
             `;
-
-            listContainer.innerHTML = summary + (historyRows || '<div style="text-align:center; padding:20px;">Aucune donnée ce mois-ci.</div>');
+            listContainer.innerHTML = summary + (historyRows || '<div style="text-align:center; padding:20px;">Aucune donnée.</div>');
         }
 
-        // --- LOGIQUE PRINCIPALE ---
         function toggleDayStatus() {
             const path = 'presences/' + dateInput.value + '/disabled';
             database.ref(path).set(!isCurrentDayDisabled);
@@ -413,42 +398,84 @@
             const container = document.getElementById('dashBody');
             const dates = getDatesInRange(dateInput.value, 'month');
             const stats = await calculateStats(dates);
-            let reportList = Object.values(stats).filter(s => s.lateMinutes > 0);
-            reportList.sort((a, b) => b.lateMinutes - a.lateMinutes);
+            
+            // 1. Liste des retardataires
+            let lateList = Object.values(stats).filter(s => s.lateMinutes > 0);
+            lateList.sort((a, b) => b.lateMinutes - a.lateMinutes);
 
-            container.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; color:#e74c3c;">🏆 Top Retardataires (Mois)</h3>`;
+            // 2. Liste des disciplinés (0 retard et au moins 1 jour de présence)
+            let goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0);
+            goodList.sort((a, b) => b.present - a.present);
 
-            if (reportList.length === 0) {
-                container.innerHTML += `<div style="text-align:center; padding:30px; color:#27ae60; background:white; border-radius:10px;">👏 Aucun retard ce mois-ci !</div>`;
-                return;
+            container.innerHTML = '';
+
+            // --- SECTION RETARDATAIRES ---
+            container.innerHTML += `<div class="section-title" style="color:#e74c3c">🏆 Top Retardataires</div>`;
+            
+            if (lateList.length === 0) {
+                container.innerHTML += `<div style="text-align:center; padding:15px; color:#27ae60; background:white; border-radius:10px;">👏 Aucun retard !</div>`;
+            } else {
+                lateList.forEach((s, index) => {
+                    const rank = index + 1;
+                    let rankClass = '', rankIcon = rank;
+                    if(rank === 1) { rankClass = 'rank-1'; rankIcon = '🥇'; }
+                    else if(rank === 2) { rankClass = 'rank-2'; rankIcon = '🥈'; }
+                    else if(rank === 3) { rankClass = 'rank-3'; rankIcon = '🥉'; }
+                    
+                    const card = document.createElement('div');
+                    card.className = `staff-row`;
+                    if(s.lateMinutes >= 60) card.style.borderLeft = "4px solid #e74c3c";
+
+                    const badgeHtml = rank <= 3 ? `<div class="rank-badge ${rankClass}">${rankIcon}</div>` : `<div style="font-size:0.8rem; color:#999; margin-right:5px;">#${rank}</div>`;
+
+                    card.innerHTML = `
+                        ${rank <= 3 ? badgeHtml : ''}
+                        <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}" onclick="openHistory('${s.info.nom}', '${s.info.prenom}')">
+                            <b>${s.info.nom} ${s.info.prenom}</b>
+                            <i>${s.info.poste}</i>
+                        </div>
+                        <div class="late-stats">
+                            <span class="late-minutes">-${s.lateMinutes} min</span>
+                            <span class="late-count">${s.lateCount} fois</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
             }
 
-            reportList.forEach((s, index) => {
-                const rank = index + 1;
-                let rankClass = '', rankIcon = rank;
-                if(rank === 1) { rankClass = 'rank-1'; rankIcon = '🥇'; }
-                else if(rank === 2) { rankClass = 'rank-2'; rankIcon = '🥈'; }
-                else if(rank === 3) { rankClass = 'rank-3'; rankIcon = '🥉'; }
-                
-                const card = document.createElement('div');
-                card.className = `staff-row`;
-                if(s.lateMinutes >= 60) card.style.borderLeft = "4px solid #e74c3c";
+            // --- SECTION DISCIPLINÉS ---
+            container.innerHTML += `<div class="section-title" style="color:#27ae60; margin-top:30px;">🌟 Top Disciplinés (0 Retard)</div>`;
 
-                const badgeHtml = rank <= 3 ? `<div class="rank-badge ${rankClass}">${rankIcon}</div>` : `<div style="font-size:0.8rem; color:#999; margin-right:5px;">#${rank}</div>`;
+            if (goodList.length === 0) {
+                container.innerHTML += `<div style="text-align:center; padding:15px; color:#999; background:white; border-radius:10px;">Aucun employé sans retard ce mois-ci.</div>`;
+            } else {
+                goodList.forEach((s, index) => {
+                    const rank = index + 1;
+                    let rankClass = '', rankIcon = rank;
+                    if(rank === 1) { rankClass = 'rank-1'; rankIcon = '🥇'; }
+                    else if(rank === 2) { rankClass = 'rank-2'; rankIcon = '🥈'; }
+                    else if(rank === 3) { rankClass = 'rank-3'; rankIcon = '🥉'; }
 
-                card.innerHTML = `
-                    ${rank <= 3 ? badgeHtml : ''}
-                    <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}" onclick="openHistory('${s.info.nom}', '${s.info.prenom}')">
-                        <b>${s.info.nom} ${s.info.prenom}</b>
-                        <i>${s.info.poste}</i>
-                    </div>
-                    <div class="late-stats">
-                        <span class="late-minutes">-${s.lateMinutes} min</span>
-                        <span class="late-count">${s.lateCount} fois</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+                    const card = document.createElement('div');
+                    card.className = `staff-row`;
+                    card.style.borderLeft = "4px solid #27ae60";
+
+                    const badgeHtml = rank <= 3 ? `<div class="rank-badge ${rankClass}">${rankIcon}</div>` : `<div style="font-size:0.8rem; color:#999; margin-right:5px;">#${rank}</div>`;
+
+                    card.innerHTML = `
+                        ${rank <= 3 ? badgeHtml : ''}
+                        <div class="staff-info" style="${rank > 3 ? 'padding-left:0;' : 'padding-left:15px;'}" onclick="openHistory('${s.info.nom}', '${s.info.prenom}')">
+                            <b>${s.info.nom} ${s.info.prenom}</b>
+                            <i>${s.info.poste}</i>
+                        </div>
+                        <div class="good-stats">
+                            <span class="good-days">${s.present} Jours</span>
+                            <span class="good-label">Assiduité</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
         }
 
         async function calculateStats(dates) {
