@@ -3,18 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestion RH • Grey Corner Fès</title>
+    <title>Supervision Staff • Grey Corner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
         .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        
+        /* Styles de statut */
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
-        .status-late { border-left-color: #f43f5e !important; background: #fff1f2; }
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
-        .status-off { border-left-color: #94a3b8 !important; background: #f8fafc; opacity: 0.7; }
-        .excluded-day { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+        .status-late { border-left-color: #f43f5e !important; background: #fff1f2; }
+        
+        /* Style spécifique pour le personnel OFF (Gris) */
+        .status-off { 
+            border-left-color: #cbd5e1 !important; 
+            background: #f1f5f9 !important; 
+            opacity: 0.6; 
+            filter: grayscale(0.8);
+        }
+        
         .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
@@ -22,34 +31,24 @@
 <body class="p-4 antialiased pb-24">
 
     <header class="text-center mb-6">
-        <h1 class="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Supervision Grey Corner</h1>
-        <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.3em]">Comptabilité & Ponctualité</p>
+        <h1 class="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Grey Corner Hub</h1>
+        <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.3em]">Présence & Cohésion d'Équipe</p>
     </header>
 
-    <div class="glass-card rounded-2xl p-4 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex-1">
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Date sélectionnée</p>
-                <input type="date" id="dashDate" class="bg-transparent border-none font-black text-indigo-900 focus:ring-0 text-lg p-0 w-full">
-            </div>
-            <div class="flex items-center gap-3 pl-4 border-l border-slate-200">
-                <button id="excludeBtn" onclick="toggleExclusion()" class="flex flex-col items-center group">
-                    <div id="excludeIcon" class="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <span id="excludeLabel" class="text-[8px] font-black uppercase mt-1 text-slate-400">Exclure</span>
-                </button>
-            </div>
+    <div class="glass-card rounded-2xl p-4 mb-6 flex items-center justify-between">
+        <div class="flex-1">
+            <input type="date" id="dashDate" class="bg-transparent border-none font-black text-indigo-900 focus:ring-0 text-lg p-0 w-full">
         </div>
-        <p id="excludeMsg" class="hidden text-center text-rose-500 text-[10px] font-black uppercase mt-3 animate-pulse italic">⚠️ Cette journée est exclue des calculs (Fermeture)</p>
+        <button id="excludeBtn" onclick="toggleExclusion()" class="ml-4 p-2 rounded-xl bg-slate-100 text-slate-400" title="Exclure la journée">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </button>
     </div>
 
     <div class="flex bg-slate-200/50 p-1 rounded-xl gap-1 mb-6">
-        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[10px] font-black rounded-lg transition-all uppercase">Jour</button>
-        <button onclick="switchMode('month', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-lg transition-all uppercase">Mois</button>
-        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-lg transition-all uppercase text-rose-500 bg-rose-50/50">Bilan</button>
+        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[10px] font-black rounded-lg transition-all uppercase">Journée</button>
+        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-lg transition-all uppercase text-rose-500 bg-rose-50/50">Bilan Retards</button>
     </div>
 
     <div id="dashBody" class="space-y-3"></div>
@@ -57,11 +56,8 @@
     <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm p-4 items-end justify-center">
         <div class="bg-white w-full max-w-md rounded-t-[32px] overflow-hidden shadow-2xl">
             <div class="p-6 border-b border-slate-50 flex justify-between items-center bg-indigo-50/30">
-                <div>
-                    <h2 id="modalTitle" class="text-lg font-black text-slate-900 uppercase">Employé</h2>
-                    <p class="text-[9px] font-bold text-indigo-500 uppercase">Détails mensuels</p>
-                </div>
-                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white text-slate-900 shadow-sm font-bold">✕</button>
+                <h2 id="modalTitle" class="text-lg font-black text-slate-900 uppercase">Employé</h2>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm font-bold">✕</button>
             </div>
             <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-2"></div>
         </div>
@@ -92,7 +88,6 @@
 
         const dateInput = document.getElementById('dashDate');
         let currentMode = 'day';
-        let isCurrentDayExcluded = false;
 
         dateInput.value = new Date().toISOString().split('T')[0];
         dateInput.addEventListener('change', updateDashboard);
@@ -115,162 +110,137 @@
             return diff > 5 ? diff : 0;
         }
 
-        function toggleExclusion() {
-            database.ref('presences/' + dateInput.value + '/disabled').set(!isCurrentDayExcluded);
-        }
-
         function updateDashboard() {
             const container = document.getElementById('dashBody');
-            container.innerHTML = '<div class="text-center py-20 font-bold text-indigo-300 animate-pulse">Synchronisation...</div>';
+            container.innerHTML = '<div class="text-center py-20 font-bold text-slate-300">Mise à jour...</div>';
             
             database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
-                isCurrentDayExcluded = data.disabled === true;
-                
-                // UI Exclusion
-                const btnIcon = document.getElementById('excludeIcon');
-                const btnLabel = document.getElementById('excludeLabel');
-                const msg = document.getElementById('excludeMsg');
-                
-                if(isCurrentDayExcluded) {
-                    btnIcon.className = "w-10 h-10 rounded-full flex items-center justify-center transition-all bg-rose-500 text-white shadow-lg shadow-rose-200";
-                    btnLabel.innerText = "Exclu";
-                    btnLabel.className = "text-[8px] font-black uppercase mt-1 text-rose-500";
-                    msg.classList.remove('hidden');
-                } else {
-                    btnIcon.className = "w-10 h-10 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-400";
-                    btnLabel.innerText = "Exclure";
-                    btnLabel.className = "text-[8px] font-black uppercase mt-1 text-slate-400";
-                    msg.classList.add('hidden');
-                }
-
                 if (currentMode === 'day') renderDayView(data);
-                else if (currentMode === 'report') renderReportView();
-                else renderMonthView();
+                else renderReportView();
             });
         }
 
         function renderDayView(data) {
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
-            const bodyClass = isCurrentDayExcluded ? 'excluded-day' : '';
             
             equipe.forEach(emp => {
                 const d = data[emp.nom + '_' + emp.prenom] || {};
                 const diff = getTimeDiff(d.hA, d.hP);
-                let sClass = d.on ? (diff > 0 ? 'status-late' : 'status-on-time') : (d.off ? 'status-off' : '');
                 
+                // Logique de couleur : Gris si OFF, sinon Rouge/Vert
+                let sClass = "";
+                if (d.off) {
+                    sClass = "status-off";
+                } else if (d.on) {
+                    sClass = (diff > 0) ? "status-late" : "status-on-time";
+                }
+
                 container.innerHTML += `
-                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${bodyClass}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
                         <div>
                             <b class="text-xs uppercase text-slate-800">${emp.prenom} ${emp.nom}</b><br>
                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">${emp.poste}</span>
                         </div>
                         <div class="text-right">
-                            <span class="text-[9px] font-black text-slate-400">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>
-                            ${diff > 0 ? `<div class="text-[9px] font-black text-rose-500 uppercase">Retard ${diff}m</div>` : ''}
-                        </div>
-                    </div>`;
-            });
-        }
-
-        async function renderMonthView() {
-            const stats = await calculateStats(getDatesInMonth(dateInput.value));
-            const container = document.getElementById('dashBody');
-            container.innerHTML = '';
-            Object.values(stats).forEach(s => {
-                container.innerHTML += `
-                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 0 ? 'border-rose-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
-                        <b class="text-xs uppercase text-slate-800">${s.info.prenom} ${s.info.nom}</b>
-                        <div class="text-right">
-                            <div class="text-[10px] font-black text-indigo-600">${s.present}j / ${s.off}j OFF</div>
-                            <div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-rose-500' : 'text-emerald-500'}">${s.lateMinutes} min retard</div>
+                            ${d.off ? 
+                                '<span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">● En Repos</span>' : 
+                                `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`
+                            }
+                            ${!d.off && diff > 0 ? `<div class="text-[9px] font-black text-rose-500 uppercase tracking-tighter">Retard ${diff}m</div>` : ''}
                         </div>
                     </div>`;
             });
         }
 
         async function renderReportView() {
-            const stats = await calculateStats(getDatesInMonth(dateInput.value));
+            const stats = await calculateStats();
             const container = document.getElementById('dashBody');
             let lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
-            let html = `<h3 class="text-indigo-900 font-black uppercase text-[10px] mb-3 pl-1 tracking-[0.2em]">📊 Bilan du Cycle Net</h3>`;
-            lateList.slice(0, 10).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','s.info.prenom')">
+            let html = `<h3 class="text-indigo-900 font-black uppercase text-[10px] mb-3 pl-1 tracking-[0.2em]">📊 Retards Cumulés du Mois</h3>`;
+            lateList.forEach(s => {
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
                     <b class="text-xs uppercase text-slate-700">${s.info.prenom} ${s.info.nom}</b>
                     <b class="text-rose-500 text-xs font-black">${s.lateMinutes} min</b>
                 </div>`;
             });
-            container.innerHTML = html || '<p class="text-center py-10 text-slate-400 text-xs">Aucun retard à signaler sur ce cycle.</p>';
+            container.innerHTML = html || '<p class="text-center py-10 text-slate-400 text-xs">Tout est parfait !</p>';
         }
 
-        async function calculateStats(dates) {
+        async function calculateStats() {
             const stats = {};
-            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, off: 0, lateMinutes: 0});
-            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, lateMinutes: 0});
+            const d = new Date(dateInput.value);
+            const m = d.getMonth();
+            const y = d.getFullYear();
+            const date = new Date(y, m, 1);
+            const dates = [];
+            while(date.getMonth() === m) {
+                dates.push(new Date(date).toISOString().split('T')[0]);
+                date.setDate(date.getDate() + 1);
+            }
+
+            const promises = dates.map(dt => database.ref('presences/'+dt).once('value'));
             const snaps = await Promise.all(promises);
             snaps.forEach(s => {
                 const data = s.val();
-                if(!data || data.disabled) return; // LOGIQUE D'EXCLUSION : On ignore si data.disabled est vrai
+                if(!data || data.disabled) return;
                 Object.keys(stats).forEach(id => {
-                    const d = data[id];
-                    if(d) {
-                        if(d.on) { stats[id].present++; stats[id].lateMinutes += getTimeDiff(d.hA, d.hP); }
-                        if(d.off) stats[id].off++;
+                    const entry = data[id];
+                    if(entry && entry.on && !entry.off) {
+                        stats[id].present++;
+                        stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
                     }
                 });
             });
             return stats;
         }
 
-        function getDatesInMonth(dateStr) {
-            const dates = [];
-            const d = new Date(dateStr);
+        async function openHistory(nom, prenom) {
+            const modal = document.getElementById('historyModal');
+            document.getElementById('modalTitle').innerText = `${prenom} ${nom}`;
+            modal.classList.add('modal-active');
+            const list = document.getElementById('modalList');
+            list.innerHTML = '<div class="text-center py-10 font-bold text-slate-300 italic">Extraction du cycle...</div>';
+
+            const d = new Date(dateInput.value);
             const m = d.getMonth();
             const y = d.getFullYear();
             const date = new Date(y, m, 1);
+            const dates = [];
             while(date.getMonth() === m) {
                 dates.push(new Date(date).toISOString().split('T')[0]);
                 date.setDate(date.getDate() + 1);
             }
-            return dates;
-        }
 
-        async function openHistory(nom, prenom) {
-            const modal = document.getElementById('historyModal');
-            const list = document.getElementById('modalList');
-            document.getElementById('modalTitle').innerText = `${prenom} ${nom}`;
-            modal.classList.add('modal-active');
-            list.innerHTML = '<div class="text-center py-10 font-bold text-slate-300">Analyse...</div>';
-
-            const dates = getDatesInMonth(dateInput.value);
-            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            const promises = dates.map(dt => database.ref('presences/'+dt).once('value'));
             const snaps = await Promise.all(promises);
             let html = '';
-            const id = nom + '_' + prenom;
-
             snaps.reverse().forEach((s, idx) => {
                 const data = s.val();
-                const d = data ? data[id] : null;
-                const dateRev = dates.slice().reverse()[idx];
-                const isExcluded = data && data.disabled;
-                
-                if(d) {
-                    const diff = getTimeDiff(d.hA, d.hP);
-                    let statusTxt = isExcluded ? 'EXCLU' : (d.on ? (diff>0 ? '-'+diff+'m' : 'OK') : 'OFF');
-                    let colorClass = isExcluded ? 'text-slate-300' : (d.on ? (diff>0 ? 'text-rose-600' : 'text-emerald-600') : 'text-slate-400');
-
+                const entry = data ? data[nom+'_'+prenom] : null;
+                const dtStr = dates.slice().reverse()[idx].split('-').reverse().slice(0,2).join('/');
+                if(entry) {
+                    const diff = getTimeDiff(entry.hA, entry.hP);
+                    const isLate = entry.on && !entry.off && diff > 0;
+                    const isOff = entry.off;
                     html += `
-                        <div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 ${isExcluded ? 'bg-slate-100/30' : 'bg-slate-50/50'}">
-                            <span class="text-[10px] font-black ${isExcluded ? 'text-slate-300' : 'text-slate-500'}">${dateRev.split('-').reverse().slice(0,2).join('/')}</span>
-                            <div class="text-right flex items-center gap-3">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase">P: ${d.hP||'--'} | A: ${d.hA||'--'}</span>
-                                <span class="text-[10px] font-black min-w-[40px] ${colorClass}">${statusTxt}</span>
-                            </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl border border-slate-100 ${isOff ? 'bg-slate-50 opacity-50' : 'bg-white'}">
+                            <span class="text-[10px] font-black text-slate-400">${dtStr}</span>
+                            <span class="text-[10px] font-black ${isOff ? 'text-slate-400' : (isLate ? 'text-rose-500' : 'text-emerald-500')}">
+                                ${isOff ? 'OFF' : (isLate ? '-'+diff+'m' : 'OK')}
+                            </span>
                         </div>`;
                 }
             });
             list.innerHTML = html;
+        }
+
+        function toggleExclusion() {
+            database.ref('presences/' + dateInput.value + '/disabled').once('value').then(snap => {
+                database.ref('presences/' + dateInput.value + '/disabled').set(!snap.val());
+            });
         }
     </script>
 </body>
