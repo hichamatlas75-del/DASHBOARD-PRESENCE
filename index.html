@@ -3,71 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Supervision • Grey Corner Hub</title>
+    <title>Supervision Color • Grey Corner Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .view-btn.active { background: #1e293b; color: white; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.3); }
-        .live-dot { height: 8px; width: 8px; background-color: #ef4444; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .staff-row { transition: all 0.2s ease; border-left: 4px solid transparent; }
-        .status-on { border-left-color: #10b981 !important; background: white; }
-        .status-off { border-left-color: #94a3b8 !important; background: #f1f5f9; opacity: 0.8; }
-        .rank-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; position: absolute; top: -10px; left: -10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .modal-active { display: flex !important; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f4f8; color: #1e293b; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        .view-btn.active { background: #4f46e5; color: white; transform: scale(1.05); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
+        .staff-row { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 6px solid #cbd5e1; }
+        .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
+        .status-late { border-left-color: #ef4444 !important; background: #fef2f2; }
+        .status-off { border-left-color: #64748b !important; background: #f8fafc; opacity: 0.7; }
+        .rank-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; position: absolute; top: -12px; left: -12px; z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 2px solid white; }
+        .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="p-4 antialiased pb-12">
+<body class="p-4 antialiased pb-20">
 
-    <header class="text-center mb-6">
-        <div class="flex justify-center items-center mb-1">
-            <span class="live-dot"></span>
-            <p class="text-[10px] uppercase tracking-[0.3em] font-black text-slate-500">Supervision Live</p>
-        </div>
-        <h1 class="text-xl font-black text-slate-800 uppercase">Direction Hub</h1>
+    <header class="text-center mb-8">
+        <h1 class="text-2xl font-black text-indigo-900 uppercase tracking-tighter italic">Live Supervision</h1>
+        <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.4em]">Grey Corner Fès • Excellence</p>
     </header>
 
-    <div class="flex bg-slate-200/50 p-1 rounded-xl gap-1 mb-6">
-        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[11px] font-bold rounded-lg transition-all">JOUR</button>
-        <button onclick="switchMode('week', this)" class="view-btn flex-1 py-2 text-[11px] font-bold rounded-lg transition-all">SEMAINE</button>
-        <button onclick="switchMode('month', this)" class="view-btn flex-1 py-2 text-[11px] font-bold rounded-lg transition-all">MOIS</button>
-        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-2 text-[11px] font-bold rounded-lg transition-all text-red-600">⚠️ BILAN</button>
+    <div class="flex bg-white/50 p-1.5 rounded-2xl gap-2 mb-8 shadow-inner">
+        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-black rounded-xl transition-all uppercase">Jour</button>
+        <button onclick="switchMode('week', this)" class="view-btn flex-1 py-3 text-[11px] font-black rounded-xl transition-all uppercase">Semaine</button>
+        <button onclick="switchMode('month', this)" class="view-btn flex-1 py-3 text-[11px] font-black rounded-xl transition-all uppercase">Mois</button>
+        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-black rounded-xl transition-all uppercase text-red-500 bg-red-50">Bilan</button>
     </div>
 
-    <div class="glass-card rounded-2xl p-4 mb-6">
-        <div class="flex items-center gap-3">
-            <input type="date" id="dashDate" class="flex-1 bg-transparent border-none font-bold text-slate-800 focus:ring-0">
-            <button id="toggleDayBtn" onclick="toggleDayStatus()" class="px-4 py-2 rounded-lg text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg shadow-emerald-100">Statut Jour</button>
+    <div class="glass-card rounded-3xl p-5 mb-8 border-b-4 border-indigo-200">
+        <div class="flex items-center gap-4">
+            <input type="date" id="dashDate" class="flex-1 bg-transparent border-none font-black text-indigo-900 focus:ring-0 text-lg">
+            <button id="toggleDayBtn" onclick="toggleDayStatus()" class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase bg-indigo-600 text-white shadow-xl shadow-indigo-100 active:scale-95 transition-transform">Statut</button>
         </div>
-        <p id="dayStatusMsg" class="hidden text-center text-red-500 text-[10px] mt-2 font-bold uppercase italic">Journée exclue des statistiques</p>
+        <p id="dayStatusMsg" class="hidden text-center text-red-500 text-[10px] mt-3 font-black uppercase animate-bounce">⚠️ Journée Hors-Stats</p>
     </div>
 
-    <div class="grid grid-cols-3 gap-3 mb-6" id="statsHeader">
-        <div class="glass-card p-3 rounded-2xl text-center">
-            <span id="stat1-val" class="block text-lg font-black text-slate-800">0</span>
-            <span id="stat1-label" class="text-[9px] uppercase font-bold text-slate-400">Présents</span>
+    <div class="grid grid-cols-3 gap-4 mb-8" id="statsHeader">
+        <div class="glass-card p-4 rounded-3xl text-center border-b-4 border-emerald-400">
+            <span id="stat1-val" class="block text-2xl font-black text-slate-800">0</span>
+            <span class="text-[9px] uppercase font-black text-emerald-500">Présents</span>
         </div>
-        <div class="glass-card p-3 rounded-2xl text-center">
-            <span id="stat2-val" class="block text-lg font-black text-slate-800">0</span>
-            <span id="stat2-label" class="text-[9px] uppercase font-bold text-slate-400">Off</span>
+        <div class="glass-card p-4 rounded-3xl text-center border-b-4 border-slate-400">
+            <span id="stat2-val" class="block text-2xl font-black text-slate-800">0</span>
+            <span class="text-[9px] uppercase font-black text-slate-400">Off</span>
         </div>
-        <div class="glass-card p-3 rounded-2xl text-center">
-            <span id="stat3-val" class="block text-lg font-black text-emerald-600">0%</span>
-            <span id="stat3-label" class="text-[9px] uppercase font-bold text-slate-400">Taux</span>
+        <div class="glass-card p-4 rounded-3xl text-center border-b-4 border-indigo-400">
+            <span id="stat3-val" class="block text-2xl font-black text-indigo-600">0%</span>
+            <span class="text-[9px] uppercase font-black text-indigo-400">Score</span>
         </div>
     </div>
 
-    <div id="dashBody" class="space-y-3"></div>
+    <div id="dashBody" class="space-y-4"></div>
 
-    <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm p-4 items-end sm:items-center justify-center">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h2 id="modalTitle" class="text-sm font-black text-slate-800 uppercase">Historique</h2>
-                <button onclick="closeModal()" class="text-slate-400 font-bold p-2">✕</button>
+    <div id="historyModal" class="fixed inset-0 z-50 hidden bg-indigo-900/40 backdrop-blur-md p-4 items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-indigo-50/50">
+                <h2 id="modalTitle" class="text-lg font-black text-indigo-900 uppercase italic">Profil Staff</h2>
+                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white text-indigo-900 shadow-sm font-bold">✕</button>
             </div>
-            <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-3"></div>
+            <div id="modalList" class="p-8 max-h-[60vh] overflow-y-auto space-y-4"></div>
         </div>
     </div>
 
@@ -97,13 +94,10 @@
         const dateInput = document.getElementById('dashDate');
         const toggleBtn = document.getElementById('toggleDayBtn');
         const statusMsg = document.getElementById('dayStatusMsg');
-        let currentMode = 'day'; 
-        let currentListenerRef = null;
+        let currentMode = 'day';
         let isCurrentDayDisabled = false;
 
-        const today = new Date();
-        dateInput.value = today.toISOString().split('T')[0];
-
+        dateInput.value = new Date().toISOString().split('T')[0];
         dateInput.addEventListener('change', updateDashboard);
         updateDashboard();
 
@@ -116,107 +110,96 @@
 
         function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
 
-        async function openHistory(nom, prenom) {
-            const modal = document.getElementById('historyModal');
-            const listContainer = document.getElementById('modalList');
-            document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
-            modal.classList.add('modal-active');
-            listContainer.innerHTML = '<p class="text-center text-xs py-4">Chargement...</p>';
-
-            const dates = getDatesInRange(dateInput.value, 'month');
-            const promises = dates.map(d => database.ref('presences/' + d).once('value').then(s => ({ date: d, data: s.val() || {} })));
-            const results = await Promise.all(promises);
-            const id = nom + '_' + prenom;
-            
-            let html = '';
-            results.reverse().forEach(day => {
-                const emp = day.data[id];
-                if(!emp || day.data.disabled) return;
-                let status = emp.on ? `<span class="text-emerald-600 font-bold">PRÉSENT</span>` : (emp.off ? `<span class="text-slate-400">OFF</span>` : 'ABSENT');
-                html += `<div class="flex justify-between text-xs border-b pb-2"><b>${day.date}</b> <span>${status}</span></div>`;
-            });
-            listContainer.innerHTML = html || 'Pas de données.';
+        function getTimeDiff(a, p) {
+            if(!a || !p) return 0;
+            const [ha, ma] = a.split(':').map(Number);
+            const [hp, mp] = p.split(':').map(Number);
+            const diff = (ha*60+ma) - (hp*60+mp);
+            return diff > 0 ? diff : 0;
         }
 
-        function toggleDayStatus() {
-            database.ref('presences/' + dateInput.value + '/disabled').set(!isCurrentDayDisabled);
-        }
+        function toggleDayStatus() { database.ref('presences/' + dateInput.value + '/disabled').set(!isCurrentDayDisabled); }
 
         function updateDashboard() {
-            if(currentListenerRef) { database.ref(currentListenerRef).off(); }
             const container = document.getElementById('dashBody');
-            container.innerHTML = '<p class="text-center py-10 text-slate-400">Chargement...</p>';
-
-            if (currentMode === 'day') {
-                renderDayView();
-            } else if (currentMode === 'report') {
-                renderReportView();
-            } else {
-                renderRangeView(currentMode);
-            }
+            container.innerHTML = '<div class="text-center py-20 animate-pulse font-bold text-indigo-300">Synchronisation...</div>';
+            
+            if (currentMode === 'day') renderDayView();
+            else if (currentMode === 'report') renderReportView();
+            else renderRangeView(currentMode);
         }
 
         function renderDayView() {
-            const path = 'presences/' + dateInput.value;
-            currentListenerRef = path;
-            database.ref(path).on('value', (snap) => {
+            database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
                 isCurrentDayDisabled = data.disabled === true;
                 statusMsg.style.display = isCurrentDayDisabled ? 'block' : 'none';
-                toggleBtn.innerText = isCurrentDayDisabled ? "Réactiver" : "Exclure";
-                
                 const container = document.getElementById('dashBody');
                 container.innerHTML = '';
                 let on = 0, off = 0;
 
                 equipe.forEach(emp => {
                     const d = data[emp.nom + '_' + emp.prenom] || {};
+                    const diff = getTimeDiff(d.hA, d.hP);
                     if(d.on) on++; if(d.off) off++;
-                    const sClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
+
+                    let sClass = d.on ? (diff > 5 ? 'status-late' : 'status-on-time') : (d.off ? 'status-off' : '');
+                    let lateTxt = diff > 5 ? `<span class="text-red-600 font-black">⚠️ +${diff}m</span>` : (d.on ? `<span class="text-emerald-600 font-bold">✓ OK</span>` : '');
+
                     container.innerHTML += `
-                        <div class="staff-row glass-card p-4 rounded-xl flex justify-between items-center ${sClass}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
-                            <div><b class="text-sm uppercase">${emp.prenom} ${emp.nom}</b><br><i class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">${emp.poste}</i></div>
-                            <span class="text-[10px] font-black">${d.on ? 'PRÉSENT' : (d.off ? 'OFF' : '-')}</span>
+                        <div class="staff-row glass-card p-5 rounded-[25px] flex justify-between items-center ${sClass}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                            <div>
+                                <b class="text-sm uppercase text-indigo-900">${emp.prenom} ${emp.nom}</b><br>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${emp.poste}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[11px] font-black">${lateTxt || (d.off ? 'OFF' : '-')}</div>
+                                <div class="text-[9px] text-slate-400 font-bold">${d.hA || '--:--'}</div>
+                            </div>
                         </div>`;
                 });
                 updateStats(on, off, Math.round((on/equipe.length)*100)+'%');
             });
         }
 
-        async function renderRangeView(mode) {
-            const dates = getDatesInRange(dateInput.value, mode);
-            const stats = await calculateStats(dates);
-            const container = document.getElementById('dashBody');
-            container.innerHTML = '';
-            
-            equipe.forEach(emp => {
-                const s = stats[emp.nom + '_' + emp.prenom];
-                container.innerHTML += `
-                    <div class="glass-card p-4 rounded-xl flex justify-between items-center" onclick="openHistory('${emp.nom}','${emp.prenom}')">
-                        <div><b class="text-sm uppercase">${emp.prenom} ${emp.nom}</b></div>
-                        <div class="text-right text-[10px] font-bold">
-                            <span class="text-emerald-600">${s.present}j</span> / <span class="text-red-400">${s.lateMinutes}m</span>
-                        </div>
-                    </div>`;
-            });
-        }
-
         async function renderReportView() {
             const container = document.getElementById('dashBody');
             const stats = await calculateStats(getDatesInRange(dateInput.value, 'month'));
-            let lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
             
-            container.innerHTML = '<h3 class="text-center font-black text-red-500 uppercase text-xs mb-4">Top Retards (Mois)</h3>';
-            lateList.forEach((s, i) => {
-                container.innerHTML += `
-                    <div class="glass-card p-4 rounded-xl relative mb-4">
-                        <div class="rank-badge bg-white border-2 border-red-500 text-red-500">${i+1}</div>
+            let lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
+            let goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+
+            let html = `<div class="space-y-8">`;
+            
+            // Section Retardataires
+            html += `<div><h3 class="text-red-500 font-black uppercase text-xs mb-4 tracking-widest pl-2">Top Retards (Minutes Cumulées)</h3>`;
+            lateList.slice(0, 5).forEach((s, i) => {
+                html += `
+                    <div class="glass-card p-5 rounded-[25px] relative mb-4 border-l-8 border-red-500">
+                        <div class="rank-badge bg-red-500 text-white">${i+1}</div>
                         <div class="flex justify-between items-center">
-                            <b class="text-xs uppercase">${s.info.prenom} ${s.info.nom}</b>
-                            <b class="text-red-500">-${s.lateMinutes} min</b>
+                            <b class="text-sm uppercase text-slate-700">${s.info.prenom} ${s.info.nom}</b>
+                            <b class="text-red-600 font-black">-${s.lateMinutes} min</b>
                         </div>
                     </div>`;
             });
+            html += `</div>`;
+
+            // Section Disciplinés
+            html += `<div><h3 class="text-emerald-500 font-black uppercase text-xs mb-4 tracking-widest pl-2">⭐ Élite Ponctualité (0 Retard)</h3>`;
+            goodList.slice(0, 5).forEach((s, i) => {
+                html += `
+                    <div class="glass-card p-5 rounded-[25px] relative mb-4 border-l-8 border-emerald-500">
+                        <div class="rank-badge bg-emerald-500 text-white">🏆</div>
+                        <div class="flex justify-between items-center">
+                            <b class="text-sm uppercase text-slate-700">${s.info.prenom} ${s.info.nom}</b>
+                            <b class="text-emerald-600 font-black">${s.present} Jours</b>
+                        </div>
+                    </div>`;
+            });
+            html += `</div></div>`;
+            
+            container.innerHTML = html;
         }
 
         async function calculateStats(dates) {
@@ -231,32 +214,19 @@
                     const d = data[id];
                     if(d && d.on) {
                         stats[id].present++;
-                        if(d.hA && d.hP) {
-                            const diff = getTimeDiff(d.hA, d.hP);
-                            if(diff > 5) stats[id].lateMinutes += diff;
-                        }
+                        stats[id].lateMinutes += getTimeDiff(d.hA, d.hP);
                     }
                 });
             });
             return stats;
         }
 
-        function getTimeDiff(a, p) {
-            const [ha, ma] = a.split(':').map(Number);
-            const [hp, mp] = p.split(':').map(Number);
-            return (ha*60+ma) - (hp*60+mp);
-        }
-
         function getDatesInRange(dateStr, mode) {
             const current = new Date(dateStr);
             const dates = [];
-            if(mode === 'week') {
-                for(let i=0; i<7; i++) { dates.push(current.toISOString().split('T')[0]); current.setDate(current.getDate()+1); }
-            } else {
-                const m = current.getMonth();
-                const d = new Date(current.getFullYear(), m, 1);
-                while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
-            }
+            const m = current.getMonth();
+            const d = new Date(current.getFullYear(), m, 1);
+            while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
             return dates;
         }
 
