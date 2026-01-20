@@ -3,77 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Direction • Supervision Live Grey Corner</title>
+    <title>Supervision • Grey Corner Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #1e293b; 
-            --accent: #c5a059; 
-            --bg: #f8fafc; 
-            --danger: #ef4444; 
-            --success: #10b981; 
-            --warning: #f59e0b;
-        }
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg); 
-            color: var(--primary);
-        }
-
-        /* Effet Glassmorphism pour les cartes */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease;
-        }
-
-        /* Couleurs par Poste */
-        .tag-cuisine { background: #fee2e2; color: #991b1b; }
-        .tag-service { background: #e0f2fe; color: #075985; }
-        .tag-bar { background: #fef3c7; color: #92400e; }
-        .tag-menage { background: #f1f5f9; color: #475569; }
-
-        /* Animation Point Live */
-        .live-dot {
-            height: 8px; width: 8px;
-            background-color: var(--danger);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
-
-        .view-btn.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 10px rgba(30, 41, 59, 0.3);
-        }
-
-        .staff-card {
-            border-left: 4px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .staff-card.present { border-left-color: var(--success); }
-        .staff-card.late { border-left-color: var(--danger); }
-        .staff-card.off { border-left-color: #cbd5e1; opacity: 0.8; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .view-btn.active { background: #1e293b; color: white; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.3); }
+        .live-dot { height: 8px; width: 8px; background-color: #ef4444; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .staff-row { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .status-on { border-left-color: #10b981 !important; background: white; }
+        .status-off { border-left-color: #94a3b8 !important; background: #f1f5f9; opacity: 0.8; }
+        .rank-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; position: absolute; top: -10px; left: -10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .modal-active { display: flex !important; }
     </style>
 </head>
-<body class="p-4 antialiased">
+<body class="p-4 antialiased pb-12">
 
     <header class="text-center mb-6">
-        <div class="flex justify-center mb-2">
+        <div class="flex justify-center items-center mb-1">
             <span class="live-dot"></span>
-            <p class="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Supervision Temps Réel</p>
+            <p class="text-[10px] uppercase tracking-[0.3em] font-black text-slate-500">Supervision Live</p>
         </div>
-        <h1 class="text-xl font-black text-slate-800 uppercase tracking-tight">Direction Hub</h1>
+        <h1 class="text-xl font-black text-slate-800 uppercase">Direction Hub</h1>
     </header>
 
     <div class="flex bg-slate-200/50 p-1 rounded-xl gap-1 mb-6">
@@ -86,9 +39,7 @@
     <div class="glass-card rounded-2xl p-4 mb-6">
         <div class="flex items-center gap-3">
             <input type="date" id="dashDate" class="flex-1 bg-transparent border-none font-bold text-slate-800 focus:ring-0">
-            <button id="toggleDayBtn" onclick="toggleDayStatus()" class="px-4 py-2 rounded-lg text-[11px] font-bold uppercase transition-all bg-emerald-500 text-white shadow-lg shadow-emerald-200">
-                Statut Jour
-            </button>
+            <button id="toggleDayBtn" onclick="toggleDayStatus()" class="px-4 py-2 rounded-lg text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg shadow-emerald-100">Statut Jour</button>
         </div>
         <p id="dayStatusMsg" class="hidden text-center text-red-500 text-[10px] mt-2 font-bold uppercase italic">Journée exclue des statistiques</p>
     </div>
@@ -96,42 +47,224 @@
     <div class="grid grid-cols-3 gap-3 mb-6" id="statsHeader">
         <div class="glass-card p-3 rounded-2xl text-center">
             <span id="stat1-val" class="block text-lg font-black text-slate-800">0</span>
-            <span id="stat1-label" class="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Présents</span>
+            <span id="stat1-label" class="text-[9px] uppercase font-bold text-slate-400">Présents</span>
         </div>
         <div class="glass-card p-3 rounded-2xl text-center">
             <span id="stat2-val" class="block text-lg font-black text-slate-800">0</span>
-            <span id="stat2-label" class="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Off</span>
+            <span id="stat2-label" class="text-[9px] uppercase font-bold text-slate-400">Off</span>
         </div>
         <div class="glass-card p-3 rounded-2xl text-center">
             <span id="stat3-val" class="block text-lg font-black text-emerald-600">0%</span>
-            <span id="stat3-label" class="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Assiduité</span>
+            <span id="stat3-label" class="text-[9px] uppercase font-bold text-slate-400">Taux</span>
         </div>
     </div>
 
-    <div id="dashBody" class="space-y-3">
-        </div>
+    <div id="dashBody" class="space-y-3"></div>
 
     <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm p-4 items-end sm:items-center justify-center">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h2 id="modalTitle" class="text-lg font-black text-slate-800 uppercase tracking-tight">Nom Prénom</h2>
-                    <p id="modalPoste" class="text-xs text-slate-500 font-bold uppercase tracking-widest">Poste</p>
-                </div>
-                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white border shadow-sm text-slate-400">✕</button>
+                <h2 id="modalTitle" class="text-sm font-black text-slate-800 uppercase">Historique</h2>
+                <button onclick="closeModal()" class="text-slate-400 font-bold p-2">✕</button>
             </div>
-            <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-4">
-                </div>
+            <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-3"></div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script>
-        // ... (Gardez votre logique Firebase existante ici)
-        // Note : Mettez simplement à jour les fonctions de rendu (renderDayView, etc.) 
-        // pour utiliser les nouvelles classes CSS 'glass-card' et 'staff-card'.
-    </script>
 
+    <script>
+        const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const equipe = [
+            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'}, {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'},
+            {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT'}, {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
+            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'},
+            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'}, {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
+            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'},
+            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'},
+            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'}, {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'},
+            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
+            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'}, {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'},
+            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'}, {nom: 'EL MOEDEN', prenom: 'HASSAN', poste: 'SERVICE'},
+            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'}, {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
+            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'}, {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'}
+        ];
+
+        const dateInput = document.getElementById('dashDate');
+        const toggleBtn = document.getElementById('toggleDayBtn');
+        const statusMsg = document.getElementById('dayStatusMsg');
+        let currentMode = 'day'; 
+        let currentListenerRef = null;
+        let isCurrentDayDisabled = false;
+
+        const today = new Date();
+        dateInput.value = today.toISOString().split('T')[0];
+
+        dateInput.addEventListener('change', updateDashboard);
+        updateDashboard();
+
+        function switchMode(mode, btn) {
+            currentMode = mode;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateDashboard();
+        }
+
+        function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
+
+        async function openHistory(nom, prenom) {
+            const modal = document.getElementById('historyModal');
+            const listContainer = document.getElementById('modalList');
+            document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
+            modal.classList.add('modal-active');
+            listContainer.innerHTML = '<p class="text-center text-xs py-4">Chargement...</p>';
+
+            const dates = getDatesInRange(dateInput.value, 'month');
+            const promises = dates.map(d => database.ref('presences/' + d).once('value').then(s => ({ date: d, data: s.val() || {} })));
+            const results = await Promise.all(promises);
+            const id = nom + '_' + prenom;
+            
+            let html = '';
+            results.reverse().forEach(day => {
+                const emp = day.data[id];
+                if(!emp || day.data.disabled) return;
+                let status = emp.on ? `<span class="text-emerald-600 font-bold">PRÉSENT</span>` : (emp.off ? `<span class="text-slate-400">OFF</span>` : 'ABSENT');
+                html += `<div class="flex justify-between text-xs border-b pb-2"><b>${day.date}</b> <span>${status}</span></div>`;
+            });
+            listContainer.innerHTML = html || 'Pas de données.';
+        }
+
+        function toggleDayStatus() {
+            database.ref('presences/' + dateInput.value + '/disabled').set(!isCurrentDayDisabled);
+        }
+
+        function updateDashboard() {
+            if(currentListenerRef) { database.ref(currentListenerRef).off(); }
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '<p class="text-center py-10 text-slate-400">Chargement...</p>';
+
+            if (currentMode === 'day') {
+                renderDayView();
+            } else if (currentMode === 'report') {
+                renderReportView();
+            } else {
+                renderRangeView(currentMode);
+            }
+        }
+
+        function renderDayView() {
+            const path = 'presences/' + dateInput.value;
+            currentListenerRef = path;
+            database.ref(path).on('value', (snap) => {
+                const data = snap.val() || {};
+                isCurrentDayDisabled = data.disabled === true;
+                statusMsg.style.display = isCurrentDayDisabled ? 'block' : 'none';
+                toggleBtn.innerText = isCurrentDayDisabled ? "Réactiver" : "Exclure";
+                
+                const container = document.getElementById('dashBody');
+                container.innerHTML = '';
+                let on = 0, off = 0;
+
+                equipe.forEach(emp => {
+                    const d = data[emp.nom + '_' + emp.prenom] || {};
+                    if(d.on) on++; if(d.off) off++;
+                    const sClass = d.on ? 'status-on' : (d.off ? 'status-off' : '');
+                    container.innerHTML += `
+                        <div class="staff-row glass-card p-4 rounded-xl flex justify-between items-center ${sClass}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                            <div><b class="text-sm uppercase">${emp.prenom} ${emp.nom}</b><br><i class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">${emp.poste}</i></div>
+                            <span class="text-[10px] font-black">${d.on ? 'PRÉSENT' : (d.off ? 'OFF' : '-')}</span>
+                        </div>`;
+                });
+                updateStats(on, off, Math.round((on/equipe.length)*100)+'%');
+            });
+        }
+
+        async function renderRangeView(mode) {
+            const dates = getDatesInRange(dateInput.value, mode);
+            const stats = await calculateStats(dates);
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '';
+            
+            equipe.forEach(emp => {
+                const s = stats[emp.nom + '_' + emp.prenom];
+                container.innerHTML += `
+                    <div class="glass-card p-4 rounded-xl flex justify-between items-center" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                        <div><b class="text-sm uppercase">${emp.prenom} ${emp.nom}</b></div>
+                        <div class="text-right text-[10px] font-bold">
+                            <span class="text-emerald-600">${s.present}j</span> / <span class="text-red-400">${s.lateMinutes}m</span>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function renderReportView() {
+            const container = document.getElementById('dashBody');
+            const stats = await calculateStats(getDatesInRange(dateInput.value, 'month'));
+            let lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
+            
+            container.innerHTML = '<h3 class="text-center font-black text-red-500 uppercase text-xs mb-4">Top Retards (Mois)</h3>';
+            lateList.forEach((s, i) => {
+                container.innerHTML += `
+                    <div class="glass-card p-4 rounded-xl relative mb-4">
+                        <div class="rank-badge bg-white border-2 border-red-500 text-red-500">${i+1}</div>
+                        <div class="flex justify-between items-center">
+                            <b class="text-xs uppercase">${s.info.prenom} ${s.info.nom}</b>
+                            <b class="text-red-500">-${s.lateMinutes} min</b>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function calculateStats(dates) {
+            const stats = {};
+            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, off: 0, lateMinutes: 0});
+            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            const snaps = await Promise.all(promises);
+            snaps.forEach(s => {
+                const data = s.val();
+                if(!data || data.disabled) return;
+                Object.keys(stats).forEach(id => {
+                    const d = data[id];
+                    if(d && d.on) {
+                        stats[id].present++;
+                        if(d.hA && d.hP) {
+                            const diff = getTimeDiff(d.hA, d.hP);
+                            if(diff > 5) stats[id].lateMinutes += diff;
+                        }
+                    }
+                });
+            });
+            return stats;
+        }
+
+        function getTimeDiff(a, p) {
+            const [ha, ma] = a.split(':').map(Number);
+            const [hp, mp] = p.split(':').map(Number);
+            return (ha*60+ma) - (hp*60+mp);
+        }
+
+        function getDatesInRange(dateStr, mode) {
+            const current = new Date(dateStr);
+            const dates = [];
+            if(mode === 'week') {
+                for(let i=0; i<7; i++) { dates.push(current.toISOString().split('T')[0]); current.setDate(current.getDate()+1); }
+            } else {
+                const m = current.getMonth();
+                const d = new Date(current.getFullYear(), m, 1);
+                while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
+            }
+            return dates;
+        }
+
+        function updateStats(v1, v2, v3) {
+            document.getElementById('stat1-val').innerText = v1;
+            document.getElementById('stat2-val').innerText = v2;
+            document.getElementById('stat3-val').innerText = v3;
+        }
+    </script>
 </body>
 </html>
