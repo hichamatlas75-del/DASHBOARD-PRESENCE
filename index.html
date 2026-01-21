@@ -13,6 +13,20 @@
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         .status-late { border-left-color: #f43f5e !important; background: #fff1f2; }
+        
+        /* ALERTE SPÉCIALE +1H */
+        .status-critical { 
+            border-left-color: #991b1b !important; 
+            background: #fef2f2; 
+            animation: critical-pulse 2s infinite;
+            border-width: 2px 2px 2px 8px !important;
+        }
+        @keyframes critical-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
         .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.6; }
         .excluded-day { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
         .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -118,7 +132,6 @@
                 const data = snap.val() || {};
                 isExcluded = data.disabled === true;
                 
-                // UI Exclusion
                 document.getElementById('excludeIcon').className = isExcluded ? "w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400";
                 document.getElementById('excludeLabel').innerText = isExcluded ? "Exclu" : "Exclure";
                 document.getElementById('excludeMsg').classList.toggle('hidden', !isExcluded);
@@ -135,7 +148,16 @@
             equipe.forEach(emp => {
                 const d = data[emp.nom + '_' + emp.prenom] || {};
                 const diff = getTimeDiff(d.hA, d.hP);
-                let sClass = d.off ? "status-off" : (d.on ? (diff > 0 ? "status-late" : "status-on-time") : "");
+                
+                // LOGIQUE D'ALERTE : Si diff >= 60 on passe en mode critique
+                let sClass = "";
+                if (d.off) {
+                    sClass = "status-off";
+                } else if (d.on) {
+                    if (diff >= 60) sClass = "status-critical";
+                    else if (diff > 0) sClass = "status-late";
+                    else sClass = "status-on-time";
+                }
                 
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${isExcluded ? 'excluded-day' : ''}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
@@ -145,12 +167,18 @@
                         </div>
                         <div class="text-right">
                             ${d.off ? '<span class="text-[10px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}
-                            ${!d.off && diff > 0 ? `<div class="text-[9px] font-black text-rose-500 uppercase">-${diff}m</div>` : ''}
+                            ${!d.off && diff > 0 ? `
+                                <div class="flex flex-col items-end">
+                                    <div class="text-[9px] font-black text-rose-500 uppercase">-${diff}m</div>
+                                    ${diff >= 60 ? '<span class="bg-rose-600 text-white text-[7px] px-2 py-0.5 rounded-full font-black mt-1">🚨 CRITIQUE</span>' : ''}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>`;
             });
         }
 
+        // ... (Reste du code inchangé) ...
         async function renderRangeView() {
             const dates = getDatesInRange(currentMode);
             const stats = await calculateStats(dates);
