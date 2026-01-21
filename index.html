@@ -12,13 +12,12 @@
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
         
-        /* ÉTATS DE PRÉSENCE */
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         
-        /* RETARD STANDARD (ORANGE) - Après 10mn */
+        /* ORANGE uniquement après 10mn */
         .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
         
-        /* RETARD CRITIQUE (ROUGE) - Après 60mn */
+        /* ROUGE après 60mn */
         .status-critical { 
             border-left-color: #dc2626 !important; 
             background: #fef2f2; 
@@ -57,7 +56,6 @@
                 <span id="excludeLabel" class="text-[8px] font-black uppercase mt-1 text-slate-400">Exclure</span>
             </button>
         </div>
-        <div id="excludeMsg" class="hidden text-center text-rose-500 text-[10px] font-black uppercase mb-2">⚠️ Journée Hors-Compta</div>
         
         <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
             <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Jour</button>
@@ -119,13 +117,13 @@
 
         function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
 
-        // AJUSTEMENT TOLÉRANCE 10 MN
+        // Retourne le retard réel sans filtre
         function getTimeDiff(a, p) {
             if(!a || !p) return 0;
             const [ha, ma] = a.split(':').map(Number);
             const [hp, mp] = p.split(':').map(Number);
             const diff = (ha*60+ma) - (hp*60+mp);
-            return diff > 10 ? diff : 0; // Se déclenche uniquement après 10mn
+            return diff > 0 ? diff : 0;
         }
 
         function toggleExclusion() {
@@ -139,7 +137,6 @@
                 
                 document.getElementById('excludeIcon').className = isExcluded ? "w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400";
                 document.getElementById('excludeLabel').innerText = isExcluded ? "Exclu" : "Exclure";
-                document.getElementById('excludeMsg').classList.toggle('hidden', !isExcluded);
 
                 if (currentMode === 'day') renderDayView(data);
                 else if (currentMode === 'report') renderReportView();
@@ -158,9 +155,9 @@
                 if (d.off) {
                     sClass = "status-off";
                 } else if (d.on) {
-                    if (diff >= 60) sClass = "status-critical"; // Rouge si > 60mn
-                    else if (diff > 0) sClass = "status-late";    // Orange si > 10mn
-                    else sClass = "status-on-time";
+                    if (diff >= 60) sClass = "status-critical"; // Rouge
+                    else if (diff > 10) sClass = "status-late";   // Orange vignette
+                    else sClass = "status-on-time";               // Vert ou Blanc
                 }
                 
                 container.innerHTML += `
@@ -182,6 +179,7 @@
             });
         }
 
+        // Reste des fonctions inchangé...
         async function renderRangeView() {
             const dates = getDatesInRange(currentMode);
             const stats = await calculateStats(dates);
@@ -189,7 +187,7 @@
             container.innerHTML = '';
             Object.values(stats).forEach(s => {
                 container.innerHTML += `
-                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 0 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
+                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
                         <b class="text-xs uppercase text-slate-800">${s.info.prenom} ${s.info.nom}</b>
                         <div class="text-right">
                             <div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div>
@@ -205,7 +203,7 @@
             const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
             const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
 
-            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Retards (Hors Tolérance)</h3>';
+            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Retards (Réels)</h3>';
             lateList.slice(0, 5).forEach(s => {
                 html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
             });
