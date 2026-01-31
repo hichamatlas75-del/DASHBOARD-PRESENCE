@@ -12,6 +12,7 @@
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
         
+        /* CODES COULEURS EXCELLENCE */
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
         .status-critical { 
@@ -81,7 +82,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 📋 LISTE ÉQUIPE MISE À JOUR & RIGOUREUSEMENT TRIÉE
+        // 📋 LISTE ÉQUIPE TRIÉE PAR NOM PUIS PRÉNOM
         const equipe = [
             {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
             {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
@@ -169,7 +170,7 @@
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${isExcluded ? 'excluded-day' : ''}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
                         <div>
-                            <b class="text-xs uppercase text-slate-800">${emp.prenom} ${emp.nom}</b><br>
+                            <b class="text-xs uppercase text-slate-800">${emp.nom} ${emp.prenom}</b><br>
                             <span class="text-[8px] font-bold text-slate-400 uppercase">${emp.poste}</span>
                         </div>
                         <div class="text-right">
@@ -227,10 +228,11 @@
             const stats = await calculateStats(dates);
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
+            // TRI ALPHABÉTIQUE NOM PRÉNOM
             Object.values(stats).sort((a,b) => a.info.nom.localeCompare(b.info.nom)).forEach(s => {
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
-                        <b class="text-xs uppercase text-slate-800">${s.info.prenom} ${s.info.nom}</b>
+                        <b class="text-xs uppercase text-slate-800">${s.info.nom} ${s.info.prenom}</b>
                         <div class="text-right">
                             <div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div>
                             <div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m total</div>
@@ -247,19 +249,19 @@
 
             let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Retards (Top 5)</h3>';
             lateList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
             });
 
             html += '<h3 class="text-emerald-500 font-black uppercase text-[10px] mt-6 mb-3 tracking-widest pl-2">⭐ Disciplinés</h3>';
             goodList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
             });
             container.innerHTML = html;
         }
 
         async function openHistory(nom, prenom) {
             const modal = document.getElementById('historyModal');
-            document.getElementById('modalTitle').innerText = `${prenom} ${nom}`;
+            document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
             modal.classList.add('modal-active');
             const list = document.getElementById('modalList');
             list.innerHTML = '<div class="text-center py-10 font-bold text-slate-300 tracking-widest uppercase text-[10px]">Chargement...</div>';
