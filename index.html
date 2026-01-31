@@ -81,21 +81,34 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 📋 LISTE ÉQUIPE MISE À JOUR ET TRIÉE
-        const equipe = [
-            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
-            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
-            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
-            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'}, {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
-            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT'},
-            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'}, {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
-            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'}, {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
-            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'}, {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
-            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'}, {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
-            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'}, {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'},
-            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'}, {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
-            {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}, {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'}
-        ].sort((a, b) => a.nom.localeCompare(b.nom));
+        // 📋 LISTE ÉQUIPE MISE À JOUR : ORDRE ALPHABÉTIQUE (NOM PRÉNOM)
+const equipe = [
+    {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
+    {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
+    {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'},
+    {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
+    {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'},
+    {nom: 'EL KOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
+    {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'},
+    {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
+    {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'},
+    {nom: 'ENNHAIlI', prenom: 'SOUMIA', poste: 'EXONOMAT'},
+    {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'},
+    {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
+    {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'},
+    {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
+    {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'},
+    {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
+    {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'},
+    {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
+    {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'},
+    {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'},
+    {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'},
+    {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
+    {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
+    {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
+];
+sort((a, b) => a.nom.localeCompare(b.nom));
 
         const dateInput = document.getElementById('dashDate');
         let currentMode = 'day';
