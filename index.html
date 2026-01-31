@@ -12,12 +12,13 @@
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
         
+        /* VERT : Présent et à l'heure */
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         
-        /* ORANGE uniquement après 10mn */
+        /* ORANGE : Retard après 10mn */
         .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
         
-        /* ROUGE après 60mn */
+        /* ROUGE : Retard critique après 60mn */
         .status-critical { 
             border-left-color: #dc2626 !important; 
             background: #fef2f2; 
@@ -117,7 +118,6 @@
 
         function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
 
-        // Retourne le retard réel sans filtre
         function getTimeDiff(a, p) {
             if(!a || !p) return 0;
             const [ha, ma] = a.split(':').map(Number);
@@ -154,10 +154,12 @@
                 let sClass = "";
                 if (d.off) {
                     sClass = "status-off";
-                } else if (d.on) {
-                    if (diff >= 60) sClass = "status-critical"; // Rouge
-                    else if (diff > 10) sClass = "status-late";   // Orange vignette
-                    else sClass = "status-on-time";               // Vert ou Blanc
+                } 
+                // MODIFICATION : On se base sur le fait que l'heure d'arrivée est saisie
+                else if (d.hA) {
+                    if (diff >= 60) sClass = "status-critical"; 
+                    else if (diff > 10) sClass = "status-late";   
+                    else sClass = "status-on-time";               
                 }
                 
                 container.innerHTML += `
@@ -179,7 +181,46 @@
             });
         }
 
-        // Reste des fonctions inchangé...
+        async function calculateStats(dates) {
+            const stats = {};
+            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, lateMinutes: 0});
+            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            const snaps = await Promise.all(promises);
+            snaps.forEach(s => {
+                const data = s.val();
+                if(!data || data.disabled) return;
+                Object.keys(stats).forEach(id => {
+                    const entry = data[id];
+                    // On considère présent si hA est rempli
+                    if(entry && entry.hA && !entry.off) {
+                        stats[id].present++;
+                        stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
+                    }
+                });
+            });
+            return stats;
+        }
+
+        function getDatesInRange(mode) {
+            const dates = [];
+            const curr = new Date(dateInput.value);
+            if(mode === 'week') {
+                const first = curr.getDate() - curr.getDay() + 1;
+                for(let i=0; i<7; i++) {
+                    const d = new Date(new Date(curr).setDate(first + i));
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+            } else {
+                const m = curr.getMonth(), y = curr.getFullYear();
+                const d = new Date(y, m, 1);
+                while(d.getMonth() === m) {
+                    dates.push(new Date(d).toISOString().split('T')[0]);
+                    d.setDate(d.getDate() + 1);
+                }
+            }
+            return dates;
+        }
+
         async function renderRangeView() {
             const dates = getDatesInRange(currentMode);
             const stats = await calculateStats(dates);
@@ -213,45 +254,6 @@
                 html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
             });
             container.innerHTML = html;
-        }
-
-        async function calculateStats(dates) {
-            const stats = {};
-            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, lateMinutes: 0});
-            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
-            const snaps = await Promise.all(promises);
-            snaps.forEach(s => {
-                const data = s.val();
-                if(!data || data.disabled) return;
-                Object.keys(stats).forEach(id => {
-                    const entry = data[id];
-                    if(entry && entry.on && !entry.off) {
-                        stats[id].present++;
-                        stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
-                    }
-                });
-            });
-            return stats;
-        }
-
-        function getDatesInRange(mode) {
-            const dates = [];
-            const curr = new Date(dateInput.value);
-            if(mode === 'week') {
-                const first = curr.getDate() - curr.getDay() + 1;
-                for(let i=0; i<7; i++) {
-                    const d = new Date(new Date(curr).setDate(first + i));
-                    dates.push(d.toISOString().split('T')[0]);
-                }
-            } else {
-                const m = curr.getMonth(), y = curr.getFullYear();
-                const d = new Date(y, m, 1);
-                while(d.getMonth() === m) {
-                    dates.push(new Date(d).toISOString().split('T')[0]);
-                    d.setDate(d.getDate() + 1);
-                }
-            }
-            return dates;
         }
 
         async function openHistory(nom, prenom) {
