@@ -82,7 +82,14 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 📋 LISTE ÉQUIPE TRIÉE PAR NOM PUIS PRÉNOM
+        // --- GESTION DU FUSEAU HORAIRE MAROC ---
+        const getMarocDate = () => {
+            return new Intl.DateTimeFormat('fr-CA', {
+                timeZone: 'Africa/Casablanca',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+        };
+
         const equipe = [
             {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
             {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
@@ -114,9 +121,19 @@
         let currentMode = 'day';
         let isExcluded = false;
 
-        dateInput.value = new Date().toISOString().split('T')[0];
+        // Initialisation à l'heure du Maroc
+        dateInput.value = getMarocDate();
         dateInput.addEventListener('change', updateDashboard);
         updateDashboard();
+
+        // Auto-refresh si on change de jour (Maroc) sans recharger la page
+        setInterval(() => {
+            const marocNow = getMarocDate();
+            if(dateInput.value !== marocNow && !dateInput.matches(':focus')) {
+                dateInput.value = marocNow;
+                updateDashboard();
+            }
+        }, 60000);
 
         function switchMode(mode, btn) {
             currentMode = mode;
@@ -157,7 +174,8 @@
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
             equipe.forEach(emp => {
-                const d = data[emp.nom + '_' + emp.prenom] || {};
+                const id = emp.nom + '_' + emp.prenom;
+                const d = data[id] || {};
                 const diff = getTimeDiff(d.hA, d.hP);
                 let sClass = "";
                 if (d.off) sClass = "status-off";
@@ -228,7 +246,6 @@
             const stats = await calculateStats(dates);
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
-            // TRI ALPHABÉTIQUE NOM PRÉNOM
             Object.values(stats).sort((a,b) => a.info.nom.localeCompare(b.info.nom)).forEach(s => {
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
