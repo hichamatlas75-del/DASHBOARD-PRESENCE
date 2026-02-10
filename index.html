@@ -8,67 +8,75 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
-        .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05); }
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
-        .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
+        .staff-row { transition: all 0.2s ease; border-left: 5px solid #e2e8f0; }
+        .staff-row:hover { transform: scale(1.01); }
+        
+        /* Statuts Excellence */
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
         .status-critical { border-left-color: #dc2626 !important; background: #fef2f2; animation: critical-pulse 2s infinite; }
-        @keyframes critical-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-        }
-        .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.6; }
-        .excluded-day { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
+        @keyframes critical-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); } 70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+        .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.7; }
+        
         .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        /* Scrollbar élégante */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 antialiased pb-24">
+<body class="p-3 sm:p-6 antialiased pb-24">
 
-    <header class="text-center mb-6">
-        <h1 class="text-2xl font-black text-slate-900 uppercase italic">Supervision RH</h1>
-        <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.3em]">Grey Corner • Excellence</p>
-    </header>
-
-    <div class="glass-card rounded-3xl p-5 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-[9px] font-black text-slate-400 uppercase">Période de référence</p>
-                <input type="date" id="dashDate" class="bg-transparent border-none font-black text-indigo-900 focus:ring-0 text-lg p-0 w-full">
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-6 px-1">
+            <div>
+                <h1 class="text-xl font-black text-slate-900 uppercase italic leading-none">RH SUPERVISION</h1>
+                <p class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Grey Corner Fès</p>
             </div>
-            <button id="excludeBtn" onclick="toggleExclusion()" class="ml-4 flex flex-col items-center">
-                <div id="excludeIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" /></svg>
+            <button id="excludeBtn" onclick="toggleExclusion()" class="flex flex-col items-center group">
+                <div id="excludeIcon" class="w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-100 transition-all group-active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" /></svg>
                 </div>
-                <span id="excludeLabel" class="text-[8px] font-black uppercase mt-1 text-slate-400">Exclure</span>
+                <span id="excludeLabel" class="text-[7px] font-black uppercase mt-1 text-slate-400">Exclure</span>
             </button>
-        </div>
-        
-        <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
-            <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Jour</button>
-            <button onclick="switchMode('week', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Semaine</button>
-            <button onclick="switchMode('month', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Mois</button>
-            <button onclick="switchMode('report', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase text-rose-500">Bilan</button>
-        </div>
-    </div>
+        </header>
 
-    <div id="chartContainer" class="glass-card rounded-3xl p-4 mb-6 hidden">
-        <p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Tendance Retards vs Présence (Mois)</p>
-        <canvas id="trendsChart" height="180"></canvas>
-    </div>
+        <div class="glass-card rounded-2xl p-4 mb-6 sticky top-2 z-40 backdrop-blur-md">
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <div class="w-full sm:w-1/3">
+                    <input type="date" id="dashDate" class="bg-slate-50 rounded-xl px-4 py-2 font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none text-sm w-full border-none shadow-inner">
+                </div>
+                <div class="flex bg-slate-100 p-1 rounded-xl gap-1 w-full sm:w-2/3">
+                    <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all">Jour</button>
+                    <button onclick="switchMode('week', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all">Semaine</button>
+                    <button onclick="switchMode('month', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all">Mois</button>
+                    <button onclick="switchMode('report', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase text-rose-500 transition-all">Bilan</button>
+                </div>
+            </div>
+        </div>
 
-    <div id="dashBody" class="space-y-3"></div>
+        <div id="chartContainer" class="glass-card rounded-2xl p-4 mb-6 hidden animate-in fade-in duration-500">
+            <p class="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Tendance Retards vs Présence</p>
+            <div class="h-[180px] w-full">
+                <canvas id="trendsChart"></canvas>
+            </div>
+        </div>
+
+        <div id="dashBody" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </div>
 
     <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm p-4 items-end justify-center">
-        <div class="bg-white w-full max-w-md rounded-t-[32px] overflow-hidden shadow-2xl">
-            <div class="p-6 border-b flex justify-between items-center bg-slate-50/50">
-                <h2 id="modalTitle" class="text-lg font-black text-slate-900 uppercase italic">Historique</h2>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white shadow-sm font-bold">✕</button>
+        <div class="bg-white w-full max-w-md rounded-t-[32px] shadow-2xl overflow-hidden">
+            <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+                <h2 id="modalTitle" class="text-sm font-black text-slate-900 uppercase italic">Historique</h2>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center font-bold text-slate-400">✕</button>
             </div>
-            <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-2"></div>
+            <div id="modalList" class="p-5 max-h-[60vh] overflow-y-auto space-y-2 bg-white"></div>
         </div>
     </div>
 
@@ -111,6 +119,15 @@
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
+            // Change grid layout for Report mode
+            const dashBody = document.getElementById('dashBody');
+            if(mode === 'report') {
+                dashBody.classList.remove('md:grid-cols-2');
+                dashBody.classList.add('max-w-xl', 'mx-auto');
+            } else {
+                dashBody.classList.add('md:grid-cols-2');
+                dashBody.classList.remove('max-w-xl', 'mx-auto');
+            }
             updateDashboard();
         }
 
@@ -122,7 +139,8 @@
             database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
                 isExcluded = data.disabled === true;
-                document.getElementById('excludeIcon').className = isExcluded ? "w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400";
+                const icon = document.getElementById('excludeIcon');
+                icon.className = isExcluded ? "w-9 h-9 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-9 h-9 rounded-full flex items-center justify-center bg-white text-slate-400 border border-slate-100 shadow-sm";
                 document.getElementById('excludeLabel').innerText = isExcluded ? "Exclu" : "Exclure";
                 if (currentMode === 'day') renderDayView(data);
                 else if (currentMode === 'report') renderReportView();
@@ -134,14 +152,20 @@
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
             equipe.forEach(emp => {
-                const id = emp.nom + '_' + emp.prenom;
+                const id = idEnc(emp.nom, emp.prenom);
                 const d = data[id] || {};
                 const diff = getTimeDiff(d.hA, d.hP);
                 let sClass = d.off ? "status-off" : (d.hA ? (diff >= 60 ? "status-critical" : (diff > 10 ? "status-late" : "status-on-time")) : "");
                 container.innerHTML += `
-                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${isExcluded ? 'excluded-day' : ''}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
-                        <div><b class="text-xs uppercase text-slate-800">${emp.nom} ${emp.prenom}</b><br><span class="text-[8px] font-bold text-slate-400 uppercase">${emp.poste}</span></div>
-                        <div class="text-right">${d.off ? '<span class="text-[10px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}${!d.off && diff > 0 ? `<div class="text-[9px] font-black ${diff >= 60 ? 'text-rose-600' : 'text-amber-500'} uppercase">-${diff}m</div>` : ''}</div>
+                    <div class="staff-row glass-card p-3 rounded-xl flex justify-between items-center ${sClass} ${isExcluded ? 'opacity-40 grayscale pointer-events-none' : ''} cursor-pointer shadow-sm" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                        <div class="min-w-0 flex-1 mr-2">
+                            <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate leading-tight">${emp.nom} ${emp.prenom}</p>
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">${emp.poste}</span>
+                        </div>
+                        <div class="text-right whitespace-nowrap">
+                            ${d.off ? '<span class="text-[9px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-600 block leading-none">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}
+                            ${!d.off && diff > 0 ? `<span class="text-[9px] font-black ${diff >= 60 ? 'text-rose-600' : 'text-amber-500'}">-${diff}m</span>` : ''}
+                        </div>
                     </div>`;
             });
         }
@@ -150,30 +174,17 @@
             const dates = getDatesInRange('month');
             const stats = await calculateStats(dates);
             const container = document.getElementById('dashBody');
-            
-            // --- Préparation des données du graphique ---
-            const dailyLates = [];
-            const dailyPresence = [];
-            const labels = [];
-
+            const dailyLates = []; const dailyPresence = []; const labels = [];
             const promises = dates.map(d => database.ref('presences/'+d).once('value'));
             const snaps = await Promise.all(promises);
             
             snaps.forEach((s, i) => {
                 const dayData = s.val() || {};
-                let totalLate = 0;
-                let totalPres = 0;
+                let totalLate = 0; let totalPres = 0;
                 if(!dayData.disabled) {
-                    Object.keys(dayData).forEach(key => {
-                        if(dayData[key].hA && !dayData[key].off) {
-                            totalLate += getTimeDiff(dayData[key].hA, dayData[key].hP);
-                            totalPres++;
-                        }
-                    });
+                    Object.keys(dayData).forEach(key => { if(dayData[key].hA && !dayData[key].off) { totalLate += getTimeDiff(dayData[key].hA, dayData[key].hP); totalPres++; } });
                 }
-                dailyLates.push(totalLate);
-                dailyPresence.push(totalPres);
-                labels.push(dates[i].split('-')[2]); // Juste le numéro du jour
+                dailyLates.push(totalLate); dailyPresence.push(totalPres); labels.push(dates[i].split('-')[2]);
             });
 
             renderChart(labels, dailyLates, dailyPresence);
@@ -181,14 +192,16 @@
             const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
             const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
 
-            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Top Retards</h3>';
+            let html = '<div class="space-y-6">';
+            html += '<div><h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest px-2">⚠️ Top Retards</h3>';
             lateList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
+                html += `<div class="glass-card p-4 rounded-xl mb-2 flex justify-between shadow-sm" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
             });
-            html += '<h3 class="text-emerald-500 font-black uppercase text-[10px] mt-6 mb-3 tracking-widest pl-2">⭐ Disciplinés</h3>';
+            html += '</div><div><h3 class="text-emerald-500 font-black uppercase text-[10px] mb-3 tracking-widest px-2">⭐ Disciplinés</h3>';
             goodList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
+                html += `<div class="glass-card p-4 rounded-xl mb-2 flex justify-between shadow-sm" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
             });
+            html += '</div></div>';
             container.innerHTML = html;
         }
 
@@ -200,70 +213,38 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Retards (min)',
-                        data: lates,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3,
-                        pointRadius: 0
+                        label: 'Retards', data: lates, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0
                     }, {
-                        label: 'Présences',
-                        data: presence,
-                        borderColor: '#4f46e5',
-                        borderDash: [5, 5],
-                        tension: 0.4,
-                        fill: false,
-                        pointRadius: 0
+                        label: 'Présences', data: presence, borderColor: '#4f46e5', borderDash: [5, 5], tension: 0.4, fill: false, borderWidth: 2, pointRadius: 0
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, display: false },
-                        x: { grid: { display: false }, ticks: { font: { size: 8 } } }
-                    }
-                }
+                options: { maintainAspectRatio: false, responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false }, ticks: { font: { size: 7 } } } } }
             });
         }
 
         async function calculateStats(dates) {
             const stats = {};
-            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, lateMinutes: 0});
+            equipe.forEach(e => stats[idEnc(e.nom,e.prenom)] = {info: e, present: 0, lateMinutes: 0});
             const promises = dates.map(d => database.ref('presences/'+d).once('value'));
             const snaps = await Promise.all(promises);
             snaps.forEach(s => {
-                const data = s.val();
-                if(!data || data.disabled) return;
+                const data = s.val(); if(!data || data.disabled) return;
                 Object.keys(stats).forEach(id => {
                     const entry = data[id];
-                    if(entry && entry.hA && !entry.off) {
-                        stats[id].present++;
-                        stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
-                    }
+                    if(entry && entry.hA && !entry.off) { stats[id].present++; stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP); }
                 });
             });
             return stats;
         }
 
         function getDatesInRange(mode) {
-            const dates = [];
-            const curr = new Date(dateInput.value);
+            const dates = []; const curr = new Date(dateInput.value);
             if(mode === 'week') {
                 const first = curr.getDate() - curr.getDay() + 1;
-                for(let i=0; i<7; i++) {
-                    const d = new Date(new Date(curr).setDate(first + i));
-                    dates.push(d.toISOString().split('T')[0]);
-                }
+                for(let i=0; i<7; i++) { const d = new Date(new Date(curr).setDate(first + i)); dates.push(d.toISOString().split('T')[0]); }
             } else {
-                const m = curr.getMonth(), y = curr.getFullYear();
-                const d = new Date(y, m, 1);
-                while(d.getMonth() === m) {
-                    dates.push(new Date(d).toISOString().split('T')[0]);
-                    d.setDate(d.getDate() + 1);
-                }
+                const m = curr.getMonth(), y = curr.getFullYear(); const d = new Date(y, m, 1);
+                while(d.getMonth() === m) { dates.push(new Date(d).toISOString().split('T')[0]); d.setDate(d.getDate() + 1); }
             }
             return dates;
         }
@@ -274,9 +255,9 @@
             container.innerHTML = '';
             Object.values(stats).sort((a,b) => a.info.nom.localeCompare(b.info.nom)).forEach(s => {
                 container.innerHTML += `
-                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
-                        <b class="text-xs uppercase text-slate-800">${s.info.nom} ${s.info.prenom}</b>
-                        <div class="text-right"><div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div><div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m total</div></div>
+                    <div class="staff-row glass-card p-3 rounded-xl flex justify-between items-center shadow-sm border-l-[6px] ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
+                        <div class="min-w-0 flex-1"><p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${s.info.nom} ${s.info.prenom}</p></div>
+                        <div class="text-right shrink-0"><span class="text-[9px] font-black text-indigo-600 block">${s.present}j OK</span><span class="text-[9px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m</span></div>
                     </div>`;
             });
         }
@@ -286,26 +267,26 @@
             document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
             modal.classList.add('modal-active');
             const list = document.getElementById('modalList');
-            list.innerHTML = '<div class="text-center py-10 font-bold text-slate-300 tracking-widest uppercase text-[10px]">Chargement...</div>';
+            list.innerHTML = '<div class="text-center py-10 font-black text-slate-200 uppercase text-[10px] animate-pulse">Chargement...</div>';
             const dates = getDatesInRange('month');
             const promises = dates.map(dt => database.ref('presences/'+dt).once('value'));
             const snaps = await Promise.all(promises);
             let html = '';
             snaps.reverse().forEach((s, idx) => {
-                const data = s.val();
-                const entry = data ? data[nom+'_'+prenom] : null;
+                const data = s.val(); const entry = data ? data[idEnc(nom,prenom)] : null;
                 const dtStr = dates.slice().reverse()[idx].split('-').reverse().slice(0,2).join('/');
                 if(entry) {
-                    const isEx = data.disabled;
-                    const diff = getTimeDiff(entry.hA, entry.hP);
-                    html += `<div class="flex justify-between p-3 rounded-xl border border-slate-100 ${isEx ? 'opacity-30' : ''}">
-                        <span class="text-[10px] font-black">${dtStr}</span>
-                        <span class="text-[10px] font-black ${entry.off ? 'text-slate-400' : (diff>0 ? 'text-amber-500' : 'text-emerald-500')}">${isEx ? 'EXCLU' : (entry.off ? 'OFF' : (diff>0 ? '-'+diff+'m' : 'OK'))}</span>
+                    const isEx = data.disabled; const diff = getTimeDiff(entry.hA, entry.hP);
+                    html += `<div class="flex justify-between items-center p-3 rounded-xl border border-slate-100 bg-slate-50 shadow-sm ${isEx ? 'opacity-30' : ''}">
+                        <span class="text-[10px] font-black text-slate-500">${dtStr}</span>
+                        <span class="text-[10px] font-black ${entry.off ? 'text-slate-400' : (diff>0 ? 'text-amber-500' : 'text-emerald-500')}">${isEx ? 'EXCLU' : (entry.off ? 'OFF' : (diff>0 ? '-'+diff+'m' : 'PÉRIODE OK'))}</span>
                     </div>`;
                 }
             });
             list.innerHTML = html || '<div class="text-center py-10 text-slate-400 text-xs">Aucune donnée ce mois-ci</div>';
         }
+
+        function idEnc(nom, prenom) { return nom + '_' + prenom; }
     </script>
 </body>
 </html>
