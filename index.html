@@ -5,28 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Direction Hub • Grey Corner Fès</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
         .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
-        
-        /* CODES COULEURS EXCELLENCE */
         .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
         .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
-        .status-critical { 
-            border-left-color: #dc2626 !important; 
-            background: #fef2f2; 
-            animation: critical-pulse 2s infinite;
-        }
-        
+        .status-critical { border-left-color: #dc2626 !important; background: #fef2f2; animation: critical-pulse 2s infinite; }
         @keyframes critical-pulse {
             0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
             100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
         }
-
         .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.6; }
         .excluded-day { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
         .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -62,6 +55,11 @@
         </div>
     </div>
 
+    <div id="chartContainer" class="glass-card rounded-3xl p-4 mb-6 hidden">
+        <p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Tendance Retards vs Présence (Mois)</p>
+        <canvas id="trendsChart" height="180"></canvas>
+    </div>
+
     <div id="dashBody" class="space-y-3"></div>
 
     <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm p-4 items-end justify-center">
@@ -82,88 +80,50 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // --- GESTION DU FUSEAU HORAIRE MAROC ---
-        const getMarocDate = () => {
-            return new Intl.DateTimeFormat('fr-CA', {
-                timeZone: 'Africa/Casablanca',
-                year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(new Date());
-        };
+        const getMarocDate = () => new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Casablanca', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
         const equipe = [
-            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
-            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
-            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'},
-            {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
-            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'},
-            {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
-            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'},
-            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
-            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'},
-            {nom: 'ENNHAILI', prenom: 'SOUMIA', poste: 'EXONOMAT'},
-            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'},
-            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
-            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'},
-            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
-            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'},
-            {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
-            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'},
-            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
-            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'},
-            {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'},
-            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'},
-            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
-            {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
-            {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
+            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
+            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
+            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
+            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'}, {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
+            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ENNHAILI', prenom: 'SOUMIA', poste: 'ECONOMAT'},
+            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'}, {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
+            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'}, {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
+            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'}, {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
+            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'}, {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
+            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'}, {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'},
+            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'}, {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
+            {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
         ];
 
         const dateInput = document.getElementById('dashDate');
         let currentMode = 'day';
         let isExcluded = false;
+        let myChart = null;
 
-        // Initialisation à l'heure du Maroc
         dateInput.value = getMarocDate();
         dateInput.addEventListener('change', updateDashboard);
         updateDashboard();
-
-        // Auto-refresh si on change de jour (Maroc) sans recharger la page
-        setInterval(() => {
-            const marocNow = getMarocDate();
-            if(dateInput.value !== marocNow && !dateInput.matches(':focus')) {
-                dateInput.value = marocNow;
-                updateDashboard();
-            }
-        }, 60000);
 
         function switchMode(mode, btn) {
             currentMode = mode;
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
             updateDashboard();
         }
 
         function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
-
-        function getTimeDiff(a, p) {
-            if(!a || !p) return 0;
-            const [ha, ma] = a.split(':').map(Number);
-            const [hp, mp] = p.split(':').map(Number);
-            const diff = (ha*60+ma) - (hp*60+mp);
-            return diff > 0 ? diff : 0;
-        }
-
-        function toggleExclusion() {
-            database.ref('presences/' + dateInput.value + '/disabled').set(!isExcluded);
-        }
+        function getTimeDiff(a, p) { if(!a || !p) return 0; const [ha, ma] = a.split(':').map(Number); const [hp, mp] = p.split(':').map(Number); const diff = (ha*60+ma) - (hp*60+mp); return diff > 0 ? diff : 0; }
+        function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').set(!isExcluded); }
 
         function updateDashboard() {
             database.ref('presences/' + dateInput.value).on('value', (snap) => {
                 const data = snap.val() || {};
                 isExcluded = data.disabled === true;
-                
                 document.getElementById('excludeIcon').className = isExcluded ? "w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400";
                 document.getElementById('excludeLabel').innerText = isExcluded ? "Exclu" : "Exclure";
-
                 if (currentMode === 'day') renderDayView(data);
                 else if (currentMode === 'report') renderReportView();
                 else renderRangeView();
@@ -177,28 +137,95 @@
                 const id = emp.nom + '_' + emp.prenom;
                 const d = data[id] || {};
                 const diff = getTimeDiff(d.hA, d.hP);
-                let sClass = "";
-                if (d.off) sClass = "status-off";
-                else if (d.hA) {
-                    if (diff >= 60) sClass = "status-critical"; 
-                    else if (diff > 10) sClass = "status-late";   
-                    else sClass = "status-on-time";               
-                }
-                
+                let sClass = d.off ? "status-off" : (d.hA ? (diff >= 60 ? "status-critical" : (diff > 10 ? "status-late" : "status-on-time")) : "");
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${isExcluded ? 'excluded-day' : ''}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
-                        <div>
-                            <b class="text-xs uppercase text-slate-800">${emp.nom} ${emp.prenom}</b><br>
-                            <span class="text-[8px] font-bold text-slate-400 uppercase">${emp.poste}</span>
-                        </div>
-                        <div class="text-right">
-                            ${d.off ? '<span class="text-[10px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}
-                            ${!d.off && diff > 0 ? `
-                                <div class="flex flex-col items-end">
-                                    <div class="text-[9px] font-black ${diff >= 60 ? 'text-rose-600' : 'text-amber-500'} uppercase">-${diff}m</div>
-                                </div>` : ''}
-                        </div>
+                        <div><b class="text-xs uppercase text-slate-800">${emp.nom} ${emp.prenom}</b><br><span class="text-[8px] font-bold text-slate-400 uppercase">${emp.poste}</span></div>
+                        <div class="text-right">${d.off ? '<span class="text-[10px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}${!d.off && diff > 0 ? `<div class="text-[9px] font-black ${diff >= 60 ? 'text-rose-600' : 'text-amber-500'} uppercase">-${diff}m</div>` : ''}</div>
                     </div>`;
+            });
+        }
+
+        async function renderReportView() {
+            const dates = getDatesInRange('month');
+            const stats = await calculateStats(dates);
+            const container = document.getElementById('dashBody');
+            
+            // --- Préparation des données du graphique ---
+            const dailyLates = [];
+            const dailyPresence = [];
+            const labels = [];
+
+            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            const snaps = await Promise.all(promises);
+            
+            snaps.forEach((s, i) => {
+                const dayData = s.val() || {};
+                let totalLate = 0;
+                let totalPres = 0;
+                if(!dayData.disabled) {
+                    Object.keys(dayData).forEach(key => {
+                        if(dayData[key].hA && !dayData[key].off) {
+                            totalLate += getTimeDiff(dayData[key].hA, dayData[key].hP);
+                            totalPres++;
+                        }
+                    });
+                }
+                dailyLates.push(totalLate);
+                dailyPresence.push(totalPres);
+                labels.push(dates[i].split('-')[2]); // Juste le numéro du jour
+            });
+
+            renderChart(labels, dailyLates, dailyPresence);
+
+            const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
+            const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+
+            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Top Retards</h3>';
+            lateList.slice(0, 5).forEach(s => {
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
+            });
+            html += '<h3 class="text-emerald-500 font-black uppercase text-[10px] mt-6 mb-3 tracking-widest pl-2">⭐ Disciplinés</h3>';
+            goodList.slice(0, 5).forEach(s => {
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderChart(labels, lates, presence) {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Retards (min)',
+                        data: lates,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 0
+                    }, {
+                        label: 'Présences',
+                        data: presence,
+                        borderColor: '#4f46e5',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, display: false },
+                        x: { grid: { display: false }, ticks: { font: { size: 8 } } }
+                    }
+                }
             });
         }
 
@@ -242,38 +269,16 @@
         }
 
         async function renderRangeView() {
-            const dates = getDatesInRange(currentMode);
-            const stats = await calculateStats(dates);
+            const stats = await calculateStats(getDatesInRange(currentMode));
             const container = document.getElementById('dashBody');
             container.innerHTML = '';
             Object.values(stats).sort((a,b) => a.info.nom.localeCompare(b.info.nom)).forEach(s => {
                 container.innerHTML += `
                     <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
                         <b class="text-xs uppercase text-slate-800">${s.info.nom} ${s.info.prenom}</b>
-                        <div class="text-right">
-                            <div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div>
-                            <div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m total</div>
-                        </div>
+                        <div class="text-right"><div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div><div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m total</div></div>
                     </div>`;
             });
-        }
-
-        async function renderReportView() {
-            const stats = await calculateStats(getDatesInRange('month'));
-            const container = document.getElementById('dashBody');
-            const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
-            const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
-
-            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Retards (Top 5)</h3>';
-            lateList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
-            });
-
-            html += '<h3 class="text-emerald-500 font-black uppercase text-[10px] mt-6 mb-3 tracking-widest pl-2">⭐ Disciplinés</h3>';
-            goodList.slice(0, 5).forEach(s => {
-                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
-            });
-            container.innerHTML = html;
         }
 
         async function openHistory(nom, prenom) {
@@ -295,9 +300,7 @@
                     const diff = getTimeDiff(entry.hA, entry.hP);
                     html += `<div class="flex justify-between p-3 rounded-xl border border-slate-100 ${isEx ? 'opacity-30' : ''}">
                         <span class="text-[10px] font-black">${dtStr}</span>
-                        <span class="text-[10px] font-black ${entry.off ? 'text-slate-400' : (diff>0 ? 'text-amber-500' : 'text-emerald-500')}">
-                            ${isEx ? 'EXCLU' : (entry.off ? 'OFF' : (diff>0 ? '-'+diff+'m' : 'OK'))}
-                        </span>
+                        <span class="text-[10px] font-black ${entry.off ? 'text-slate-400' : (diff>0 ? 'text-amber-500' : 'text-emerald-500')}">${isEx ? 'EXCLU' : (entry.off ? 'OFF' : (diff>0 ? '-'+diff+'m' : 'OK'))}</span>
                     </div>`;
                 }
             });
