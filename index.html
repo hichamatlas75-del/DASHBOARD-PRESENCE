@@ -14,7 +14,6 @@
       --grey-deep: #1a1a1a;
       --grey-soft: #f8f9fa;
       --gold: #c5a059;
-      --gold-light: #e2cfab;
       --ok: #10b981;
       --warn: #f59e0b;
       --crit: #ef4444;
@@ -31,6 +30,7 @@
       background: #ffffff; 
       border: 1px solid rgba(0,0,0,0.05);
       box-shadow: 0 10px 30px -12px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
     }
 
     /* Navigation Haute Gamme */
@@ -39,47 +39,33 @@
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
     }
-    .nav-btn.active { 
-      color: var(--grey-deep);
-    }
+    .nav-btn.active { color: var(--grey-deep); }
     .nav-btn.active::after {
       content: '';
-      position: absolute;
-      bottom: 0; left: 25%; width: 50%; height: 3px;
-      background: var(--gold);
-      border-radius: 10px;
+      position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px;
+      background: var(--gold); border-radius: 10px;
     }
 
     /* Logique de Retard Visuelle */
     .staff-card { border-left-width: 6px; }
-    
     .status-green { border-left-color: var(--ok) !important; background: #f0fdf4; }
     .status-orange { border-left-color: var(--warn) !important; background: #fffbeb; }
     .status-red { border-left-color: var(--crit) !important; background: #fef2f2; }
     
-    /* Rouge qui flash (+1h) */
     .status-flash { 
       border-left-color: var(--crit) !important; 
       animation: flash-red 1.2s infinite;
     }
     @keyframes flash-red {
-      0%, 100% { background: #fef2f2; opacity: 1; }
-      50% { background: #fee2e2; opacity: 0.8; }
+      0%, 100% { background: #fef2f2; border-left-width: 6px; }
+      50% { background: #fee2e2; border-left-width: 10px; }
     }
 
     .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9; opacity: 0.5; }
 
     /* Bouton Exclure Discret */
-    .exclude-btn {
-      transition: all 0.3s ease;
-    }
-    .exclude-btn.active {
-      color: var(--crit);
-      transform: rotate(90deg);
-    }
-
-    .modal-up { animation: slideUp 0.4s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .exclude-btn.active { color: var(--crit); transform: rotate(90deg); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 
@@ -91,7 +77,7 @@
         <p class="text-[10px] font-extrabold text-[#c5a059] uppercase tracking-[0.4em] mb-1">Grey Corner Fès</p>
         <h1 class="text-2xl font-black text-slate-900 tracking-tight italic">Supervision</h1>
       </div>
-      <button onclick="toggleExclusion()" id="excludeBtn" class="exclude-btn p-2 text-slate-300">
+      <button onclick="toggleExclusion()" id="excludeBtn" class="exclude-btn p-2 text-slate-300 transition-all">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
         </svg>
@@ -115,9 +101,9 @@
   </div>
 
   <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm items-end" onclick="closeModal()">
-    <div class="bg-white w-full rounded-t-[40px] p-8 modal-up" onclick="event.stopPropagation()">
+    <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up" onclick="event.stopPropagation()">
       <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8"></div>
-      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tighter">Fiche Employé</h2>
+      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tighter">Historique</h2>
       <div id="modalList" class="space-y-3 max-h-[50vh] overflow-y-auto no-scrollbar"></div>
       <button onclick="closeModal()" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm">Fermer</button>
     </div>
@@ -161,9 +147,7 @@
       updateDashboard();
     }
 
-    function toggleExclusion() { 
-      database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); 
-    }
+    function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); }
 
     function updateDashboard() {
       database.ref('presences/' + dateInput.value).on('value', (snap) => {
@@ -186,7 +170,6 @@
     function renderDayView(data) {
       const container = document.getElementById('dashBody');
       const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
-      
       let html = '';
       Object.keys(groups).forEach(poste => {
         html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
@@ -229,12 +212,37 @@
       });
 
       renderChart(labels, dailyLates);
-      const lateList = Object.values(stats).filter(s => s.late > 0).sort((a,b) => b.late - a.late);
+
+      const allStats = Object.values(stats);
+      const discList = allStats.filter(s => s.late === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+      const lateList = allStats.filter(s => s.late > 0).sort((a,b) => b.late - a.late);
       
-      let html = `<div><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Classement Mensuel</h3>`;
-      lateList.forEach(s => {
-        html += `<div class="glass-card p-5 rounded-[24px] mb-3 flex justify-between items-center"><span class="text-xs font-black uppercase">${s.info.nom}</span><span class="text-rose-500 font-black">${s.late} min</span></div>`;
-      });
+      let html = '<div class="space-y-10">';
+
+      // SECTION 1 : ÉLITE DISCIPLINE
+      if(discList.length > 0) {
+        html += `<div><h3 class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">🏆 Élite Discipline</h3><div class="space-y-3">`;
+        discList.slice(0, 5).forEach((s, idx) => {
+          html += `<div class="glass-card p-4 rounded-[22px] border-l-4 border-emerald-500 flex justify-between items-center bg-emerald-50/30">
+            <div><p class="text-xs font-black uppercase text-slate-800">${idx===0?'🥇 ':''}${s.info.nom}</p><p class="text-[9px] font-bold text-emerald-600">${s.present} j OK</p></div>
+            <span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full tracking-tighter">IRRÉPROCHABLE</span>
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      // SECTION 2 : TOP RETARDATAIRES
+      if(lateList.length > 0) {
+        html += `<div><h3 class="text-[10px] font-black text-rose-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">⚠️ Analyse Retards</h3><div class="space-y-2">`;
+        lateList.slice(0, 5).forEach((s, idx) => {
+          html += `<div class="glass-card p-4 rounded-[22px] flex justify-between items-center">
+            <span class="text-xs font-black uppercase text-slate-700">#${idx+1} ${s.info.nom}</span>
+            <div class="text-right"><p class="text-xs font-black text-rose-500">${s.late}m</p><p class="text-[8px] font-bold text-slate-400">${s.present} j</p></div>
+          </div>`;
+        });
+        html += '</div></div>';
+      }
+
       document.getElementById('dashBody').innerHTML = html + '</div>';
     }
 
@@ -245,7 +253,7 @@
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 2, backgroundColor: 'rgba(197,160,89,0.05)', fill: true }]
+          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 0, backgroundColor: 'rgba(197,160,89,0.05)', fill: true }]
         },
         options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
       });
@@ -261,8 +269,8 @@
     async function openHistory(nom, prenom) {
       const modal = document.getElementById('historyModal');
       document.getElementById('modalTitle').innerText = nom;
-      modal.classList.add('flex');
       modal.classList.remove('hidden');
+      modal.classList.add('flex');
       const dates = getDatesInMonth();
       const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
       let html = '';
