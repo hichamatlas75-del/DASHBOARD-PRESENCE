@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Direction Hub • Grey Corner Fès</title>
+  <title>Supervision • Grey Corner Fès</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,109 +11,115 @@
 
   <style>
     :root {
-      --grey-dark: #2c2c2c;
-      --grey-light: #f4f4f4;
+      --grey-deep: #1a1a1a;
+      --grey-soft: #f8f9fa;
       --gold: #c5a059;
       --gold-light: #e2cfab;
-      --status-ok: #10b981;    /* Vert */
-      --status-late: #f59e0b;  /* Orange */
-      --status-crit: #ef4444;  /* Rouge */
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --crit: #ef4444;
     }
 
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: var(--grey-light); 
-      color: var(--grey-dark); 
+      background: var(--grey-soft); 
+      color: var(--grey-deep);
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Thème Cozy Grey & Gold */
     .glass-card { 
       background: #ffffff; 
-      border: 1px solid #e5e7eb; 
-      box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 10px 30px -12px rgba(0,0,0,0.08);
     }
 
-    .view-btn {
-      color: var(--grey-dark);
-      border: 1px solid transparent;
-      transition: all 0.3s ease;
+    /* Navigation Haute Gamme */
+    .nav-btn {
+      color: #94a3b8;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
     }
-    .view-btn.active { 
-      background: var(--grey-dark); 
-      color: var(--gold); 
-      border-color: var(--gold);
+    .nav-btn.active { 
+      color: var(--grey-deep);
+    }
+    .nav-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 25%; width: 50%; height: 3px;
+      background: var(--gold);
+      border-radius: 10px;
     }
 
-    /* Logique de couleurs demandée */
-    .staff-card { border-left-width: 5px; transition: transform 0.2s; }
+    /* Logique de Retard Visuelle */
+    .staff-card { border-left-width: 6px; }
     
-    .status-green { border-left-color: var(--status-ok) !important; background: #f0fdf4; }
-    .status-orange { border-left-color: var(--status-late) !important; background: #fffbeb; }
-    .status-red { border-left-color: var(--status-crit) !important; background: #fef2f2; }
+    .status-green { border-left-color: var(--ok) !important; background: #f0fdf4; }
+    .status-orange { border-left-color: var(--warn) !important; background: #fffbeb; }
+    .status-red { border-left-color: var(--crit) !important; background: #fef2f2; }
     
     /* Rouge qui flash (+1h) */
     .status-flash { 
-      border-left-color: var(--status-crit) !important; 
-      background: #fef2f2;
-      animation: flash-red 1s infinite;
+      border-left-color: var(--crit) !important; 
+      animation: flash-red 1.2s infinite;
     }
     @keyframes flash-red {
-      0% { box-shadow: inset 0 0 0px #ef4444; }
-      50% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.2); border-left-width: 8px; }
-      100% { box-shadow: inset 0 0 0px #ef4444; }
+      0%, 100% { background: #fef2f2; opacity: 1; }
+      50% { background: #fee2e2; opacity: 0.8; }
     }
 
-    .status-off { border-left-color: #94a3b8 !important; background: #f8fafc; opacity: 0.6; }
+    .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9; opacity: 0.5; }
 
-    /* Modal Style */
-    .modal-active { display: flex !important; animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1); }
+    /* Bouton Exclure Discret */
+    .exclude-btn {
+      transition: all 0.3s ease;
+    }
+    .exclude-btn.active {
+      color: var(--crit);
+      transform: rotate(90deg);
+    }
+
+    .modal-up { animation: slideUp 0.4s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   </style>
 </head>
 
-<body class="antialiased pb-10">
-  <div class="max-w-md mx-auto px-5 pt-8">
+<body class="antialiased pb-20">
+  <div class="max-w-md mx-auto px-6 pt-10">
     
-    <header class="flex justify-between items-start mb-10">
+    <header class="flex justify-between items-center mb-10">
       <div>
-        <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
-        <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</p>
+        <p class="text-[10px] font-extrabold text-[#c5a059] uppercase tracking-[0.4em] mb-1">Grey Corner Fès</p>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight italic">Supervision</h1>
       </div>
-      <button onclick="toggleExclusion()" class="relative">
-        <div id="excludeIcon" class="w-12 h-12 rounded-full flex items-center justify-center bg-white border border-slate-200 shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+      <button onclick="toggleExclusion()" id="excludeBtn" class="exclude-btn p-2 text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
       </button>
     </header>
 
-    <div class="mb-8 space-y-4">
-      <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
+    <div class="mb-8">
+      <div class="flex border-b border-slate-200">
+        <button onclick="switchMode('day', this)" class="nav-btn active flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Jour</button>
+        <button onclick="switchMode('report', this)" class="nav-btn flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Bilan Mensuel</button>
       </div>
-      
-      <div class="relative">
-        <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
-      </div>
+      <input type="date" id="dashDate" class="w-full mt-4 bg-transparent text-sm font-bold text-slate-500 text-center outline-none">
     </div>
 
-    <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-8 hidden">
-      <div class="h-[180px] w-full">
-        <canvas id="trendsChart"></canvas>
-      </div>
+    <div id="chartContainer" class="glass-card rounded-[32px] p-6 mb-8 hidden">
+      <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Tendance Retards (Min)</p>
+      <div class="h-[150px] w-full"><canvas id="trendsChart"></canvas></div>
     </div>
 
-    <div id="dashBody" class="space-y-6"></div>
+    <div id="dashBody" class="space-y-8"></div>
   </div>
 
-  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeModal()">
-    <div class="bg-white w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
-      <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
-      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tight">Historique</h2>
-      <div id="modalList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div>
+  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm items-end" onclick="closeModal()">
+    <div class="bg-white w-full rounded-t-[40px] p-8 modal-up" onclick="event.stopPropagation()">
+      <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8"></div>
+      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tighter">Fiche Employé</h2>
+      <div id="modalList" class="space-y-3 max-h-[50vh] overflow-y-auto no-scrollbar"></div>
+      <button onclick="closeModal()" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm">Fermer</button>
     </div>
   </div>
 
@@ -149,60 +155,50 @@
 
     function switchMode(mode, btn) {
       currentMode = mode;
-      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
       updateDashboard();
     }
 
-    function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); }
+    function toggleExclusion() { 
+      database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); 
+    }
 
     function updateDashboard() {
       database.ref('presences/' + dateInput.value).on('value', (snap) => {
         const data = snap.val() || {};
-        updateExcludeUI(data.disabled);
+        document.getElementById('excludeBtn').classList.toggle('active', data.disabled);
         if (currentMode === 'day') renderDayView(data);
         else renderReportView();
       });
     }
 
-    function updateExcludeUI(ex) {
-      const icon = document.getElementById('excludeIcon');
-      icon.style.backgroundColor = ex ? '#ef4444' : '#ffffff';
-      icon.style.color = ex ? '#ffffff' : '#2c2c2c';
-    }
-
     function getStatusClass(diff, isOff, hasArrived) {
       if (isOff) return 'status-off';
       if (!hasArrived) return '';
-      if (diff <= 0) return 'status-green'; // À l'heure
-      if (diff > 0 && diff < 30) return 'status-orange'; // Retard < 30mn
-      if (diff >= 30 && diff < 60) return 'status-red'; // Retard > 30mn
-      if (diff >= 60) return 'status-flash'; // Retard > 1h (Flash)
-      return '';
+      if (diff <= 0) return 'status-green';
+      if (diff < 30) return 'status-orange';
+      if (diff < 60) return 'status-red';
+      return 'status-flash'; // +1h
     }
 
     function renderDayView(data) {
       const container = document.getElementById('dashBody');
-      const groups = {};
-      equipe.forEach(e => (groups[e.poste] ||= []).push(e));
+      const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
       
       let html = '';
       Object.keys(groups).forEach(poste => {
-        html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
+        html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
         groups[poste].forEach(emp => {
           const d = data[emp.nom + '_' + emp.prenom] || {};
           const diff = getTimeDiff(d.hA, d.hP);
           const sClass = getStatusClass(diff, d.off, !!d.hA);
-          
           html += `
-            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28 ${data.disabled?'opacity-20':''}">
-              <div>
-                <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
-                <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
-              </div>
-              <p class="text-[10px] font-black ${diff > 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m retard' : 'À L\'HEURE') : 'ATTENTE')}
+            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left h-28 flex flex-col justify-between ${data.disabled?'opacity-20':''}">
+              <div><p class="text-[11px] font-black uppercase text-slate-800 truncate">${emp.nom}</p></div>
+              <p class="text-[9px] font-bold ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
+                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m' : 'OK') : '--:--')}
               </p>
             </button>`;
         });
@@ -213,57 +209,43 @@
 
     async function renderReportView() {
       const dates = getDatesInMonth();
-      const stats = {};
-      equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info: e, present: 0, late: 0 });
-
+      const stats = {}; equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info: e, present: 0, late: 0 });
       const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
       
-      // Data pour Chart
-      const dailyLates = [], dailyPresence = [], labels = [];
-
+      const dailyLates = [], labels = [];
       snaps.forEach((s, i) => {
         const dData = s.val() || {};
-        let tL = 0, tP = 0;
+        let tL = 0;
         if (!dData.disabled) {
           Object.keys(stats).forEach(id => {
             const e = dData[id];
             if(e && e.hA && !e.off) {
-              const diff = getTimeDiff(e.hA, e.hP);
-              stats[id].present++;
-              stats[id].late += diff;
-              tL += diff; tP++;
+              const d = getTimeDiff(e.hA, e.hP);
+              stats[id].present++; stats[id].late += d; tL += d;
             }
           });
         }
-        dailyLates.push(tL); dailyPresence.push(tP); labels.push(dates[i].split('-')[2]);
+        dailyLates.push(tL); labels.push(dates[i].split('-')[2]);
       });
 
-      renderChart(labels, dailyLates, dailyPresence);
-
+      renderChart(labels, dailyLates);
       const lateList = Object.values(stats).filter(s => s.late > 0).sort((a,b) => b.late - a.late);
-      const goodList = Object.values(stats).filter(s => s.late === 0 && s.present > 0).sort((a,b) => b.present - a.present);
-
-      let html = '<div class="space-y-8">';
-      html += `<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
-      lateList.slice(0, 5).forEach(s => {
-        html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center"><span class="text-xs font-extrabold uppercase">${s.info.nom}</span><span class="text-rose-600 font-black">${s.late}m</span></div>`;
+      
+      let html = `<div><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Classement Mensuel</h3>`;
+      lateList.forEach(s => {
+        html += `<div class="glass-card p-5 rounded-[24px] mb-3 flex justify-between items-center"><span class="text-xs font-black uppercase">${s.info.nom}</span><span class="text-rose-500 font-black">${s.late} min</span></div>`;
       });
-      html += `</div><div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
-      goodList.slice(0, 5).forEach(s => {
-        html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center"><span class="text-xs font-extrabold uppercase">${s.info.nom}</span><span class="text-emerald-600 font-black">${s.present}j OK</span></div>`;
-      });
-      html += '</div></div>';
-      document.getElementById('dashBody').innerHTML = html;
+      document.getElementById('dashBody').innerHTML = html + '</div>';
     }
 
-    function renderChart(labels, lates, pres) {
+    function renderChart(labels, lates) {
       const ctx = document.getElementById('trendsChart').getContext('2d');
       if (myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 0, fill: true, backgroundColor: 'rgba(197, 160, 89, 0.05)' }]
+          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 2, backgroundColor: 'rgba(197,160,89,0.05)', fill: true }]
         },
         options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
       });
@@ -279,7 +261,8 @@
     async function openHistory(nom, prenom) {
       const modal = document.getElementById('historyModal');
       document.getElementById('modalTitle').innerText = nom;
-      modal.classList.add('modal-active');
+      modal.classList.add('flex');
+      modal.classList.remove('hidden');
       const dates = getDatesInMonth();
       const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
       let html = '';
@@ -287,7 +270,7 @@
         const data = s.val(), entry = data ? data[nom+'_'+prenom] : null;
         if(entry) {
           const diff = getTimeDiff(entry.hA, entry.hP);
-          html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+          html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
             <span class="text-[10px] font-black text-slate-400 uppercase">${dates.slice().reverse()[i].split('-').reverse().slice(0,2).join('/')}</span>
             <span class="text-[10px] font-black ${entry.off?'text-slate-300':(diff>0?'text-rose-500':'text-emerald-500')} uppercase">${entry.off?'Repos':(entry.hA?(diff>0?diff+'m':'OK'):'Absent')}</span>
           </div>`;
@@ -295,7 +278,7 @@
       });
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
-    function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
+    function closeModal() { document.getElementById('historyModal').classList.add('hidden'); }
   </script>
 </body>
 </html>
