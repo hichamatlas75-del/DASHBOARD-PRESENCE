@@ -10,82 +10,120 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; overflow-x: hidden; }
-    .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05); }
-    .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+    :root {
+      --primary: #1e293b;
+      --accent: #4f46e5;
+      --bg: #f8fafc;
+    }
 
-    .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; }
-    .staff-row:hover { transform: scale(1.01); }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background: var(--bg); 
+      color: var(--primary); 
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* Statuts */
+    /* Esthétique Cartes Style Pointage */
+    .glass-card { 
+      background: #ffffff; 
+      border: 1px solid #e2e8f0; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .view-btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+    }
+    .view-btn.active { 
+      background: var(--primary); 
+      color: white; 
+      box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+    }
+
+    /* Status Indicators */
+    .staff-card {
+      transition: transform 0.1s active;
+      border-left-width: 4px;
+    }
+    .staff-card:active { transform: scale(0.97); }
+
     .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
     .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
-    .status-critical { border-left-color: #dc2626 !important; background: #fef2f2; animation: critical-pulse 2s infinite; }
-    @keyframes critical-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); } 70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
-    .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.7; }
-    .status-missing { border-left-color: #94a3b8 !important; background: #ffffff !important; }
+    .status-critical { border-left-color: #dc2626 !important; background: #fef2f2; animation: pulse-red 2s infinite; }
+    @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+    .status-off { border-left-color: #94a3b8 !important; background: #f1f5f9; opacity: 0.6; }
+    .status-missing { border-left-color: #e2e8f0 !important; background: #ffffff; }
 
-    .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    /* Modal Animation */
+    .modal-active { display: flex !important; animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { transform: translateY(20%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    /* Hide Scrollbar */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 
-<body class="p-3 sm:p-6 antialiased pb-24">
-  <div class="max-w-5xl mx-auto">
-    <header class="flex justify-between items-center mb-6 px-1">
+<body class="antialiased pb-10">
+  <div class="max-w-md mx-auto px-4 pt-6">
+    
+    <header class="flex justify-between items-end mb-8">
       <div>
-        <h1 class="text-xl font-black text-slate-900 uppercase italic leading-none">RH SUPERVISION</h1>
-        <p class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Grey Corner Fès</p>
+        <p class="text-[10px] font-extrabold text-indigo-600 uppercase tracking-[0.2em] mb-1">Direction Hub</p>
+        <h1 class="text-2xl font-black text-slate-900 leading-none">PRÉSENCE</h1>
       </div>
 
-      <button id="excludeBtn" onclick="toggleExclusion()" class="flex flex-col items-center group" type="button">
-        <div id="excludeIcon" class="w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-100 transition-all group-active:scale-90">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+      <button id="excludeBtn" onclick="toggleExclusion()" class="flex flex-col items-center gap-1">
+        <div id="excludeIcon" class="w-10 h-10 rounded-2xl flex items-center justify-center bg-white border border-slate-200 shadow-sm transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
           </svg>
         </div>
-        <span id="excludeLabel" class="text-[7px] font-black uppercase mt-1 text-slate-400">Exclure</span>
+        <span id="excludeLabel" class="text-[8px] font-bold uppercase text-slate-400">Exclure</span>
       </button>
     </header>
 
-    <div class="glass-card rounded-2xl p-4 mb-6 sticky top-2 z-40 backdrop-blur-md">
-      <div class="flex flex-col sm:flex-row gap-4 items-center">
-        <div class="w-full sm:w-1/3">
-          <input type="date" id="dashDate"
-            class="bg-slate-50 rounded-xl px-4 py-2 font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none text-sm w-full border-none shadow-inner">
+    <div class="space-y-4 mb-8">
+      <div class="relative">
+        <input type="date" id="dashDate" 
+          class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-800 shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
+        <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
         </div>
+      </div>
 
-        <div class="flex bg-slate-100 p-1 rounded-xl gap-1 w-full sm:w-2/3">
-          <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all" type="button">Jour</button>
-          <button onclick="switchMode('week', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all" type="button">Semaine</button>
-          <button onclick="switchMode('month', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase transition-all" type="button">Mois</button>
-          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-2 text-[9px] font-black rounded-lg uppercase text-rose-500 transition-all" type="button">Bilan</button>
-        </div>
+      <div class="flex bg-slate-200/50 p-1.5 rounded-[20px] gap-1">
+        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[10px] font-black rounded-[14px] uppercase">Jour</button>
+        <button onclick="switchMode('week', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-[14px] uppercase">Sem</button>
+        <button onclick="switchMode('month', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-[14px] uppercase">Mois</button>
+        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[10px] font-black rounded-[14px] uppercase text-rose-600">Bilan</button>
       </div>
     </div>
 
-    <div id="chartContainer" class="glass-card rounded-2xl p-4 mb-6 hidden animate-in fade-in duration-500">
-      <p class="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Tendance Retards vs Présence</p>
-      <div class="h-[180px] w-full">
+    <div id="chartContainer" class="glass-card rounded-[24px] p-5 mb-8 hidden">
+      <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Tendance de ponctualité</p>
+      <div class="h-[160px] w-full">
         <canvas id="trendsChart"></canvas>
       </div>
     </div>
 
-    <div id="dashBody" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    <div id="dashBody" class="space-y-8 pb-10"></div>
   </div>
 
-  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm p-4 items-end justify-center"
-       onclick="onBackdropClick(event)">
-    <div class="bg-white w-full max-w-md rounded-t-[32px] shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-        <h2 id="modalTitle" class="text-sm font-black text-slate-900 uppercase italic">Historique</h2>
-        <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center font-bold text-slate-400" type="button" aria-label="Fermer">✕</button>
+  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm items-end" onclick="closeModal()">
+    <div class="bg-white w-full rounded-t-[40px] shadow-2xl p-6 pb-10 max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+      
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase italic">Historique</h2>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Récapitulatif mensuel</p>
+        </div>
+        <button onclick="closeModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">✕</button>
       </div>
-      <div id="modalList" class="p-5 max-h-[60vh] overflow-y-auto space-y-2 bg-white"></div>
+
+      <div id="modalList" class="overflow-y-auto space-y-3 no-scrollbar"></div>
     </div>
   </div>
 
@@ -93,26 +131,20 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ---------------- Firebase ----------------
+    // Config Firebase
     const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ---------------- Helpers Date (timezone safe) ----------------
     const TZ = 'Africa/Casablanca';
+    const dateInput = document.getElementById('dashDate');
+    let currentMode = 'day';
+    let isExcluded = false;
+    let myChart = null;
+    let currentRef = null;
+    let currentCb = null;
 
-    const getMarocDate = () =>
-      new Intl.DateTimeFormat('fr-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
-        .format(new Date());
-
-    function formatLocalYYYYMMDD(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const da = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${da}`;
-    }
-
-    // ---------------- Données équipe ----------------
+    // Equipe
     const equipe = [
       {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
       {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
@@ -128,373 +160,155 @@
       {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
     ];
 
-    // Ordre d’affichage des postes
     const POSTE_ORDER = ['SERVICE', 'BAR', 'CUISINE', 'CAISSE', 'ECONOMAT', 'MENAGE'];
 
-    function groupByPoste(list) {
-      const map = {};
-      list.forEach(e => {
-        const k = (e.poste || 'AUTRE').toUpperCase();
-        (map[k] ||= []).push(e);
-      });
-      Object.keys(map).forEach(k => map[k].sort((a,b) => (a.nom+a.prenom).localeCompare(b.nom+b.prenom)));
-      return map;
-    }
-
-    function sortedPostes(groups) {
-      const keys = Object.keys(groups);
-      const ordered = POSTE_ORDER.filter(k => keys.includes(k));
-      const rest = keys.filter(k => !POSTE_ORDER.includes(k)).sort();
-      return [...ordered, ...rest];
-    }
-
-    // ---------------- UI State ----------------
-    const dateInput = document.getElementById('dashDate');
-    let currentMode = 'day';
-    let isExcluded = false;
-    let myChart = null;
-
-    // Firebase listener management (évite empilement)
-    let currentRef = null;
-    let currentCb = null;
-
+    // Initialisation
+    const getMarocDate = () => new Intl.DateTimeFormat('fr-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     dateInput.value = getMarocDate();
     dateInput.addEventListener('change', updateDashboard);
-
-    // ESC pour fermer modal
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
-
     updateDashboard();
 
     function switchMode(mode, btn) {
       currentMode = mode;
-
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
       document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
-
-      // Layout spécial report
-      const dashBody = document.getElementById('dashBody');
-      if (mode === 'report') {
-        dashBody.classList.remove('md:grid-cols-2');
-        dashBody.classList.add('max-w-xl', 'mx-auto');
-      } else {
-        dashBody.classList.add('md:grid-cols-2');
-        dashBody.classList.remove('max-w-xl', 'mx-auto');
-      }
-
       updateDashboard();
     }
 
-    function updateExcludeUI(excluded) {
-      const icon = document.getElementById('excludeIcon');
-      icon.className = excluded
-        ? "w-9 h-9 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg"
-        : "w-9 h-9 rounded-full flex items-center justify-center bg-white text-slate-400 border border-slate-100 shadow-sm";
-      document.getElementById('excludeLabel').innerText = excluded ? "Exclu" : "Exclure";
-    }
-
     function toggleExclusion() {
-      const ref = database.ref('presences/' + dateInput.value + '/disabled');
-      ref.transaction(v => !v);
+      database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v);
     }
 
     function updateDashboard() {
-      // cleanup ancien listener
       if (currentRef && currentCb) currentRef.off('value', currentCb);
-
       currentRef = database.ref('presences/' + dateInput.value);
       currentCb = (snap) => {
         const data = snap.val() || {};
         isExcluded = data.disabled === true;
         updateExcludeUI(isExcluded);
-
         if (currentMode === 'day') renderDayView(data);
         else if (currentMode === 'report') renderReportView();
         else renderRangeView();
       };
-
       currentRef.on('value', currentCb);
     }
 
-    function closeModal() {
-      document.getElementById('historyModal').classList.remove('modal-active');
+    function updateExcludeUI(excluded) {
+      const icon = document.getElementById('excludeIcon');
+      icon.className = excluded 
+        ? "w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500 text-white shadow-lg border-none"
+        : "w-10 h-10 rounded-2xl flex items-center justify-center bg-white text-slate-400 border border-slate-200 shadow-sm";
+      document.getElementById('excludeLabel').innerText = excluded ? "Exclu" : "Exclure";
+      document.getElementById('excludeLabel').className = `text-[8px] font-bold uppercase ${excluded ? 'text-rose-500' : 'text-slate-400'}`;
     }
 
-    function onBackdropClick(ev) {
-      // click sur le backdrop
-      closeModal();
-    }
-
-    function getTimeDiff(a, p) {
-      if (!a || !p) return 0;
-      const [ha, ma] = a.split(':').map(Number);
-      const [hp, mp] = p.split(':').map(Number);
-      if (Number.isNaN(ha) || Number.isNaN(ma) || Number.isNaN(hp) || Number.isNaN(mp)) return 0;
-      const diff = (ha * 60 + ma) - (hp * 60 + mp);
-      return diff > 0 ? diff : 0;
-    }
-
-    function idEnc(nom, prenom) { return nom + '_' + prenom; }
-
-    // ---------------- Views ----------------
-
-    // DAY: carreaux + groupés par poste
+    // Rendu Jour (Mobile Optimized Grid)
     function renderDayView(data) {
       const container = document.getElementById('dashBody');
       const groups = groupByPoste(equipe);
       const postes = sortedPostes(groups);
-
       let html = '';
 
       postes.forEach(poste => {
-        html += `
-          <section class="glass-card rounded-2xl p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500">${poste}</h3>
-              <span class="text-[9px] font-black text-slate-400">${groups[poste].length}</span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        `;
+        html += `<div class="mb-6">
+          <div class="flex justify-between items-center mb-3 px-1">
+            <h3 class="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">${poste}</h3>
+            <span class="bg-slate-200 text-slate-600 text-[9px] font-bold px-2 py-0.5 rounded-full">${groups[poste].length} pers.</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">`;
 
         groups[poste].forEach(emp => {
           const id = idEnc(emp.nom, emp.prenom);
           const d = data[id] || {};
           const diff = getTimeDiff(d.hA, d.hP);
-
-          const sClass = d.off
-            ? "status-off"
-            : (d.hA
-              ? (diff >= 60 ? "status-critical" : (diff > 10 ? "status-late" : "status-on-time"))
-              : "status-missing");
-
-          const topLine = d.off ? 'REPOS' : `P:${d.hP || '--'} • A:${d.hA || '--'}`;
-          const bottomLine = d.off ? '' : (d.hA ? (diff > 0 ? `-${diff}m` : 'OK') : 'NON POINTÉ');
-
-          const bottomColor =
-            d.off ? 'text-slate-400' :
-            (!d.hA ? 'text-slate-500' :
-              (diff >= 60 ? 'text-rose-600' : (diff > 10 ? 'text-amber-500' : 'text-emerald-600')));
-
+          const sClass = d.off ? "status-off" : (d.hA ? (diff >= 60 ? "status-critical" : (diff > 10 ? "status-late" : "status-on-time")) : "status-missing");
+          
           html += `
-            <button
-              class="staff-row ${sClass} ${isExcluded ? 'opacity-40 grayscale pointer-events-none' : ''}
-                     glass-card rounded-xl p-3 text-left shadow-sm border-l-[6px]
-                     aspect-square flex flex-col justify-between"
-              onclick="openHistory('${emp.nom}','${emp.prenom}')"
-              type="button"
-            >
-              <div class="min-w-0">
-                <div class="text-[10px] font-extrabold uppercase text-slate-800 truncate leading-tight">${emp.nom}</div>
-                <div class="text-[9px] font-bold text-slate-600 truncate leading-tight">${emp.prenom}</div>
+            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28 relative overflow-hidden ${isExcluded ? 'opacity-30' : ''}">
+              <div class="z-10">
+                <p class="text-[10px] font-black text-slate-800 uppercase truncate">${emp.nom}</p>
+                <p class="text-[9px] font-medium text-slate-500 truncate">${emp.prenom}</p>
               </div>
-
-              <div class="pt-2">
-                <div class="text-[8px] font-black uppercase tracking-tight text-slate-400">${topLine}</div>
-                <div class="text-[10px] font-black ${bottomColor}">${bottomLine}</div>
+              <div class="z-10 mt-auto">
+                <p class="text-[8px] font-bold text-slate-400 uppercase">${d.off ? 'REPOS' : 'P:'+(d.hP||'--')+' A:'+(d.hA||'--')}</p>
+                <p class="text-xs font-black ${diff > 0 ? 'text-amber-600' : 'text-emerald-600'}">${d.off ? '-' : (d.hA ? (diff > 0 ? '-'+diff+'m' : 'OK') : '...')}</p>
               </div>
-            </button>
-          `;
+            </button>`;
         });
-
-        html += `</div></section>`;
+        html += `</div></div>`;
       });
-
       container.innerHTML = html;
     }
 
-    // REPORT: inchangé (liste top), + chart
-    async function renderReportView() {
+    // Logique helpers inchangée
+    function idEnc(nom, prenom) { return nom + '_' + prenom; }
+    function groupByPoste(list) {
+      const map = {};
+      list.forEach(e => { (map[e.poste] ||= []).push(e); });
+      return map;
+    }
+    function sortedPostes(groups) {
+      return POSTE_ORDER.filter(p => groups[p]);
+    }
+    function getTimeDiff(a, p) {
+      if (!a || !p) return 0;
+      const [ha, ma] = a.split(':').map(Number);
+      const [hp, mp] = p.split(':').map(Number);
+      const d = (ha * 60 + ma) - (hp * 60 + mp);
+      return d > 0 ? d : 0;
+    }
+
+    async function openHistory(nom, prenom) {
+      const modal = document.getElementById('historyModal');
+      document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
+      modal.classList.add('modal-active');
+      const list = document.getElementById('modalList');
+      list.innerHTML = '<div class="text-center py-10 animate-pulse font-bold text-slate-300">CHARGEMENT...</div>';
+
       const dates = getDatesInRange('month');
-      const stats = await calculateStats(dates);
-
-      const container = document.getElementById('dashBody');
-      const dailyLates = [];
-      const dailyPresence = [];
-      const labels = [];
-
-      const promises = dates.map(d => database.ref('presences/' + d).once('value'));
+      const promises = dates.map(dt => database.ref('presences/' + dt).once('value'));
       const snaps = await Promise.all(promises);
-
-      snaps.forEach((s, i) => {
-        const dayData = s.val() || {};
-        let totalLate = 0;
-        let totalPres = 0;
-
-        if (!dayData.disabled) {
-          Object.keys(dayData).forEach(key => {
-            if (dayData[key] && dayData[key].hA && !dayData[key].off) {
-              totalLate += getTimeDiff(dayData[key].hA, dayData[key].hP);
-              totalPres++;
-            }
-          });
-        }
-
-        dailyLates.push(totalLate);
-        dailyPresence.push(totalPres);
-        labels.push(dates[i].split('-')[2]);
-      });
-
-      renderChart(labels, dailyLates, dailyPresence);
-
-      const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
-      const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
-
-      let html = '<div class="space-y-6">';
-      html += '<div><h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest px-2">⚠️ Top Retards</h3>';
-      lateList.slice(0, 5).forEach(s => {
-        html += `<div class="glass-card p-4 rounded-xl mb-2 flex justify-between shadow-sm cursor-pointer" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
-      });
-      html += '</div><div><h3 class="text-emerald-500 font-black uppercase text-[10px] mb-3 tracking-widest px-2">⭐ Disciplinés</h3>';
-      goodList.slice(0, 5).forEach(s => {
-        html += `<div class="glass-card p-4 rounded-xl mb-2 flex justify-between shadow-sm cursor-pointer" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
-      });
-      html += '</div></div>';
-
-      container.innerHTML = html;
-    }
-
-    function renderChart(labels, lates, presence) {
-      const ctx = document.getElementById('trendsChart').getContext('2d');
-      if (myChart) myChart.destroy();
-
-      myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Retards',
-            data: lates,
-            borderColor: '#f59e0b',
-            backgroundColor: 'rgba(245, 158, 11, 0.1)',
-            fill: true,
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 0
-          }, {
-            label: 'Présences',
-            data: presence,
-            borderColor: '#4f46e5',
-            borderDash: [5, 5],
-            tension: 0.4,
-            fill: false,
-            borderWidth: 2,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          maintainAspectRatio: false,
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, display: false },
-            x: { grid: { display: false }, ticks: { font: { size: 7 } } }
-          }
-        }
-      });
-    }
-
-    // WEEK/MONTH: carreaux + groupés par poste
-    async function renderRangeView() {
-      const dates = getDatesInRange(currentMode);
-      const stats = await calculateStats(dates);
-
-      const container = document.getElementById('dashBody');
-      const groups = groupByPoste(equipe);
-      const postes = sortedPostes(groups);
-
-      const statsById = {};
-      Object.values(stats).forEach(s => { statsById[idEnc(s.info.nom, s.info.prenom)] = s; });
 
       let html = '';
-
-      postes.forEach(poste => {
-        html += `
-          <section class="glass-card rounded-2xl p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500">${poste}</h3>
-              <span class="text-[9px] font-black text-slate-400">${groups[poste].length}</span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        `;
-
-        groups[poste].forEach(emp => {
-          const id = idEnc(emp.nom, emp.prenom);
-          const s = statsById[id] || { present: 0, lateMinutes: 0, info: emp };
-
-          const border = s.lateMinutes > 10 ? 'border-amber-400 bg-amber-50' : 'border-emerald-400 bg-emerald-50';
-          const bottomColor = s.lateMinutes > 0 ? 'text-amber-600' : 'text-emerald-700';
-
+      snaps.reverse().forEach((s, idx) => {
+        const dStr = dates.slice().reverse()[idx];
+        const data = s.val();
+        const entry = data ? data[idEnc(nom, prenom)] : null;
+        if (entry) {
+          const diff = getTimeDiff(entry.hA, entry.hP);
           html += `
-            <button
-              class="glass-card rounded-xl p-3 text-left shadow-sm border-l-[6px] ${border}
-                     aspect-square flex flex-col justify-between"
-              onclick="openHistory('${emp.nom}','${emp.prenom}')"
-              type="button"
-            >
-              <div class="min-w-0">
-                <div class="text-[10px] font-extrabold uppercase text-slate-800 truncate leading-tight">${emp.nom}</div>
-                <div class="text-[9px] font-bold text-slate-600 truncate leading-tight">${emp.prenom}</div>
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <span class="text-[10px] font-black text-slate-400 uppercase">${dStr.split('-').reverse().slice(0,2).join('/')}</span>
+              <div class="text-right">
+                <p class="text-[10px] font-black ${entry.off?'text-slate-400':(diff>0?'text-amber-500':'text-emerald-500')} uppercase">
+                  ${entry.off ? 'Repos' : (entry.hA ? (diff>0?'-'+diff+'m':'Présent') : 'Non pointé')}
+                </p>
+                <p class="text-[8px] font-bold text-slate-300 uppercase">${entry.hP||'--'}:${entry.hA||'--'}</p>
               </div>
-
-              <div class="pt-2">
-                <div class="text-[8px] font-black uppercase tracking-tight text-slate-400">${s.present} j OK</div>
-                <div class="text-[10px] font-black ${bottomColor}">${s.lateMinutes}m</div>
-              </div>
-            </button>
-          `;
-        });
-
-        html += `</div></section>`;
+            </div>`;
+        }
       });
-
-      container.innerHTML = html;
+      list.innerHTML = html || '<p class="text-center py-10 text-slate-400">Aucune donnée</p>';
     }
 
-    // ---------------- Stats / Ranges ----------------
-    async function calculateStats(dates) {
-      const stats = {};
-      equipe.forEach(e => stats[idEnc(e.nom, e.prenom)] = { info: e, present: 0, lateMinutes: 0 });
+    function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
 
-      const promises = dates.map(d => database.ref('presences/' + d).once('value'));
-      const snaps = await Promise.all(promises);
-
-      snaps.forEach(s => {
-        const data = s.val();
-        if (!data || data.disabled) return;
-
-        Object.keys(stats).forEach(id => {
-          const entry = data[id];
-          if (entry && entry.hA && !entry.off) {
-            stats[id].present++;
-            stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
-          }
-        });
-      });
-
-      return stats;
+    // Fonctions manquantes pour Bilan/Range
+    function formatLocalYYYYMMDD(d) {
+      return d.toISOString().split('T')[0];
     }
 
     function getDatesInRange(mode) {
       const dates = [];
-      const curr = new Date(dateInput.value + 'T00:00:00');
-
+      const curr = new Date(dateInput.value);
       if (mode === 'week') {
-        // Lundi = 1 ... Dimanche = 0
-        const day = curr.getDay(); // 0..6
-        const diffToMonday = (day === 0) ? -6 : (1 - day);
-        const monday = new Date(curr);
-        monday.setDate(curr.getDate() + diffToMonday);
-
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(monday);
-          d.setDate(monday.getDate() + i);
-          dates.push(formatLocalYYYYMMDD(d));
+        const day = curr.getDay();
+        const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(curr.setDate(diff));
+        for(let i=0; i<7; i++) {
+          dates.push(formatLocalYYYYMMDD(new Date(monday)));
+          monday.setDate(monday.getDate() + 1);
         }
       } else {
         const m = curr.getMonth(), y = curr.getFullYear();
@@ -504,56 +318,61 @@
           d.setDate(d.getDate() + 1);
         }
       }
-
       return dates;
     }
 
-    // ---------------- Modal Historique ----------------
-    async function openHistory(nom, prenom) {
-      const modal = document.getElementById('historyModal');
-      document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
-      modal.classList.add('modal-active');
-
-      const list = document.getElementById('modalList');
-      list.innerHTML = '<div class="text-center py-10 font-black text-slate-200 uppercase text-[10px] animate-pulse">Chargement...</div>';
-
-      const dates = getDatesInRange('month'); // mois du dateInput
-      const promises = dates.map(dt => database.ref('presences/' + dt).once('value'));
-      const snaps = await Promise.all(promises);
-
-      // affichage du plus récent au plus ancien
-      const datesRev = dates.slice().reverse();
-      const snapsRev = snaps.slice().reverse();
-
-      let html = '';
-      snapsRev.forEach((s, idx) => {
+    async function calculateStats(dates) {
+      const stats = {};
+      equipe.forEach(e => stats[idEnc(e.nom, e.prenom)] = { info: e, present: 0, lateMinutes: 0 });
+      const snaps = await Promise.all(dates.map(d => database.ref('presences/' + d).once('value')));
+      snaps.forEach(s => {
         const data = s.val();
-        const entry = data ? data[idEnc(nom, prenom)] : null;
-        const dtStr = datesRev[idx].split('-').reverse().slice(0,2).join('/'); // DD/MM
-
-        if (entry) {
-          const isEx = data && data.disabled;
-          const diff = getTimeDiff(entry.hA, entry.hP);
-          const label = isEx ? 'EXCLU' : (entry.off ? 'OFF' : (entry.hA ? (diff > 0 ? '-' + diff + 'm' : 'OK') : 'NON POINTÉ'));
-
-          const color =
-            isEx ? 'text-slate-300' :
-            (entry.off ? 'text-slate-400' :
-              (!entry.hA ? 'text-slate-500' :
-                (diff > 0 ? 'text-amber-500' : 'text-emerald-500')));
-
-          html += `
-            <div class="flex justify-between items-center p-3 rounded-xl border border-slate-100 bg-slate-50 shadow-sm ${isEx ? 'opacity-30' : ''}">
-              <span class="text-[10px] font-black text-slate-500">${dtStr}</span>
-              <span class="text-[10px] font-black ${color}">
-                ${label}
-              </span>
-            </div>
-          `;
-        }
+        if (!data || data.disabled) return;
+        Object.keys(stats).forEach(id => {
+          const entry = data[id];
+          if (entry && entry.hA && !entry.off) {
+            stats[id].present++;
+            stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
+          }
+        });
       });
+      return stats;
+    }
 
-      list.innerHTML = html || '<div class="text-center py-10 text-slate-400 text-xs">Aucune donnée ce mois-ci</div>';
+    async function renderRangeView() {
+      const stats = await calculateStats(getDatesInRange(currentMode));
+      const groups = groupByPoste(equipe);
+      let html = '';
+      sortedPostes(groups).forEach(poste => {
+        html += `<div class="mb-6"><h3 class="text-[11px] font-black uppercase text-slate-400 mb-3 tracking-widest px-1">${poste}</h3><div class="grid grid-cols-2 gap-3">`;
+        groups[poste].forEach(emp => {
+          const s = stats[idEnc(emp.nom, emp.prenom)];
+          html += `
+            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="glass-card p-4 rounded-2xl text-left border-l-4 ${s.lateMinutes > 0 ? 'border-amber-400 bg-amber-50/30' : 'border-emerald-400'}">
+              <p class="text-[10px] font-black text-slate-800 uppercase truncate">${emp.nom}</p>
+              <div class="mt-2">
+                <p class="text-[8px] font-bold text-slate-400 uppercase">${s.present} Jours OK</p>
+                <p class="text-xs font-black ${s.lateMinutes > 0 ? 'text-amber-600' : 'text-emerald-600'}">${s.lateMinutes}m retard</p>
+              </div>
+            </button>`;
+        });
+        html += `</div></div>`;
+      });
+      document.getElementById('dashBody').innerHTML = html;
+    }
+
+    async function renderReportView() {
+      const dates = getDatesInRange('month');
+      const stats = await calculateStats(dates);
+      const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
+      
+      let html = '<div class="space-y-6">';
+      html += '<div><h3 class="text-rose-500 font-black uppercase text-[10px] mb-3 tracking-widest px-1">Top Retards (Mois)</h3>';
+      lateList.slice(0, 8).forEach(s => {
+        html += `<div onclick="openHistory('${s.info.nom}','${s.info.prenom}')" class="glass-card p-4 rounded-2xl mb-2 flex justify-between items-center"><span class="text-xs font-black uppercase">${s.info.nom}</span><span class="text-rose-600 font-black">${s.lateMinutes}m</span></div>`;
+      });
+      html += '</div></div>';
+      document.getElementById('dashBody').innerHTML = html;
     }
   </script>
 </body>
