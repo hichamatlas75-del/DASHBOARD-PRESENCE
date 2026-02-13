@@ -168,27 +168,48 @@
     }
 
     function renderDayView(data) {
-      const container = document.getElementById('dashBody');
-      const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
-      let html = '';
-      Object.keys(groups).forEach(poste => {
-        html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
-        groups[poste].forEach(emp => {
-          const d = data[emp.nom + '_' + emp.prenom] || {};
-          const diff = getTimeDiff(d.hA, d.hP);
-          const sClass = getStatusClass(diff, d.off, !!d.hA);
-          html += `
-            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left h-28 flex flex-col justify-between ${data.disabled?'opacity-20':''}">
-              <div><p class="text-[11px] font-black uppercase text-slate-800 truncate">${emp.nom}</p></div>
-              <p class="text-[9px] font-bold ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
-                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m' : 'OK') : '--:--')}
-              </p>
-            </button>`;
-        });
-        html += `</div></div>`;
-      });
-      container.innerHTML = html;
-    }
+  const container = document.getElementById('dashBody');
+  const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
+  let html = '';
+  
+  Object.keys(groups).forEach(poste => {
+    html += `<div class="mb-10"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-2 italic">${poste}</h3><div class="grid grid-cols-2 gap-5">`;
+    groups[poste].forEach(emp => {
+      const d = data[emp.nom + '_' + emp.prenom] || {};
+      const diff = getTimeDiff(d.hA, d.hP);
+      const sClass = getStatusClass(diff, d.off, !!d.hA);
+      
+      html += `
+        <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-[24px] text-left h-32 flex flex-col justify-between transition-transform active:scale-95 ${data.disabled?'opacity-20':''}">
+          <div>
+            <p class="text-[11px] font-black uppercase text-slate-800 truncate tracking-tight">${emp.nom}</p>
+            <p class="text-[9px] font-medium text-slate-400 lowercase">${emp.prenom}</p>
+          </div>
+          
+          <div class="space-y-1">
+            <p class="text-[10px] font-black ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
+              ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m retard' : 'À L\'HEURE') : 'ATTENTE')}
+            </p>
+            
+            ${!d.off && d.hA ? `
+            <div class="flex gap-2 border-t border-slate-100 pt-1 mt-1">
+              <div class="flex flex-col">
+                <span class="text-[7px] font-bold text-slate-300 uppercase">HP</span>
+                <span class="text-[9px] font-black text-slate-500">${d.hP || '--:--'}</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[7px] font-bold text-slate-300 uppercase">HA</span>
+                <span class="text-[9px] font-black text-slate-800">${d.hA}</span>
+              </div>
+            </div>` : ''}
+          </div>
+        </button>`;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+}
+
 
     async function renderReportView() {
       const dates = getDatesInMonth();
