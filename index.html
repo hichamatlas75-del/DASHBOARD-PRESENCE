@@ -1,334 +1,308 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Supervision • Grey Corner Fès</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Direction Hub • Grey Corner Fès</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .view-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        .staff-row { transition: all 0.2s ease; border-left: 6px solid #e2e8f0; cursor: pointer; }
+        
+        /* CODES COULEURS EXCELLENCE */
+        .status-on-time { border-left-color: #10b981 !important; background: #f0fdf4; }
+        .status-late { border-left-color: #f59e0b !important; background: #fffbeb; }
+        .status-critical { 
+            border-left-color: #dc2626 !important; 
+            background: #fef2f2; 
+            animation: critical-pulse 2s infinite;
+        }
+        
+        @keyframes critical-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --grey-deep: #1a1a1a;
-      --grey-soft: #f8f9fa;
-      --gold: #c5a059;
-      --ok: #10b981;
-      --warn: #f59e0b;
-      --crit: #ef4444;
-    }
-
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: var(--grey-soft); 
-      color: var(--grey-deep);
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .glass-card { 
-      background: #ffffff; 
-      border: 1px solid rgba(0,0,0,0.05);
-      box-shadow: 0 10px 30px -12px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
-    }
-
-    /* Navigation Haute Gamme */
-    .nav-btn {
-      color: #94a3b8;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-    }
-    .nav-btn.active { color: var(--grey-deep); }
-    .nav-btn.active::after {
-      content: '';
-      position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px;
-      background: var(--gold); border-radius: 10px;
-    }
-
-    /* Logique de Retard Visuelle */
-    .staff-card { border-left-width: 6px; }
-    .status-green { border-left-color: var(--ok) !important; background: #f0fdf4; }
-    .status-orange { border-left-color: var(--warn) !important; background: #fffbeb; }
-    .status-red { border-left-color: var(--crit) !important; background: #fef2f2; }
-
-    .status-flash { 
-      border-left-color: var(--crit) !important; 
-      animation: flash-red 1.2s infinite;
-    }
-    @keyframes flash-red {
-      0%, 100% { background: #fef2f2; border-left-width: 6px; }
-      50% { background: #fee2e2; border-left-width: 10px; }
-    }
-
-    .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9; opacity: 0.5; }
-
-    /* Bouton Exclure Discret */
-    .exclude-btn.active { color: var(--crit); transform: rotate(90deg); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-  </style>
+        .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9 !important; opacity: 0.6; }
+        .excluded-day { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
+        .modal-active { display: flex !important; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
 </head>
+<body class="p-4 antialiased pb-24">
 
-<body class="antialiased pb-20">
-  <div class="max-w-md mx-auto px-6 pt-10">
-
-    <header class="flex justify-between items-center mb-10">
-      <div>
-        <p class="text-[10px] font-extrabold text-[#c5a059] uppercase tracking-[0.4em] mb-1">Grey Corner Fès</p>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight italic">Supervision</h1>
-      </div>
-      <button onclick="toggleExclusion()" id="excludeBtn" class="exclude-btn p-2 text-slate-300 transition-all">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-      </button>
+    <header class="text-center mb-6">
+        <h1 class="text-2xl font-black text-slate-900 uppercase italic">Supervision RH</h1>
+        <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.3em]">Grey Corner • Excellence</p>
     </header>
 
-    <div class="mb-8">
-      <div class="flex border-b border-slate-200">
-        <button onclick="switchMode('day', this)" class="nav-btn active flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Jour</button>
-        <button onclick="switchMode('report', this)" class="nav-btn flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Bilan Mensuel</button>
-      </div>
-      <input type="date" id="dashDate" class="w-full mt-4 bg-transparent text-sm font-bold text-slate-500 text-center outline-none">
+    <div class="glass-card rounded-3xl p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-slate-400 uppercase">Période de référence</p>
+                <input type="date" id="dashDate" class="bg-transparent border-none font-black text-indigo-900 focus:ring-0 text-lg p-0 w-full">
+            </div>
+            <button id="excludeBtn" onclick="toggleExclusion()" class="ml-4 flex flex-col items-center">
+                <div id="excludeIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" /></svg>
+                </div>
+                <span id="excludeLabel" class="text-[8px] font-black uppercase mt-1 text-slate-400">Exclure</span>
+            </button>
+        </div>
+        
+        <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+            <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Jour</button>
+            <button onclick="switchMode('week', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Semaine</button>
+            <button onclick="switchMode('month', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase">Mois</button>
+            <button onclick="switchMode('report', this)" class="view-btn flex-1 py-2 text-[9px] font-bold rounded-lg uppercase text-rose-500">Bilan</button>
+        </div>
     </div>
 
-    <div id="chartContainer" class="glass-card rounded-[32px] p-6 mb-8 hidden">
-      <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Tendance Retards (Min)</p>
-      <div class="h-[150px] w-full"><canvas id="trendsChart"></canvas></div>
+    <div id="dashBody" class="space-y-3"></div>
+
+    <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm p-4 items-end justify-center">
+        <div class="bg-white w-full max-w-md rounded-t-[32px] overflow-hidden shadow-2xl">
+            <div class="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                <h2 id="modalTitle" class="text-lg font-black text-slate-900 uppercase italic">Historique</h2>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white shadow-sm font-bold">✕</button>
+            </div>
+            <div id="modalList" class="p-6 max-h-[60vh] overflow-y-auto space-y-2"></div>
+        </div>
     </div>
 
-    <div id="dashBody" class="space-y-8"></div>
-  </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm items-end" onclick="closeModal()">
-    <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up" onclick="event.stopPropagation()">
-      <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8"></div>
-      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tighter">Historique</h2>
-      <div id="modalList" class="space-y-3 max-h-[50vh] overflow-y-auto no-scrollbar"></div>
-      <button onclick="closeModal()" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm">Fermer</button>
-    </div>
-  </div>
+    <script>
+        const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+        // --- GESTION DU FUSEAU HORAIRE MAROC ---
+        const getMarocDate = () => {
+            return new Intl.DateTimeFormat('fr-CA', {
+                timeZone: 'Africa/Casablanca',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+        };
 
-  <script>
-    const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+        const equipe = [
+            {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'},
+            {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
+            {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'},
+            {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
+            {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'},
+            {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
+            {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'},
+            {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
+            {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'},
+            {nom: 'ENNHAILI', prenom: 'SOUMIA', poste: 'EXONOMAT'},
+            {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'},
+            {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
+            {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'},
+            {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
+            {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'},
+            {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
+            {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'},
+            {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
+            {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'},
+            {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'},
+            {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'},
+            {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
+            {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'},
+            {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
+        ];
 
-    const dateInput = document.getElementById('dashDate');
-    let currentMode = 'day', myChart = null;
+        const dateInput = document.getElementById('dashDate');
+        let currentMode = 'day';
+        let isExcluded = false;
 
-    const equipe = [
-      {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
-      {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
-      {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
-      {nom: 'ELGORRAMY', prenom: 'ANISSA', poste: 'MENAGE'}, {nom: 'ELGORRAMY', prenom: 'SOUAD', poste: 'MENAGE'},
-      {nom: 'ELMCHAOURI', prenom: 'SOUAD', poste: 'MENAGE'}, {nom: 'ENNHAILI', prenom: 'SOUMIA', poste: 'ECONOMAT'},
-      {nom: 'FILALI', prenom: 'ABDERAFI', poste: 'BAR'}, {nom: 'GUETIBI', prenom: 'AMINE', poste: 'SERVICE'},
-      {nom: 'HATTAF', prenom: 'MOHAMED', poste: 'SERVICE'}, {nom: 'HIDARA', prenom: 'YOUSSEF', poste: 'SERVICE'},
-      {nom: 'IDRISSI', prenom: 'SAAD', poste: 'CUISINE'}, {nom: 'KAFOUNI', prenom: 'ZAKARIAE', poste: 'SERVICE'},
-      {nom: 'KHALOUQ', prenom: 'RACHID', poste: 'BAR'}, {nom: 'LEMSSIEH', prenom: 'JAWAD', poste: 'CUISINE'},
-      {nom: 'MAJDOUB', prenom: 'JIHANE', poste: 'CUISINE'}, {nom: 'MOHSINE', prenom: 'YOUNESS', poste: 'SERVICE'},
-      {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'}, {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
-      {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
-    ];
+        // Initialisation à l'heure du Maroc
+        dateInput.value = getMarocDate();
+        dateInput.addEventListener('change', updateDashboard);
+        updateDashboard();
 
-    dateInput.value = new Intl.DateTimeFormat('fr-CA', {timeZone: 'Africa/Casablanca', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
-    dateInput.addEventListener('change', updateDashboard);
-    updateDashboard();
-
-    function switchMode(mode, btn) {
-      currentMode = mode;
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
-      updateDashboard();
-    }
-
-    function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); }
-
-    function updateDashboard() {
-      database.ref('presences/' + dateInput.value).on('value', (snap) => {
-        const data = snap.val() || {};
-        document.getElementById('excludeBtn').classList.toggle('active', data.disabled);
-        if (currentMode === 'day') renderDayView(data);
-        else renderReportView();
-      });
-    }
-
-    function getStatusClass(diff, isOff, hasArrived) {
-      if (isOff) return 'status-off';
-      if (!hasArrived) return '';
-      if (diff <= 0) return 'status-green';
-      if (diff < 30) return 'status-orange';
-      if (diff < 60) return 'status-red';
-      return 'status-flash'; // +1h
-    }
-
-    function renderDayView(data) {
-      const container = document.getElementById('dashBody');
-      const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
-      let html = '';
-      Object.keys(groups).forEach(poste => {
-        html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
-        groups[poste].forEach(emp => {
-          const d = data[emp.nom + '_' + emp.prenom] || {};
-          const diff = getTimeDiff(d.hA, d.hP);
-          const sClass = getStatusClass(diff, d.off, !!d.hA);
-          html += `
-            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left h-28 flex flex-col justify-between ${data.disabled?'opacity-20':''}">
-              <div><p class="text-[11px] font-black uppercase text-slate-800 truncate">${emp.nom}</p></div>
-              <p class="text-[9px] font-bold ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
-                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m' : 'OK') : '--:--')}
-              </p>
-            </button>`;
-        });
-        html += `</div></div>`;
-      });
-      container.innerHTML = html;
-    }
-  const container = document.getElementById('dashBody');
-  const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
-  let html = '';
-  
-  Object.keys(groups).forEach(poste => {
-    html += `<div class="mb-10"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-2 italic">${poste}</h3><div class="grid grid-cols-2 gap-5">`;
-    groups[poste].forEach(emp => {
-      const d = data[emp.nom + '_' + emp.prenom] || {};
-      const diff = getTimeDiff(d.hA, d.hP);
-      const sClass = getStatusClass(diff, d.off, !!d.hA);
-      
-      html += `
-        <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-[24px] text-left h-32 flex flex-col justify-between transition-transform active:scale-95 ${data.disabled?'opacity-20':''}">
-          <div>
-            <p class="text-[11px] font-black uppercase text-slate-800 truncate tracking-tight">${emp.nom}</p>
-            <p class="text-[9px] font-medium text-slate-400 lowercase">${emp.prenom}</p>
-          </div>
-          
-          <div class="space-y-1">
-            <p class="text-[10px] font-black ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
-              ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m retard' : 'À L\'HEURE') : 'ATTENTE')}
-            </p>
-            
-            ${!d.off && d.hA ? `
-            <div class="flex gap-2 border-t border-slate-100 pt-1 mt-1">
-              <div class="flex flex-col">
-                <span class="text-[7px] font-bold text-slate-300 uppercase">HP</span>
-                <span class="text-[9px] font-black text-slate-500">${d.hP || '--:--'}</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[7px] font-bold text-slate-300 uppercase">HA</span>
-                <span class="text-[9px] font-black text-slate-800">${d.hA}</span>
-              </div>
-            </div>` : ''}
-          </div>
-        </button>`;
-    });
-    html += `</div></div>`;
-  });
-  container.innerHTML = html;
-}
-
-
-    async function renderReportView() {
-      const dates = getDatesInMonth();
-      const stats = {}; equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info: e, present: 0, late: 0 });
-      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
-
-      const dailyLates = [], labels = [];
-      snaps.forEach((s, i) => {
-        const dData = s.val() || {};
-        let tL = 0;
-        if (!dData.disabled) {
-          Object.keys(stats).forEach(id => {
-            const e = dData[id];
-            if(e && e.hA && !e.off) {
-              const d = getTimeDiff(e.hA, e.hP);
-              stats[id].present++; stats[id].late += d; tL += d;
+        // Auto-refresh si on change de jour (Maroc) sans recharger la page
+        setInterval(() => {
+            const marocNow = getMarocDate();
+            if(dateInput.value !== marocNow && !dateInput.matches(':focus')) {
+                dateInput.value = marocNow;
+                updateDashboard();
             }
-          });
+        }, 60000);
+
+        function switchMode(mode, btn) {
+            currentMode = mode;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateDashboard();
         }
-        dailyLates.push(tL); labels.push(dates[i].split('-')[2]);
-      });
 
-      renderChart(labels, dailyLates);
+        function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
 
-      const allStats = Object.values(stats);
-      const discList = allStats.filter(s => s.late === 0 && s.present > 0).sort((a,b) => b.present - a.present);
-      const lateList = allStats.filter(s => s.late > 0).sort((a,b) => b.late - a.late);
-
-      let html = '<div class="space-y-10">';
-
-      // SECTION 1 : ÉLITE DISCIPLINE
-      if(discList.length > 0) {
-        html += `<div><h3 class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">🏆 Élite Discipline</h3><div class="space-y-3">`;
-        discList.slice(0, 5).forEach((s, idx) => {
-          html += `<div class="glass-card p-4 rounded-[22px] border-l-4 border-emerald-500 flex justify-between items-center bg-emerald-50/30">
-            <div><p class="text-xs font-black uppercase text-slate-800">${idx===0?'🥇 ':''}${s.info.nom}</p><p class="text-[9px] font-bold text-emerald-600">${s.present} j OK</p></div>
-            <span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full tracking-tighter">IRRÉPROCHABLE</span>
-          </div>`;
-        });
-        html += `</div></div>`;
-      }
-
-      // SECTION 2 : TOP RETARDATAIRES
-      if(lateList.length > 0) {
-        html += `<div><h3 class="text-[10px] font-black text-rose-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">⚠️ Analyse Retards</h3><div class="space-y-2">`;
-        lateList.slice(0, 5).forEach((s, idx) => {
-          html += `<div class="glass-card p-4 rounded-[22px] flex justify-between items-center">
-            <span class="text-xs font-black uppercase text-slate-700">#${idx+1} ${s.info.nom}</span>
-            <div class="text-right"><p class="text-xs font-black text-rose-500">${s.late}m</p><p class="text-[8px] font-bold text-slate-400">${s.present} j</p></div>
-          </div>`;
-        });
-        html += '</div></div>';
-      }
-
-      document.getElementById('dashBody').innerHTML = html + '</div>';
-    }
-
-    function renderChart(labels, lates) {
-      const ctx = document.getElementById('trendsChart').getContext('2d');
-      if (myChart) myChart.destroy();
-      myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 0, backgroundColor: 'rgba(197,160,89,0.05)', fill: true }]
-        },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
-      });
-    }
-
-    function getTimeDiff(a, p) { if(!a || !p) return 0; const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number); const d=(ha*60+ma)-(hp*60+mp); return d>0?d:0; }
-    function getDatesInMonth() {
-      const dates = [], curr = new Date(dateInput.value), m = curr.getMonth(), y = curr.getFullYear(), d = new Date(y, m, 1);
-      while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
-      return dates;
-    }
-
-    async function openHistory(nom, prenom) {
-      const modal = document.getElementById('historyModal');
-      document.getElementById('modalTitle').innerText = nom;
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      const dates = getDatesInMonth();
-      const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
-      let html = '';
-      snaps.reverse().forEach((s, i) => {
-        const data = s.val(), entry = data ? data[nom+'_'+prenom] : null;
-        if(entry) {
-          const diff = getTimeDiff(entry.hA, entry.hP);
-          html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <span class="text-[10px] font-black text-slate-400 uppercase">${dates.slice().reverse()[i].split('-').reverse().slice(0,2).join('/')}</span>
-            <span class="text-[10px] font-black ${entry.off?'text-slate-300':(diff>0?'text-rose-500':'text-emerald-500')} uppercase">${entry.off?'Repos':(entry.hA?(diff>0?diff+'m':'OK'):'Absent')}</span>
-          </div>`;
+        function getTimeDiff(a, p) {
+            if(!a || !p) return 0;
+            const [ha, ma] = a.split(':').map(Number);
+            const [hp, mp] = p.split(':').map(Number);
+            const diff = (ha*60+ma) - (hp*60+mp);
+            return diff > 0 ? diff : 0;
         }
-      });
-      document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
-    }
-    function closeModal() { document.getElementById('historyModal').classList.add('hidden'); }
-  </script>
+
+        function toggleExclusion() {
+            database.ref('presences/' + dateInput.value + '/disabled').set(!isExcluded);
+        }
+
+        function updateDashboard() {
+            database.ref('presences/' + dateInput.value).on('value', (snap) => {
+                const data = snap.val() || {};
+                isExcluded = data.disabled === true;
+                
+                document.getElementById('excludeIcon').className = isExcluded ? "w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 text-white shadow-lg" : "w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-400";
+                document.getElementById('excludeLabel').innerText = isExcluded ? "Exclu" : "Exclure";
+
+                if (currentMode === 'day') renderDayView(data);
+                else if (currentMode === 'report') renderReportView();
+                else renderRangeView();
+            });
+        }
+
+        function renderDayView(data) {
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '';
+            equipe.forEach(emp => {
+                const id = emp.nom + '_' + emp.prenom;
+                const d = data[id] || {};
+                const diff = getTimeDiff(d.hA, d.hP);
+                let sClass = "";
+                if (d.off) sClass = "status-off";
+                else if (d.hA) {
+                    if (diff >= 60) sClass = "status-critical"; 
+                    else if (diff > 10) sClass = "status-late";   
+                    else sClass = "status-on-time";               
+                }
+                
+                container.innerHTML += `
+                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center ${sClass} ${isExcluded ? 'excluded-day' : ''}" onclick="openHistory('${emp.nom}','${emp.prenom}')">
+                        <div>
+                            <b class="text-xs uppercase text-slate-800">${emp.nom} ${emp.prenom}</b><br>
+                            <span class="text-[8px] font-bold text-slate-400 uppercase">${emp.poste}</span>
+                        </div>
+                        <div class="text-right">
+                            ${d.off ? '<span class="text-[10px] font-black text-slate-400 italic">REPOS</span>' : `<span class="text-[9px] font-black text-slate-500">P: ${d.hP||'--'} A: ${d.hA||'--'}</span>`}
+                            ${!d.off && diff > 0 ? `
+                                <div class="flex flex-col items-end">
+                                    <div class="text-[9px] font-black ${diff >= 60 ? 'text-rose-600' : 'text-amber-500'} uppercase">-${diff}m</div>
+                                </div>` : ''}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function calculateStats(dates) {
+            const stats = {};
+            equipe.forEach(e => stats[e.nom+'_'+e.prenom] = {info: e, present: 0, lateMinutes: 0});
+            const promises = dates.map(d => database.ref('presences/'+d).once('value'));
+            const snaps = await Promise.all(promises);
+            snaps.forEach(s => {
+                const data = s.val();
+                if(!data || data.disabled) return;
+                Object.keys(stats).forEach(id => {
+                    const entry = data[id];
+                    if(entry && entry.hA && !entry.off) {
+                        stats[id].present++;
+                        stats[id].lateMinutes += getTimeDiff(entry.hA, entry.hP);
+                    }
+                });
+            });
+            return stats;
+        }
+
+        function getDatesInRange(mode) {
+            const dates = [];
+            const curr = new Date(dateInput.value);
+            if(mode === 'week') {
+                const first = curr.getDate() - curr.getDay() + 1;
+                for(let i=0; i<7; i++) {
+                    const d = new Date(new Date(curr).setDate(first + i));
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+            } else {
+                const m = curr.getMonth(), y = curr.getFullYear();
+                const d = new Date(y, m, 1);
+                while(d.getMonth() === m) {
+                    dates.push(new Date(d).toISOString().split('T')[0]);
+                    d.setDate(d.getDate() + 1);
+                }
+            }
+            return dates;
+        }
+
+        async function renderRangeView() {
+            const dates = getDatesInRange(currentMode);
+            const stats = await calculateStats(dates);
+            const container = document.getElementById('dashBody');
+            container.innerHTML = '';
+            Object.values(stats).sort((a,b) => a.info.nom.localeCompare(b.info.nom)).forEach(s => {
+                container.innerHTML += `
+                    <div class="staff-row glass-card p-4 rounded-2xl flex justify-between items-center border-l-8 ${s.lateMinutes > 10 ? 'border-amber-400' : 'border-emerald-400'}" onclick="openHistory('${s.info.nom}','${s.info.prenom}')">
+                        <b class="text-xs uppercase text-slate-800">${s.info.nom} ${s.info.prenom}</b>
+                        <div class="text-right">
+                            <div class="text-[10px] font-black text-indigo-600">${s.present}j Présents</div>
+                            <div class="text-[10px] font-black ${s.lateMinutes > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.lateMinutes}m total</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function renderReportView() {
+            const stats = await calculateStats(getDatesInRange('month'));
+            const container = document.getElementById('dashBody');
+            const lateList = Object.values(stats).filter(s => s.lateMinutes > 0).sort((a,b) => b.lateMinutes - a.lateMinutes);
+            const goodList = Object.values(stats).filter(s => s.lateMinutes === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+
+            let html = '<h3 class="text-amber-500 font-black uppercase text-[10px] mb-3 tracking-widest pl-2">⚠️ Retards (Top 5)</h3>';
+            lateList.slice(0, 5).forEach(s => {
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-amber-500 font-black">${s.lateMinutes}m</b></div>`;
+            });
+
+            html += '<h3 class="text-emerald-500 font-black uppercase text-[10px] mt-6 mb-3 tracking-widest pl-2">⭐ Disciplinés</h3>';
+            goodList.slice(0, 5).forEach(s => {
+                html += `<div class="glass-card p-4 rounded-2xl mb-2 flex justify-between" onclick="openHistory('${s.info.nom}','${s.info.prenom}')"><b class="text-xs uppercase">${s.info.nom} ${s.info.prenom}</b><b class="text-emerald-500 font-black">${s.present}j OK</b></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function openHistory(nom, prenom) {
+            const modal = document.getElementById('historyModal');
+            document.getElementById('modalTitle').innerText = `${nom} ${prenom}`;
+            modal.classList.add('modal-active');
+            const list = document.getElementById('modalList');
+            list.innerHTML = '<div class="text-center py-10 font-bold text-slate-300 tracking-widest uppercase text-[10px]">Chargement...</div>';
+            const dates = getDatesInRange('month');
+            const promises = dates.map(dt => database.ref('presences/'+dt).once('value'));
+            const snaps = await Promise.all(promises);
+            let html = '';
+            snaps.reverse().forEach((s, idx) => {
+                const data = s.val();
+                const entry = data ? data[nom+'_'+prenom] : null;
+                const dtStr = dates.slice().reverse()[idx].split('-').reverse().slice(0,2).join('/');
+                if(entry) {
+                    const isEx = data.disabled;
+                    const diff = getTimeDiff(entry.hA, entry.hP);
+                    html += `<div class="flex justify-between p-3 rounded-xl border border-slate-100 ${isEx ? 'opacity-30' : ''}">
+                        <span class="text-[10px] font-black">${dtStr}</span>
+                        <span class="text-[10px] font-black ${entry.off ? 'text-slate-400' : (diff>0 ? 'text-amber-500' : 'text-emerald-500')}">
+                            ${isEx ? 'EXCLU' : (entry.off ? 'OFF' : (diff>0 ? '-'+diff+'m' : 'OK'))}
+                        </span>
+                    </div>`;
+                }
+            });
+            list.innerHTML = html || '<div class="text-center py-10 text-slate-400 text-xs">Aucune donnée ce mois-ci</div>';
+        }
+    </script>
 </body>
 </html>
