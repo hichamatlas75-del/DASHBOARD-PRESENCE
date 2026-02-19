@@ -20,17 +20,17 @@
       --status-crit: #ef4444;  /* Rouge */
     }
 
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: var(--grey-light); 
-      color: var(--grey-dark); 
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--grey-light);
+      color: var(--grey-dark);
       -webkit-tap-highlight-color: transparent;
     }
 
     /* Thème Cozy Grey & Gold */
-    .glass-card { 
-      background: #ffffff; 
-      border: 1px solid #e5e7eb; 
+    .glass-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
       box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
     }
 
@@ -39,22 +39,22 @@
       border: 1px solid transparent;
       transition: all 0.3s ease;
     }
-    .view-btn.active { 
-      background: var(--grey-dark); 
-      color: var(--gold); 
+    .view-btn.active {
+      background: var(--grey-dark);
+      color: var(--gold);
       border-color: var(--gold);
     }
 
     /* Logique de couleurs demandée */
     .staff-card { border-left-width: 5px; transition: transform 0.2s; }
-    
+
     .status-green { border-left-color: var(--status-ok) !important; background: #f0fdf4; }
     .status-orange { border-left-color: var(--status-late) !important; background: #fffbeb; }
     .status-red { border-left-color: var(--status-crit) !important; background: #fef2f2; }
-    
+
     /* Rouge qui flash (+1h) */
-    .status-flash { 
-      border-left-color: var(--status-crit) !important; 
+    .status-flash {
+      border-left-color: var(--status-crit) !important;
       background: #fef2f2;
       animation: flash-red 1s infinite;
     }
@@ -74,7 +74,7 @@
 
 <body class="antialiased pb-10">
   <div class="max-w-md mx-auto px-5 pt-8">
-    
+
     <header class="flex justify-between items-start mb-10">
       <div>
         <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
@@ -94,7 +94,7 @@
         <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
         <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
       </div>
-      
+
       <div class="relative">
         <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
       </div>
@@ -124,11 +124,17 @@
     const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    
+
     const dateInput = document.getElementById('dashDate');
     let currentMode = 'day', myChart = null;
 
+    // ✅ listener unique (évite accumulation)
+    let activeDayListenerRef = null;
+
+    // ✅ Chef cuisine ajouté (et on la met en premier dans la liste)
     const equipe = [
+      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'}, // ✅ NEW Chef cuisine (hA-only possible)
+
       {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
       {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
       {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
@@ -142,6 +148,9 @@
       {nom: 'MOUJAHID', prenom: 'IMANE', poste: 'CUISINE'}, {nom: 'SALIL', prenom: 'HOUDA', poste: 'CAISSE'},
       {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
     ];
+
+    // ✅ IDs hA-only (pas pénalisé si hP vide)
+    const haOnlyIds = new Set(["BOUCHNAK_NAOUAL"]);
 
     dateInput.value = new Intl.DateTimeFormat('fr-CA', {timeZone: 'Africa/Casablanca', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
     dateInput.addEventListener('change', updateDashboard);
@@ -158,11 +167,24 @@
     function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); }
 
     function updateDashboard() {
-      database.ref('presences/' + dateInput.value).on('value', (snap) => {
+      // ✅ stop ancien listener
+      if(activeDayListenerRef){
+        activeDayListenerRef.off();
+        activeDayListenerRef = null;
+      }
+
+      // En mode report: pas besoin de listener live
+      if(currentMode === 'report'){
+        renderReportView();
+        return;
+      }
+
+      // Mode day: listener live
+      activeDayListenerRef = database.ref('presences/' + dateInput.value);
+      activeDayListenerRef.on('value', (snap) => {
         const data = snap.val() || {};
         updateExcludeUI(data.disabled);
-        if (currentMode === 'day') renderDayView(data);
-        else renderReportView();
+        renderDayView(data);
       });
     }
 
@@ -186,28 +208,61 @@
       const container = document.getElementById('dashBody');
       const groups = {};
       equipe.forEach(e => (groups[e.poste] ||= []).push(e));
-      
+
       let html = '';
       Object.keys(groups).forEach(poste => {
         html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
-        groups[poste].forEach(emp => {
-          const d = data[emp.nom + '_' + emp.prenom] || {};
-          const diff = getTimeDiff(d.hA, d.hP);
-          const sClass = getStatusClass(diff, d.off, !!d.hA);
-          
-          html += `
-            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28 ${data.disabled?'opacity-20':''}">
-              <div>
-                <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
-                <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
-              </div>
-              <p class="text-[10px] font-black ${diff > 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m retard' : 'À L\'HEURE') : 'ATTENTE')}
-              </p>
-            </button>`;
-        });
+
+        // ✅ tri: Chef cuisine 1ère dans CUISINE
+        groups[poste]
+          .slice()
+          .sort((a,b)=>{
+            const A = a.nom + '_' + a.prenom;
+            const B = b.nom + '_' + b.prenom;
+            if(A === "BOUCHNAK_NAOUAL") return -1;
+            if(B === "BOUCHNAK_NAOUAL") return 1;
+            return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+          })
+          .forEach(emp => {
+            const id = emp.nom + '_' + emp.prenom;
+            const d = data[id] || {};
+
+            // ✅ Chef hA-only: retard calculé uniquement si hP existe
+            const diff = getTimeDiff(d.hA, d.hP, id);
+            const sClass = getStatusClass(diff, d.off, !!d.hA);
+
+            let statusText = 'ATTENTE';
+            let statusColor = 'text-slate-400';
+
+            if(d.off){
+              statusText = 'REPOS';
+              statusColor = 'text-slate-400';
+            } else if(d.hA){
+              if(d.hP){ // si planning dispo
+                statusText = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
+                statusColor = diff > 0 ? 'text-rose-600' : 'text-emerald-600';
+              }else{
+                // hA-only ou planning non défini: considérer OK (pas de retard)
+                statusText = `OK`;
+                statusColor = 'text-emerald-600';
+              }
+            }
+
+            html += `
+              <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28 ${data.disabled?'opacity-20':''}">
+                <div>
+                  <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
+                  <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
+                </div>
+                <p class="text-[10px] font-black ${statusColor}">
+                  ${statusText}
+                </p>
+              </button>`;
+          });
+
         html += `</div></div>`;
       });
+
       container.innerHTML = html;
     }
 
@@ -217,25 +272,30 @@
       equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info: e, present: 0, late: 0 });
 
       const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
-      
-      // Data pour Chart
+
       const dailyLates = [], dailyPresence = [], labels = [];
 
       snaps.forEach((s, i) => {
         const dData = s.val() || {};
         let tL = 0, tP = 0;
+
         if (!dData.disabled) {
           Object.keys(stats).forEach(id => {
             const e = dData[id];
+
             if(e && e.hA && !e.off) {
-              const diff = getTimeDiff(e.hA, e.hP);
+              // ✅ Chef hA-only: late=0 si hP absent
+              const diff = getTimeDiff(e.hA, e.hP, id);
               stats[id].present++;
               stats[id].late += diff;
               tL += diff; tP++;
             }
           });
         }
-        dailyLates.push(tL); dailyPresence.push(tP); labels.push(dates[i].split('-')[2]);
+
+        dailyLates.push(tL);
+        dailyPresence.push(tP);
+        labels.push(dates[i].split('-')[2]);
       });
 
       renderChart(labels, dailyLates, dailyPresence);
@@ -253,6 +313,7 @@
         html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center"><span class="text-xs font-extrabold uppercase">${s.info.nom}</span><span class="text-emerald-600 font-black">${s.present}j OK</span></div>`;
       });
       html += '</div></div>';
+
       document.getElementById('dashBody').innerHTML = html;
     }
 
@@ -263,13 +324,38 @@
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 0, fill: true, backgroundColor: 'rgba(197, 160, 89, 0.05)' }]
+          datasets: [{
+            data: lates,
+            borderColor: '#c5a059',
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: 'rgba(197, 160, 89, 0.05)'
+          }]
         },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { display: false },
+            x: { grid: { display: false }, ticks: { font: { size: 8 } } }
+          }
+        }
       });
     }
 
-    function getTimeDiff(a, p) { if(!a || !p) return 0; const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number); const d=(ha*60+ma)-(hp*60+mp); return d>0?d:0; }
+    // ✅ diff: si pas de planning OU hA-only => 0
+    function getTimeDiff(a, p, id) {
+      if(!a) return 0;
+      if(!p) return 0;
+      if(id && haOnlyIds.has(id)) return 0;
+
+      const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number);
+      const d=(ha*60+ma)-(hp*60+mp);
+      return d>0?d:0;
+    }
+
     function getDatesInMonth() {
       const dates = [], curr = new Date(dateInput.value), m = curr.getMonth(), y = curr.getFullYear(), d = new Date(y, m, 1);
       while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
@@ -280,21 +366,35 @@
       const modal = document.getElementById('historyModal');
       document.getElementById('modalTitle').innerText = nom;
       modal.classList.add('modal-active');
+
       const dates = getDatesInMonth();
       const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
+
       let html = '';
       snaps.reverse().forEach((s, i) => {
-        const data = s.val(), entry = data ? data[nom+'_'+prenom] : null;
+        const data = s.val(), id = nom+'_'+prenom, entry = data ? data[id] : null;
         if(entry) {
-          const diff = getTimeDiff(entry.hA, entry.hP);
+          const diff = getTimeDiff(entry.hA, entry.hP, id);
+
+          // ✅ si hA existe mais pas hP => OK (chef / planning non défini)
+          const label = entry.off
+            ? 'Repos'
+            : (entry.hA ? (entry.hP ? (diff>0?diff+'m':'OK') : 'OK') : 'Absent');
+
+          const cls = entry.off
+            ? 'text-slate-300'
+            : (entry.hA ? (entry.hP ? (diff>0?'text-rose-500':'text-emerald-500') : 'text-emerald-500') : 'text-slate-400');
+
           html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
             <span class="text-[10px] font-black text-slate-400 uppercase">${dates.slice().reverse()[i].split('-').reverse().slice(0,2).join('/')}</span>
-            <span class="text-[10px] font-black ${entry.off?'text-slate-300':(diff>0?'text-rose-500':'text-emerald-500')} uppercase">${entry.off?'Repos':(entry.hA?(diff>0?diff+'m':'OK'):'Absent')}</span>
+            <span class="text-[10px] font-black ${cls} uppercase">${label}</span>
           </div>`;
         }
       });
+
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
+
     function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
   </script>
 </body>
