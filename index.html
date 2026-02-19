@@ -3,172 +3,124 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Grey Corner • Présences (Refonte)</title>
+  <title>Supervision • Grey Corner Fès</title>
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --primary:#0f172a;
-      --muted:#64748b;
-      --accent:#c5a059;
-      --bg:#f7f6f2;
-      --card:#ffffff;
-      --soft:#eef2f7;
+    :root {
+      --grey-deep: #1a1a1a;
+      --grey-soft: #f8f9fa;
+      --gold: #c5a059;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --crit: #ef4444;
     }
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--primary)}
-    .glass{background:rgba(255,255,255,.75);backdrop-filter: blur(10px)}
-    .card{background:var(--card);border:1px solid rgba(2,6,23,.06)}
-    .btn{transition:transform .08s ease, filter .2s ease}
-    .btn:active{transform:scale(.985)}
-    input[type="time"], input[type="date"]{-webkit-appearance:none;min-height:42px}
-    .chip{border:1px solid rgba(2,6,23,.10)}
-    .chip.active{border-color: rgba(197,160,89,.55); background: rgba(197,160,89,.10)}
-    .sectionTitle{border-left: 3px solid var(--accent);padding-left: 12px;}
-    .badge{
-      font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
-      font-weight: 800; padding: 4px 8px; border-radius: 999px;
-      border: 1px solid rgba(2,6,23,.08);
-      background: rgba(15,23,42,.04);
-      color: var(--muted); line-height: 1; white-space: nowrap;
+
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background: var(--grey-soft); 
+      color: var(--grey-deep);
+      -webkit-tap-highlight-color: transparent;
     }
-    .badge.ok{background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.30); color: #065f46;}
-    .badge.warn{background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.32); color: #92400e;}
-    .badge.bad{background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.30); color: #7f1d1d;}
-    .accentRing:focus{outline:none;box-shadow:0 0 0 3px rgba(197,160,89,.25)}
-    .toggleWrap{background: rgba(15,23,42,.04); border:1px solid rgba(2,6,23,.08)}
-    .shadowSoft{box-shadow:0 12px 28px rgba(2,6,23,.08)}
-    .stickyTop{position:sticky;top:0;z-index:50}
-    /* PDF-only area */
-    #pdfArea{display:none}
-    .pdfPage{background:#fff;color:#111827}
-    .pdfTable th,.pdfTable td{border:1px solid #e5e7eb;padding:8px;font-size:11px}
-    .pdfTable th{background:#f3f4f6;font-weight:800}
+
+    .glass-card { 
+      background: #ffffff; 
+      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 10px 30px -12px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+    }
+
+    /* Navigation Haute Gamme */
+    .nav-btn {
+      color: #94a3b8;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .nav-btn.active { color: var(--grey-deep); }
+    .nav-btn.active::after {
+      content: '';
+      position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px;
+      background: var(--gold); border-radius: 10px;
+    }
+
+    /* Logique de Retard Visuelle */
+    .staff-card { border-left-width: 6px; }
+    .status-green { border-left-color: var(--ok) !important; background: #f0fdf4; }
+    .status-orange { border-left-color: var(--warn) !important; background: #fffbeb; }
+    .status-red { border-left-color: var(--crit) !important; background: #fef2f2; }
+
+    .status-flash { 
+      border-left-color: var(--crit) !important; 
+      animation: flash-red 1.2s infinite;
+    }
+    @keyframes flash-red {
+      0%, 100% { background: #fef2f2; border-left-width: 6px; }
+      50% { background: #fee2e2; border-left-width: 10px; }
+    }
+
+    .status-off { border-left-color: #cbd5e1 !important; background: #f1f5f9; opacity: 0.5; }
+
+    /* Bouton Exclure Discret */
+    .exclude-btn.active { color: var(--crit); transform: rotate(90deg); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 
-<body class="pb-16">
+<body class="antialiased pb-20">
+  <div class="max-w-md mx-auto px-6 pt-10">
 
-  <!-- Top bar -->
-  <div class="stickyTop glass border-b border-black/5">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="text-[10px] tracking-[0.22em] font-extrabold uppercase text-[color:var(--accent)]">Fès — Maroc</div>
-        <div class="flex items-baseline gap-2">
-          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight truncate">GREY CORNER</h1>
-          <span class="text-[11px] font-bold text-slate-500">• Feuille de présence</span>
-        </div>
+    <header class="flex justify-between items-center mb-10">
+      <div>
+        <p class="text-[10px] font-extrabold text-[#c5a059] uppercase tracking-[0.4em] mb-1">Grey Corner Fès</p>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight italic">Supervision</h1>
       </div>
-
-      <button id="managerToggle" onclick="toggleManager()"
-              class="btn px-3 py-2 rounded-full text-[11px] font-extrabold tracking-wide border border-[color:var(--accent)] text-[color:var(--accent)] bg-white hover:brightness-95">
-        🔓 Accès gérant
+      <button onclick="toggleExclusion()" id="excludeBtn" class="exclude-btn p-2 text-slate-300 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
       </button>
+    </header>
+
+    <div class="mb-8">
+      <div class="flex border-b border-slate-200">
+        <button onclick="switchMode('day', this)" class="nav-btn active flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Jour</button>
+        <button onclick="switchMode('report', this)" class="nav-btn flex-1 py-4 text-[11px] font-black uppercase tracking-widest">Bilan Mensuel</button>
+      </div>
+      <input type="date" id="dashDate" class="w-full mt-4 bg-transparent text-sm font-bold text-slate-500 text-center outline-none">
     </div>
 
-    <div class="max-w-3xl mx-auto px-4 pb-3">
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+    <div id="chartContainer" class="glass-card rounded-[32px] p-6 mb-8 hidden">
+      <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Tendance Retards (Min)</p>
+      <div class="h-[150px] w-full"><canvas id="trendsChart"></canvas></div>
+    </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-3 items-center">
-          <input type="date" id="datePicker"
-                 class="w-full px-4 py-3 rounded-2xl card shadow-sm font-bold text-sm accentRing bg-white" />
+    <div id="dashBody" class="space-y-8"></div>
+  </div>
 
-          <div class="flex gap-2 flex-wrap">
-            <button onclick="setFilter('all')" id="chip-all" class="chip chipBtn chip active px-3 py-2 rounded-full text-[11px] font-extrabold text-slate-700">Tous</button>
-            <button onclick="setFilter('present')" id="chip-present" class="chip chipBtn px-3 py-2 rounded-full text-[11px] font-extrabold text-slate-700">Présents</button>
-            <button onclick="setFilter('absent')" id="chip-absent" class="chip chipBtn px-3 py-2 rounded-full text-[11px] font-extrabold text-slate-700">Absents</button>
-            <button onclick="setFilter('late')" id="chip-late" class="chip chipBtn px-3 py-2 rounded-full text-[11px] font-extrabold text-slate-700">Retard</button>
-            <button onclick="setFilter('incomplete')" id="chip-incomplete" class="chip chipBtn px-3 py-2 rounded-full text-[11px] font-extrabold text-slate-700">Incomplet</button>
-          </div>
-        </div>
-
-        <div class="flex gap-2 sm:justify-end items-stretch">
-          <input id="searchInput" oninput="applyFilters()"
-                 placeholder="Rechercher un nom…"
-                 class="w-full sm:w-56 px-4 py-3 rounded-2xl card shadow-sm text-sm font-semibold accentRing bg-white" />
-
-          <button onclick="downloadPDF()"
-                  class="btn px-4 py-3 rounded-2xl shadowSoft bg-[color:var(--primary)] text-white font-extrabold text-[12px] tracking-wide whitespace-nowrap">
-            📄 Rapport PDF
-          </button>
-
-          <button onclick="sharePDFtoWhatsApp()"
-                  class="btn px-4 py-3 rounded-2xl shadowSoft bg-green-600 text-white font-extrabold text-[12px] tracking-wide whitespace-nowrap">
-            📤 WhatsApp
-          </button>
-        </div>
-
-      </div>
+  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm items-end" onclick="closeModal()">
+    <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up" onclick="event.stopPropagation()">
+      <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8"></div>
+      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tighter">Historique</h2>
+      <div id="modalList" class="space-y-3 max-h-[50vh] overflow-y-auto no-scrollbar"></div>
+      <button onclick="closeModal()" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm">Fermer</button>
     </div>
   </div>
 
-  <main class="max-w-3xl mx-auto px-4 pt-4">
-
-    <!-- Summary -->
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-      <div class="card rounded-2xl p-3">
-        <div class="text-[10px] font-extrabold tracking-[0.16em] uppercase text-slate-500">Total</div>
-        <div id="kpiTotal" class="text-2xl font-extrabold tracking-tight mt-1">—</div>
-      </div>
-      <div class="card rounded-2xl p-3">
-        <div class="text-[10px] font-extrabold tracking-[0.16em] uppercase text-slate-500">Présents</div>
-        <div id="kpiPresent" class="text-2xl font-extrabold tracking-tight mt-1">—</div>
-      </div>
-      <div class="card rounded-2xl p-3">
-        <div class="text-[10px] font-extrabold tracking-[0.16em] uppercase text-slate-500">Absents</div>
-        <div id="kpiAbsent" class="text-2xl font-extrabold tracking-tight mt-1">—</div>
-      </div>
-      <div class="card rounded-2xl p-3">
-        <div class="text-[10px] font-extrabold tracking-[0.16em] uppercase text-slate-500">Retards</div>
-        <div id="kpiLate" class="text-2xl font-extrabold tracking-tight mt-1">—</div>
-      </div>
-      <div class="card rounded-2xl p-3 col-span-2 sm:col-span-1">
-        <div class="text-[10px] font-extrabold tracking-[0.16em] uppercase text-slate-500">Minutes retard</div>
-        <div id="kpiLateMin" class="text-2xl font-extrabold tracking-tight mt-1">—</div>
-      </div>
-    </div>
-
-    <!-- Staff list -->
-    <div id="staffList" class="space-y-6"></div>
-
-    <div class="mt-10 text-center text-slate-400 text-[10px] font-extrabold uppercase tracking-[0.28em] pb-6">
-      &copy; 2026 Grey Corner • Service & Hospitalité
-    </div>
-  </main>
-
-  <!-- Hidden PDF area (built dynamically before export) -->
-  <div id="pdfArea" class="pdfPage p-6">
-    <div id="pdfHeader" class="mb-4"></div>
-    <div id="pdfSummary" class="mb-4"></div>
-    <div id="pdfTables" class="space-y-6"></div>
-  </div>
-
-  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== Firebase =====
     const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ===== State =====
-    let isManager = false;
-    let currentFilter = "all";
-    let latestDataCache = {};
-    let activeListenerRef = null;
+    const dateInput = document.getElementById('dashDate');
+    let currentMode = 'day', myChart = null;
 
-    // ✅ Chef cuisine ajouté
-    const EQUIPE = [
-      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'}, // ✅ Chef cuisine (hA only)
+    const equipe = [
       {nom: 'ALAOUI', prenom: 'LAZIZ', poste: 'SERVICE'}, {nom: 'BELQASSE', prenom: 'KHAOULA', poste: 'CUISINE'},
       {nom: 'BENKHADA', prenom: 'ABDESLAM', poste: 'CAISSE'}, {nom: 'BOURAHMA', prenom: 'ANAS', poste: 'CUISINE'},
       {nom: 'CHKAIRI', prenom: 'YOUSSEF', poste: 'BAR'}, {nom: 'ELKOBBI', prenom: 'MOSTAFA', poste: 'BAR'},
@@ -183,495 +135,200 @@
       {nom: 'SBAI', prenom: 'HAKIMA', poste: 'MENAGE'}, {nom: 'ZAIR', prenom: 'FATIMA', poste: 'CUISINE'}
     ];
 
-    // exceptions historiques (inchangées)
-    const exceptions = ["ELMCHAOURI_SOUAD", "SBAI_HAKIMA", "KHALOUQ_RACHID"];
+    dateInput.value = new Intl.DateTimeFormat('fr-CA', {timeZone: 'Africa/Casablanca', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+    dateInput.addEventListener('change', updateDashboard);
+    updateDashboard();
 
-    // ✅ Nouvel accès: hA seulement (sans hP)
-    const haOnly = ["BOUCHNAK_NAOUAL"];
-
-    // ===== Helpers =====
-    const getMarocDate = () =>
-      new Intl.DateTimeFormat('fr-CA', {
-        timeZone: 'Africa/Casablanca',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date());
-
-    function timeToMin(t){
-      if(!t || typeof t !== "string" || !t.includes(":")) return null;
-      const [h,m] = t.split(":").map(Number);
-      if(Number.isNaN(h) || Number.isNaN(m)) return null;
-      return h*60+m;
+    function switchMode(mode, btn) {
+      currentMode = mode;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
+      updateDashboard();
     }
 
-    function lateMinutes(hP, hA){
-      const p = timeToMin(hP);
-      const a = timeToMin(hA);
-      if(p === null || a === null) return null;
-      return Math.max(0, a - p);
-    }
+    function toggleExclusion() { database.ref('presences/' + dateInput.value + '/disabled').transaction(v => !v); }
 
-    function fmtLate(min){
-      if(min === null) return "—";
-      if(min <= 0) return "À l'heure";
-      return `+${min} min`;
-    }
-
-    function empId(emp){ return `${emp.nom}_${emp.prenom}`; }
-
-    function isLocked(selectedDate){
-      return (selectedDate !== getMarocDate()) && !isManager;
-    }
-
-    function canEditHA(id, selectedDate){
-      const estEx = exceptions.includes(id);
-      return isManager || (estEx && selectedDate === getMarocDate());
-    }
-
-    // ===== Filters =====
-    function setFilter(f){
-      currentFilter = f;
-      document.querySelectorAll(".chipBtn").forEach(b => b.classList.remove("active"));
-      const btn = document.getElementById(`chip-${f}`);
-      if(btn) btn.classList.add("active");
-      applyFilters();
-    }
-
-    function applyFilters(){
-      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-      const cards = document.querySelectorAll("#staffList .empCard");
-
-      cards.forEach(card => {
-        const matchName = (card.dataset.name || "").includes(q);
-
-        let matchFilter = true;
-        if(currentFilter === "present") matchFilter = card.dataset.present === "1";
-        if(currentFilter === "absent") matchFilter = card.dataset.present === "0";
-        if(currentFilter === "late") matchFilter = card.dataset.late === "1";
-        if(currentFilter === "incomplete") matchFilter = card.dataset.incomplete === "1";
-
-        card.style.display = (matchName && matchFilter) ? "block" : "none";
+    function updateDashboard() {
+      database.ref('presences/' + dateInput.value).on('value', (snap) => {
+        const data = snap.val() || {};
+        document.getElementById('excludeBtn').classList.toggle('active', data.disabled);
+        if (currentMode === 'day') renderDayView(data);
+        else renderReportView();
       });
     }
 
-    // ===== Manager =====
-    function toggleManager(){
-      if(!isManager){
-        if(prompt("Code Manager :") === "2026"){
-          isManager = true;
-          const btn = document.getElementById('managerToggle');
-          btn.textContent = "🔒 Mode gérant actif";
-          btn.className = "btn px-3 py-2 rounded-full text-[11px] font-extrabold tracking-wide bg-[#e67e22] text-white";
-        }
-      } else {
-        isManager = false;
-        location.reload();
-      }
-      load();
+    function getStatusClass(diff, isOff, hasArrived) {
+      if (isOff) return 'status-off';
+      if (!hasArrived) return '';
+      if (diff <= 0) return 'status-green';
+      if (diff < 30) return 'status-orange';
+      if (diff < 60) return 'status-red';
+      return 'status-flash'; // +1h
     }
 
-    // ===== CRUD =====
-    function upd(id, f, v){
-      const date = document.getElementById('datePicker').value;
-      database.ref('presences/'+date+'/'+id).update({[f]:v});
-    }
-
-    // ===== Render =====
-    function render(){
-      const selectedDate = document.getElementById('datePicker').value;
-      const lock = isLocked(selectedDate);
-
-      const list = document.getElementById('staffList');
-      list.innerHTML = "";
-
-      // group by poste
-      const groupes = EQUIPE.reduce((acc, emp) => {
-        (acc[emp.poste] = acc[emp.poste] || []).push(emp);
-        return acc;
-      }, {});
-
-      Object.keys(groupes).sort().forEach(poste => {
-        const section = document.createElement('section');
-        section.className = "card rounded-3xl overflow-hidden";
-
-        const header = document.createElement('button');
-        header.type = "button";
-        header.className = "w-full flex items-center justify-between px-4 py-4 bg-white";
-        header.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="sectionTitle text-xs font-extrabold tracking-[0.18em] uppercase text-slate-500">${poste}</div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="badge">${groupes[poste].length} pers.</span>
-            <span class="text-slate-400 font-black">▾</span>
-          </div>
-        `;
-
-        const body = document.createElement('div');
-        body.className = "px-4 pb-4 space-y-3";
-
-        // default open
-        let open = true;
-        header.addEventListener('click', () => {
-          open = !open;
-          body.style.display = open ? "block" : "none";
+    function renderDayView(data) {
+      const container = document.getElementById('dashBody');
+      const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
+      let html = '';
+      Object.keys(groups).forEach(poste => {
+        html += `<div class="mb-8"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">${poste}</h3><div class="grid grid-cols-2 gap-4">`;
+        groups[poste].forEach(emp => {
+          const d = data[emp.nom + '_' + emp.prenom] || {};
+          const diff = getTimeDiff(d.hA, d.hP);
+          const sClass = getStatusClass(diff, d.off, !!d.hA);
+          html += `
+            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left h-28 flex flex-col justify-between ${data.disabled?'opacity-20':''}">
+              <div><p class="text-[11px] font-black uppercase text-slate-800 truncate">${emp.nom}</p></div>
+              <p class="text-[9px] font-bold ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
+                ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m' : 'OK') : '--:--')}
+              </p>
+            </button>`;
         });
-
-        groupes[poste]
-          .slice()
-          .sort((a,b)=>{
-            // ✅ Chef cuisine toujours en premier
-            const A = `${a.nom}_${a.prenom}`;
-            const B = `${b.nom}_${b.prenom}`;
-            if (A === "BOUCHNAK_NAOUAL") return -1;
-            if (B === "BOUCHNAK_NAOUAL") return 1;
-            return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-          })
-          .forEach(emp => {
-
-            const id = empId(emp);
-            const d = latestDataCache[id] || {};
-
-            const estEx = exceptions.includes(id);
-            const isHaOnly = haOnly.includes(id);
-
-            // ✅ hA editable: manager OR exceptions OR chef hA-only (today)
-            const editHA = canEditHA(id, selectedDate) || (isHaOnly && selectedDate === getMarocDate());
-
-            const late = lateMinutes(d.hP, d.hA);
-
-            // status
-            const isPresent = !!d.on;
-            const isOut = !!d.off;
-            const hasHP = !!d.hP;
-            const hasHA = !!d.hA;
-
-            // ✅ incomplete rule:
-            // - normal: present requires HP + HA
-            // - haOnly: present requires only HA
-            const incomplete =
-              (isPresent && (isHaOnly ? !hasHA : (!hasHP || !hasHA))) ||
-              (!isPresent && (hasHP || hasHA || isOut));
-
-            const isLate = (late !== null && late > 0);
-
-            const statusBadges = [];
-            if(isPresent) statusBadges.push(`<span class="badge ok">Présent</span>`);
-            else statusBadges.push(`<span class="badge bad">Absent</span>`);
-            if(isOut) statusBadges.push(`<span class="badge">Sorti</span>`);
-            if(isLate) statusBadges.push(`<span class="badge warn">Retard ${fmtLate(late)}</span>`);
-            if(incomplete) statusBadges.push(`<span class="badge">Incomplet</span>`);
-            if(estEx) statusBadges.push(`<span class="badge" style="border-color:rgba(197,160,89,.35);background:rgba(197,160,89,.10);color:#7a5b1d">🌿 Exception</span>`);
-            if(isHaOnly) statusBadges.push(`<span class="badge" style="border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#166534">👩‍🍳 Chef (hA)</span>`);
-
-            const card = document.createElement('div');
-            card.className = "card rounded-2xl p-4 empCard";
-            card.dataset.name = `${emp.nom} ${emp.prenom}`.toLowerCase();
-            card.dataset.present = isPresent ? "1" : "0";
-            card.dataset.late = isLate ? "1" : "0";
-            card.dataset.incomplete = incomplete ? "1" : "0";
-
-            card.innerHTML = `
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="font-extrabold text-sm tracking-tight text-slate-900 truncate">
-                    ${emp.nom} ${emp.prenom}
-                  </div>
-                  <div class="mt-2 flex gap-2 flex-wrap">
-                    ${statusBadges.join("")}
-                  </div>
-                </div>
-
-                <div class="toggleWrap rounded-2xl p-2 flex gap-2">
-                  <label class="flex flex-col items-center px-1">
-                    <span class="text-[9px] font-extrabold text-slate-400 tracking-wide">IN</span>
-                    <input type="checkbox" class="w-4 h-4 accent-[color:var(--accent)]"
-                      ${isPresent ? "checked" : ""} ${lock ? "disabled" : ""}
-                      onchange="upd('${id}','on',this.checked)">
-                  </label>
-                  <label class="flex flex-col items-center px-1">
-                    <span class="text-[9px] font-extrabold text-slate-400 tracking-wide">OUT</span>
-                    <input type="checkbox" class="w-4 h-4 accent-[color:var(--accent)]"
-                      ${isOut ? "checked" : ""} ${lock ? "disabled" : ""}
-                      onchange="upd('${id}','off',this.checked)">
-                  </label>
-                </div>
-              </div>
-
-              <div class="mt-4 grid grid-cols-2 gap-3">
-                <div>
-                  <label class="text-[10px] font-extrabold tracking-[0.14em] uppercase text-slate-500 mb-1 block">Shift prévu</label>
-                  <input type="time"
-                    class="w-full bg-[color:var(--soft)] rounded-xl text-sm font-bold px-3 py-2 accentRing"
-                    value="${d.hP || ""}"
-                    ${(lock || isHaOnly) ? "disabled" : ""}
-                    onchange="upd('${id}','hP',this.value)">
-                </div>
-
-                <div>
-                  <label class="text-[10px] font-extrabold tracking-[0.14em] uppercase text-slate-500 mb-1 block">Arrivée réelle</label>
-                  ${
-                    editHA
-                    ? `<input type="time"
-                        class="w-full rounded-xl text-sm font-extrabold px-3 py-2 accentRing"
-                        style="background: rgba(197,160,89,.10); border:1px solid rgba(197,160,89,.30)"
-                        value="${d.hA || ""}"
-                        onchange="upd('${id}','hA',this.value)">`
-                    : `<div class="w-full bg-slate-100 rounded-xl text-sm font-extrabold px-3 py-2 text-slate-500 text-center">
-                        ${d.hA || "--:--"}
-                      </div>`
-                  }
-                </div>
-              </div>
-            `;
-
-            body.appendChild(card);
-          });
-
-        section.appendChild(header);
-        section.appendChild(body);
-        list.appendChild(section);
+        html += `</div></div>`;
       });
-
-      computeKPIs();
-      applyFilters();
+      container.innerHTML = html;
     }
-
-    function computeKPIs(){
-      const total = EQUIPE.length;
-      let present = 0, absent = 0, lateCount = 0, lateMinSum = 0;
-
-      EQUIPE.forEach(emp => {
-        const id = empId(emp);
-        const d = latestDataCache[id] || {};
-        const isPresent = !!d.on;
-        if(isPresent) present++; else absent++;
-
-        const lm = lateMinutes(d.hP, d.hA);
-        if(lm !== null && lm > 0){
-          lateCount++;
-          lateMinSum += lm;
-        }
-      });
-
-      document.getElementById("kpiTotal").textContent = total;
-      document.getElementById("kpiPresent").textContent = present;
-      document.getElementById("kpiAbsent").textContent = absent;
-      document.getElementById("kpiLate").textContent = lateCount;
-      document.getElementById("kpiLateMin").textContent = lateMinSum;
-    }
-
-    // ===== Load =====
-    function load(){
-      const selectedDate = document.getElementById('datePicker').value;
-
-      if(activeListenerRef){
-        activeListenerRef.off();
-      }
-
-      activeListenerRef = database.ref('presences/' + selectedDate);
-      activeListenerRef.on('value', snap => {
-        latestDataCache = snap.val() || {};
-        render();
-      });
-    }
-
-    // ===== PDF Report =====
-    function pdfKpi(label, value){
-      return `
-        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
-          <div style="font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;font-size:10px;">${label}</div>
-          <div style="font-weight:900;font-size:18px;margin-top:4px;color:#111827;">${value}</div>
-        </div>
-      `;
-    }
-
-    function buildPDF(){
-      const date = document.getElementById('datePicker').value;
-
-      document.getElementById("pdfHeader").innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;">
+  const container = document.getElementById('dashBody');
+  const groups = {}; equipe.forEach(e => (groups[e.poste] ||= []).push(e));
+  let html = '';
+  
+  Object.keys(groups).forEach(poste => {
+    html += `<div class="mb-10"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-2 italic">${poste}</h3><div class="grid grid-cols-2 gap-5">`;
+    groups[poste].forEach(emp => {
+      const d = data[emp.nom + '_' + emp.prenom] || {};
+      const diff = getTimeDiff(d.hA, d.hP);
+      const sClass = getStatusClass(diff, d.off, !!d.hA);
+      
+      html += `
+        <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-[24px] text-left h-32 flex flex-col justify-between transition-transform active:scale-95 ${data.disabled?'opacity-20':''}">
           <div>
-            <div style="font-weight:900;letter-spacing:.12em;color:#b0892f;font-size:10px;text-transform:uppercase;">Fès — Maroc</div>
-            <div style="font-weight:900;font-size:20px;letter-spacing:-.02em;">GREY CORNER</div>
-            <div style="font-weight:800;color:#374151;font-size:12px;margin-top:2px;">Rapport journalier — Présences</div>
+            <p class="text-[11px] font-black uppercase text-slate-800 truncate tracking-tight">${emp.nom}</p>
+            <p class="text-[9px] font-medium text-slate-400 lowercase">${emp.prenom}</p>
           </div>
-          <div style="text-align:right;">
-            <div style="font-weight:900;color:#111827;font-size:12px;">Date : ${date}</div>
-            <div style="font-weight:700;color:#6b7280;font-size:10px;">Généré depuis l’outil de pointage</div>
+          
+          <div class="space-y-1">
+            <p class="text-[10px] font-black ${diff > 0 ? 'text-rose-500' : 'text-emerald-600'}">
+              ${d.off ? 'REPOS' : (d.hA ? (diff > 0 ? diff+'m retard' : 'À L\'HEURE') : 'ATTENTE')}
+            </p>
+            
+            ${!d.off && d.hA ? `
+            <div class="flex gap-2 border-t border-slate-100 pt-1 mt-1">
+              <div class="flex flex-col">
+                <span class="text-[7px] font-bold text-slate-300 uppercase">HP</span>
+                <span class="text-[9px] font-black text-slate-500">${d.hP || '--:--'}</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[7px] font-bold text-slate-300 uppercase">HA</span>
+                <span class="text-[9px] font-black text-slate-800">${d.hA}</span>
+              </div>
+            </div>` : ''}
           </div>
-        </div>
-        <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />
-      `;
+        </button>`;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+}
 
-      const total = EQUIPE.length;
-      let present = 0, absent = 0, lateCount = 0, lateMinSum = 0;
 
-      EQUIPE.forEach(emp => {
-        const d = latestDataCache[empId(emp)] || {};
-        const isPresent = !!d.on;
-        if(isPresent) present++; else absent++;
-        const lm = lateMinutes(d.hP, d.hA);
-        if(lm !== null && lm > 0){ lateCount++; lateMinSum += lm; }
-      });
+    async function renderReportView() {
+      const dates = getDatesInMonth();
+      const stats = {}; equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info: e, present: 0, late: 0 });
+      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
-      document.getElementById("pdfSummary").innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-          ${pdfKpi("Total", total)}
-          ${pdfKpi("Présents", present)}
-          ${pdfKpi("Absents", absent)}
-          ${pdfKpi("Retards", lateCount)}
-          ${pdfKpi("Minutes retard", lateMinSum)}
-        </div>
-      `;
-
-      const groupes = EQUIPE.reduce((acc, emp) => {
-        (acc[emp.poste] = acc[emp.poste] || []).push(emp);
-        return acc;
-      }, {});
-
-      const wrap = document.getElementById("pdfTables");
-      wrap.innerHTML = "";
-
-      Object.keys(groupes).sort().forEach(poste => {
-
-        const rows = groupes[poste]
-          .slice()
-          .sort((a,b)=>{
-            const A = `${a.nom}_${a.prenom}`;
-            const B = `${b.nom}_${b.prenom}`;
-            if (A === "BOUCHNAK_NAOUAL") return -1;
-            if (B === "BOUCHNAK_NAOUAL") return 1;
-            return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-          })
-          .map(emp => {
-            const id = empId(emp);
-            const d = latestDataCache[id] || {};
-            const lm = lateMinutes(d.hP, d.hA);
-
-            const presentTxt = d.on ? "Oui" : "Non";
-            const outTxt = d.off ? "Oui" : "Non";
-            const hp = d.hP || "";
-            const ha = d.hA || "";
-            const retard = (lm === null) ? "" : (lm > 0 ? `+${lm} min` : "0");
-            const ex = exceptions.includes(id) ? "🌿" : "";
-            const chef = haOnly.includes(id) ? "👩‍🍳" : "";
-
-            return `
-              <tr>
-                <td>${emp.nom} ${emp.prenom} ${chef} ${ex}</td>
-                <td style="text-align:center;">${presentTxt}</td>
-                <td style="text-align:center;">${outTxt}</td>
-                <td style="text-align:center;">${hp}</td>
-                <td style="text-align:center;">${ha}</td>
-                <td style="text-align:center;">${retard}</td>
-              </tr>
-            `;
-          }).join("");
-
-        const block = document.createElement("div");
-        block.innerHTML = `
-          <div style="margin-top:14px;margin-bottom:8px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#6b7280;font-size:11px;">
-            ${poste}
-          </div>
-          <table class="pdfTable" style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Employé</th>
-                <th style="text-align:center;">Présent</th>
-                <th style="text-align:center;">OUT</th>
-                <th style="text-align:center;">Prévu</th>
-                <th style="text-align:center;">Arrivée</th>
-                <th style="text-align:center;">Retard</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        `;
-        wrap.appendChild(block);
-      });
-    }
-
-    function downloadPDF(){
-      buildPDF();
-      const date = document.getElementById('datePicker').value;
-
-      const element = document.getElementById('pdfArea');
-      element.style.display = "block";
-
-      html2pdf().set({
-        margin: 8,
-        filename: `GC_RAPPORT_${date}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      }).from(element).save().then(() => {
-        element.style.display = "none";
-      }).catch(() => {
-        element.style.display = "none";
-      });
-    }
-
-    // ===== WhatsApp share (manual, with prefilled text) =====
-    async function sharePDFtoWhatsApp(){
-      buildPDF();
-      const date = document.getElementById('datePicker').value;
-
-      const element = document.getElementById('pdfArea');
-      element.style.display = "block";
-
-      const opt = {
-        margin: 8,
-        filename: `GC_RAPPORT_${date}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      try{
-        const worker = html2pdf().set(opt).from(element);
-        const pdfBlob = await worker.outputPdf('blob');
-
-        element.style.display = "none";
-
-        const file = new File([pdfBlob], `GC_RAPPORT_${date}.pdf`, { type: 'application/pdf' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: "Rapport Grey Corner",
-            text: "Rapport du jour",
-            files: [file]
+      const dailyLates = [], labels = [];
+      snaps.forEach((s, i) => {
+        const dData = s.val() || {};
+        let tL = 0;
+        if (!dData.disabled) {
+          Object.keys(stats).forEach(id => {
+            const e = dData[id];
+            if(e && e.hA && !e.off) {
+              const d = getTimeDiff(e.hA, e.hP);
+              stats[id].present++; stats[id].late += d; tL += d;
+            }
           });
-
-          setTimeout(() => {
-            window.location.href = "https://wa.me/212661446680?text=" + encodeURIComponent("Rapport du jour");
-          }, 400);
-
-        } else {
-          alert("Le partage direct n'est pas supporté ici. Le PDF va être téléchargé.");
-          downloadPDF();
-          setTimeout(() => {
-            window.location.href = "https://wa.me/212661446680?text=" + encodeURIComponent("Rapport du jour");
-          }, 700);
         }
-      } catch(e){
-        element.style.display = "none";
-        alert("Erreur lors de la génération/partage du PDF.");
+        dailyLates.push(tL); labels.push(dates[i].split('-')[2]);
+      });
+
+      renderChart(labels, dailyLates);
+
+      const allStats = Object.values(stats);
+      const discList = allStats.filter(s => s.late === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+      const lateList = allStats.filter(s => s.late > 0).sort((a,b) => b.late - a.late);
+
+      let html = '<div class="space-y-10">';
+
+      // SECTION 1 : ÉLITE DISCIPLINE
+      if(discList.length > 0) {
+        html += `<div><h3 class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">🏆 Élite Discipline</h3><div class="space-y-3">`;
+        discList.slice(0, 5).forEach((s, idx) => {
+          html += `<div class="glass-card p-4 rounded-[22px] border-l-4 border-emerald-500 flex justify-between items-center bg-emerald-50/30">
+            <div><p class="text-xs font-black uppercase text-slate-800">${idx===0?'🥇 ':''}${s.info.nom}</p><p class="text-[9px] font-bold text-emerald-600">${s.present} j OK</p></div>
+            <span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full tracking-tighter">IRRÉPROCHABLE</span>
+          </div>`;
+        });
+        html += `</div></div>`;
       }
+
+      // SECTION 2 : TOP RETARDATAIRES
+      if(lateList.length > 0) {
+        html += `<div><h3 class="text-[10px] font-black text-rose-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">⚠️ Analyse Retards</h3><div class="space-y-2">`;
+        lateList.slice(0, 5).forEach((s, idx) => {
+          html += `<div class="glass-card p-4 rounded-[22px] flex justify-between items-center">
+            <span class="text-xs font-black uppercase text-slate-700">#${idx+1} ${s.info.nom}</span>
+            <div class="text-right"><p class="text-xs font-black text-rose-500">${s.late}m</p><p class="text-[8px] font-bold text-slate-400">${s.present} j</p></div>
+          </div>`;
+        });
+        html += '</div></div>';
+      }
+
+      document.getElementById('dashBody').innerHTML = html + '</div>';
     }
 
-    // ===== Init =====
-    function initApp(){
-      const dp = document.getElementById('datePicker');
-      dp.value = getMarocDate();
-      dp.addEventListener('change', load);
-      load();
+    function renderChart(labels, lates) {
+      const ctx = document.getElementById('trendsChart').getContext('2d');
+      if (myChart) myChart.destroy();
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{ data: lates, borderColor: '#c5a059', tension: 0.4, borderWidth: 3, pointRadius: 0, backgroundColor: 'rgba(197,160,89,0.05)', fill: true }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
+      });
     }
 
-    initApp();
+    function getTimeDiff(a, p) { if(!a || !p) return 0; const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number); const d=(ha*60+ma)-(hp*60+mp); return d>0?d:0; }
+    function getDatesInMonth() {
+      const dates = [], curr = new Date(dateInput.value), m = curr.getMonth(), y = curr.getFullYear(), d = new Date(y, m, 1);
+      while(d.getMonth() === m) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
+      return dates;
+    }
+
+    async function openHistory(nom, prenom) {
+      const modal = document.getElementById('historyModal');
+      document.getElementById('modalTitle').innerText = nom;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      const dates = getDatesInMonth();
+      const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
+      let html = '';
+      snaps.reverse().forEach((s, i) => {
+        const data = s.val(), entry = data ? data[nom+'_'+prenom] : null;
+        if(entry) {
+          const diff = getTimeDiff(entry.hA, entry.hP);
+          html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <span class="text-[10px] font-black text-slate-400 uppercase">${dates.slice().reverse()[i].split('-').reverse().slice(0,2).join('/')}</span>
+            <span class="text-[10px] font-black ${entry.off?'text-slate-300':(diff>0?'text-rose-500':'text-emerald-500')} uppercase">${entry.off?'Repos':(entry.hA?(diff>0?diff+'m':'OK'):'Absent')}</span>
+          </div>`;
+        }
+      });
+      document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
+    }
+    function closeModal() { document.getElementById('historyModal').classList.add('hidden'); }
   </script>
 </body>
 </html>
