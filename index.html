@@ -7,42 +7,74 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ✅ PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --grey-dark:#2c2c2c;
-      --grey-light:#f4f4f4;
-      --gold:#c5a059;
-      --ok:#10b981;
-      --late:#f59e0b;
-      --crit:#ef4444;
+    :root {
+      --grey-dark: #2c2c2c;
+      --grey-light: #f4f4f4;
+      --gold: #c5a059;
+      --gold-light: #e2cfab;
+      --status-ok: #10b981;
+      --status-late: #f59e0b;
+      --status-crit: #ef4444;
     }
-    body{
-      font-family:'Plus Jakarta Sans',sans-serif;
-      background:var(--grey-light);
-      color:var(--grey-dark);
-      -webkit-tap-highlight-color:transparent;
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--grey-light);
+      color: var(--grey-dark);
+      -webkit-tap-highlight-color: transparent;
     }
-    .glass-card{background:#fff;border:1px solid #e5e7eb;box-shadow:0 4px 20px -5px rgba(0,0,0,.05)}
-    .view-btn{color:var(--grey-dark);border:1px solid transparent;transition:.25s}
-    .view-btn.active{background:var(--grey-dark);color:var(--gold);border-color:var(--gold)}
-    .staff-card{border-left-width:5px;transition:transform .15s}
-    .staff-card:active{transform:scale(.99)}
-    .status-green{border-left-color:var(--ok)!important;background:#f0fdf4}
-    .status-orange{border-left-color:var(--late)!important;background:#fffbeb}
-    .status-red{border-left-color:var(--crit)!important;background:#fef2f2}
-    .status-flash{border-left-color:var(--crit)!important;background:#fef2f2;animation:flash-red 1s infinite}
-    @keyframes flash-red{0%{box-shadow:inset 0 0 0px var(--crit)}50%{box-shadow:inset 0 0 15px rgba(239,68,68,.18);border-left-width:8px}100%{box-shadow:inset 0 0 0px var(--crit)}}
-    .status-off{border-left-color:#94a3b8!important;background:#f8fafc;opacity:.65}
-    .modal-active{display:flex!important;animation:slideUp .28s cubic-bezier(0,0,.2,1)}
-    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-    /* zone pdf cachée */
+
+    .glass-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+    }
+
+    .view-btn {
+      color: var(--grey-dark);
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+    }
+    .view-btn.active {
+      background: var(--grey-dark);
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .staff-card { border-left-width: 5px; transition: transform 0.2s; }
+    .status-green { border-left-color: var(--status-ok) !important; background: #f0fdf4; }
+    .status-orange { border-left-color: var(--status-late) !important; background: #fffbeb; }
+    .status-red { border-left-color: var(--status-crit) !important; background: #fef2f2; }
+
+    .status-flash {
+      border-left-color: var(--status-crit) !important;
+      background: #fef2f2;
+      animation: flash-red 1s infinite;
+    }
+    @keyframes flash-red {
+      0% { box-shadow: inset 0 0 0px #ef4444; }
+      50% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.2); border-left-width: 8px; }
+      100% { box-shadow: inset 0 0 0px #ef4444; }
+    }
+
+    .status-off { border-left-color: #94a3b8 !important; background: #f8fafc; opacity: 0.6; }
+
+    .modal-active { display: flex !important; animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1); }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* ✅ PDF hidden area */
     #pdfArea{display:none;background:#fff;color:#111827}
-    .pdfBox{border:1px solid #e5e7eb;border-radius:12px;padding:10px}
-    .pdfKpiLabel{font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;font-size:10px}
-    .pdfKpiVal{font-weight:900;font-size:18px;margin-top:4px}
+    .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
+    .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .pdfKpi .t{font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;font-size:10px}
+    .pdfKpi .v{font-weight:900;font-size:18px;margin-top:4px;color:#111827}
     .pdfTable{width:100%;border-collapse:collapse}
     .pdfTable th,.pdfTable td{border:1px solid #e5e7eb;padding:8px;font-size:11px}
     .pdfTable th{background:#f3f4f6;font-weight:900}
@@ -52,25 +84,50 @@
 <body class="antialiased pb-10">
   <div class="max-w-md mx-auto px-5 pt-8">
 
-    <header class="flex justify-between items-start mb-10">
+    <header class="flex justify-between items-start mb-6">
       <div>
         <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
         <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</p>
       </div>
 
-      <button id="btnPdfDay" class="bg-black text-white px-4 py-3 rounded-2xl text-[11px] font-extrabold">
-        PDF JOUR
-      </button>
+      <!-- ✅ Actions PDF -->
+      <div class="flex items-center gap-2">
+        <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+          PDF JOUR
+        </button>
+      </div>
     </header>
 
-    <div class="mb-8 space-y-4">
+    <div class="mb-6 space-y-4">
       <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-        <button id="btnModeDay" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-        <button id="btnModeReport" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
+        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
+        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
       </div>
 
       <div class="relative">
         <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
+      </div>
+
+      <!-- ✅ PDF employé (Mois / Année) -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
+
+        <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+          <!-- rempli en JS -->
+        </select>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
+            PDF MOIS
+          </button>
+          <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">
+            PDF ANNÉE
+          </button>
+        </div>
+
+        <div class="text-[10px] text-slate-500 font-semibold leading-snug">
+          ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b> (ni congé, ni absent, ni repos).
+        </div>
       </div>
     </div>
 
@@ -83,402 +140,342 @@
     <div id="dashBody" class="space-y-6"></div>
   </div>
 
-  <!-- Modal historique + PDFs employé -->
   <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeModal()">
     <div class="bg-white w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
-      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-4 tracking-tight">Historique</h2>
-
-      <div class="flex gap-2 mb-5">
-        <button id="btnPdfMonthEmp" class="flex-1 bg-black text-white py-3 rounded-2xl text-[11px] font-extrabold">PDF MOIS</button>
-        <button id="btnPdfYearEmp" class="flex-1 bg-slate-800 text-white py-3 rounded-2xl text-[11px] font-extrabold">PDF ANNÉE</button>
-      </div>
-
-      <div id="modalList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tight">Historique</h2>
+      <div id="modalList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div>
     </div>
   </div>
 
-  <!-- PDF hidden area -->
+  <!-- ✅ Hidden PDF container -->
   <div id="pdfArea" class="p-6">
     <div id="pdfHeader" class="mb-4"></div>
-    <div id="pdfSummary" class="mb-4"></div>
-    <div id="pdfContent" class="space-y-6"></div>
+    <div id="pdfKpis" class="mb-4"></div>
+    <div id="pdfContent"></div>
   </div>
 
-  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== DOM refs (✅ corrige l'erreur) =====
-    const dashDateEl = document.getElementById('dashDate');
-    const dashBodyEl = document.getElementById('dashBody');
-    const historyModalEl = document.getElementById('historyModal');
-    const modalTitleEl = document.getElementById('modalTitle');
-    const modalListEl = document.getElementById('modalList');
-
-    const btnModeDay = document.getElementById('btnModeDay');
-    const btnModeReport = document.getElementById('btnModeReport');
-    const chartContainer = document.getElementById('chartContainer');
-
-    const btnPdfDay = document.getElementById('btnPdfDay');
-    const btnPdfMonthEmp = document.getElementById('btnPdfMonthEmp');
-    const btnPdfYearEmp = document.getElementById('btnPdfYearEmp');
-
-    const pdfArea = document.getElementById('pdfArea');
-    const pdfHeader = document.getElementById('pdfHeader');
-    const pdfSummary = document.getElementById('pdfSummary');
-    const pdfContent = document.getElementById('pdfContent');
-
     // ===== Firebase =====
     const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ===== State =====
-    let currentMode = 'day';
-    let myChart = null;
+    const dateInput = document.getElementById('dashDate');
+    let currentMode = 'day', myChart = null;
+
+    // ✅ listener unique (évite accumulation)
     let activeDayListenerRef = null;
 
-    // employé sélectionné dans modal
-    let selectedEmpId = null;
-    let selectedEmpInfo = null;
-
-    // ===== Équipe complète =====
+    // ✅ Chef cuisine ajouté
     const equipe = [
-      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'}, // Chef cuisine (hA-only)
-      {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'},
-      {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
-      {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'},
-      {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
-      {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'},
-      {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
-      {nom:'ELGORRAMY', prenom:'ANISSA', poste:'MENAGE'},
-      {nom:'ELGORRAMY', prenom:'SOUAD', poste:'MENAGE'},
-      {nom:'ELMCHAOURI', prenom:'SOUAD', poste:'MENAGE'}, // Souad (exceptions exist déjà côté présence)
-      {nom:'ENNHAILI', prenom:'SOUMIA', poste:'ECONOMAT'},
-      {nom:'FILALI', prenom:'ABDERAFI', poste:'BAR'},
-      {nom:'GUETIBI', prenom:'AMINE', poste:'SERVICE'},
-      {nom:'HATTAF', prenom:'MOHAMED', poste:'SERVICE'},
-      {nom:'HIDARA', prenom:'YOUSSEF', poste:'SERVICE'},
-      {nom:'IDRISSI', prenom:'SAAD', poste:'CUISINE'},
-      {nom:'KAFOUNI', prenom:'ZAKARIAE', poste:'SERVICE'},
-      {nom:'KHALOUQ', prenom:'RACHID', poste:'BAR'},
-      {nom:'LEMSSIEH', prenom:'JAWAD', poste:'CUISINE'},
-      {nom:'MAJDOUB', prenom:'JIHANE', poste:'CUISINE'},
-      {nom:'MOHSINE', prenom:'YOUNESS', poste:'SERVICE'},
-      {nom:'MOUJAHID', prenom:'IMANE', poste:'CUISINE'},
-      {nom:'SALIL', prenom:'HOUDA', poste:'CAISSE'},
-      {nom:'SBAI', prenom:'HAKIMA', poste:'MENAGE'}, // Hakima
-      {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
+      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'}, // hA-only possible
+      {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'}, {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
+      {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'}, {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
+      {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'}, {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
+      {nom:'ELGORRAMY', prenom:'ANISSA', poste:'MENAGE'}, {nom:'ELGORRAMY', prenom:'SOUAD', poste:'MENAGE'},
+      {nom:'ELMCHAOURI', prenom:'SOUAD', poste:'MENAGE'}, {nom:'ENNHAILI', prenom:'SOUMIA', poste:'ECONOMAT'},
+      {nom:'FILALI', prenom:'ABDERAFI', poste:'BAR'}, {nom:'GUETIBI', prenom:'AMINE', poste:'SERVICE'},
+      {nom:'HATTAF', prenom:'MOHAMED', poste:'SERVICE'}, {nom:'HIDARA', prenom:'YOUSSEF', poste:'SERVICE'},
+      {nom:'IDRISSI', prenom:'SAAD', poste:'CUISINE'}, {nom:'KAFOUNI', prenom:'ZAKARIAE', poste:'SERVICE'},
+      {nom:'KHALOUQ', prenom:'RACHID', poste:'BAR'}, {nom:'LEMSSIEH', prenom:'JAWAD', poste:'CUISINE'},
+      {nom:'MAJDOUB', prenom:'JIHANE', poste:'CUISINE'}, {nom:'MOHSINE', prenom:'YOUNESS', poste:'SERVICE'},
+      {nom:'MOUJAHID', prenom:'IMANE', poste:'CUISINE'}, {nom:'SALIL', prenom:'HOUDA', poste:'CAISSE'},
+      {nom:'SBAI', prenom:'HAKIMA', poste:'MENAGE'}, {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
     ];
 
+    // ✅ IDs hA-only
     const haOnlyIds = new Set(["BOUCHNAK_NAOUAL"]);
 
-    // ===== Date helpers =====
-    function getMarocTodayISO(){
-      return new Intl.DateTimeFormat('fr-CA', {timeZone:'Africa/Casablanca', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
-    }
-    function isFutureDateISO(dateISO){
-      return dateISO > getMarocTodayISO();
-    }
-    function isPastDateISO(dateISO){
-      return dateISO < getMarocTodayISO();
+    // ✅ EXCLUSION: du 2026-01-01 au 2026-01-31 (inclus) => JAMAIS comptabilisé
+    const EXCL_START = "2026-01-01";
+    const EXCL_END   = "2026-01-31";
+    function isExcluded(dayISO){
+      return dayISO >= EXCL_START && dayISO <= EXCL_END;
     }
 
-    // ===== Retard diff =====
-    function getTimeDiff(hA, hP, id){
-      if(!hA) return 0;
-      if(!hP) return 0;           // pas de planning => pas de retard
-      if(id && haOnlyIds.has(id)) return 0; // chef hA-only non pénalisée
-      const [ha,ma]=hA.split(':').map(Number);
-      const [hp,mp]=hP.split(':').map(Number);
-      return Math.max(0, (ha*60+ma) - (hp*60+mp));
+    // ===== Helpers date (Casablanca) =====
+    function todayISO(){
+      return new Intl.DateTimeFormat('fr-CA',{
+        timeZone:'Africa/Casablanca',
+        year:'numeric',month:'2-digit',day:'2-digit'
+      }).format(new Date());
     }
 
-    function getStatusClass(diff, isOff, hasArrived){
-      if(isOff) return 'status-off';
-      if(!hasArrived) return '';
-      if(diff <= 0) return 'status-green';
-      if(diff > 0 && diff < 30) return 'status-orange';
-      if(diff >= 30 && diff < 60) return 'status-red';
-      if(diff >= 60) return 'status-flash';
+    function fmtFR(iso){ // yyyy-mm-dd => dd/mm/yyyy
+      if(!iso || !iso.includes("-")) return iso || "";
+      const [y,m,d] = iso.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    function getTimeDiff(a, p, id) {
+      if(!a) return 0;
+      if(!p) return 0;
+      if(id && haOnlyIds.has(id)) return 0;
+      const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number);
+      const d=(ha*60+ma)-(hp*60+mp);
+      return d>0?d:0;
+    }
+
+    function getStatusClass(diff, isOff, hasArrived) {
+      if (isOff) return 'status-off';
+      if (!hasArrived) return '';
+      if (diff <= 0) return 'status-green';
+      if (diff > 0 && diff < 30) return 'status-orange';
+      if (diff >= 30 && diff < 60) return 'status-red';
+      if (diff >= 60) return 'status-flash';
       return '';
     }
 
-    // ===== Init =====
-    dashDateEl.value = getMarocTodayISO();
-    dashDateEl.addEventListener('change', updateDashboard);
+    // ===== UI init =====
+    dateInput.value = todayISO();
+    dateInput.addEventListener('change', updateDashboard);
 
-    btnModeDay.onclick = () => switchMode('day');
-    btnModeReport.onclick = () => switchMode('report');
-
-    btnPdfDay.onclick = () => downloadDailyPDF();
-
-    btnPdfMonthEmp.onclick = () => {
-      if(!selectedEmpId) return;
-      downloadEmployeeMonthlyPDF(selectedEmpId, selectedEmpInfo);
-    };
-    btnPdfYearEmp.onclick = () => {
-      if(!selectedEmpId) return;
-      downloadEmployeeYearlyPDF(selectedEmpId, selectedEmpInfo);
-    };
+    // remplissage select employé
+    (function fillEmpSelect(){
+      const sel = document.getElementById("empSelect");
+      const list = equipe.slice().sort((a,b)=>{
+        const A = a.nom+"_"+a.prenom, B = b.nom+"_"+b.prenom;
+        if(A==="BOUCHNAK_NAOUAL") return -1;
+        if(B==="BOUCHNAK_NAOUAL") return 1;
+        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+      });
+      sel.innerHTML = list.map(e=>{
+        const id = e.nom+"_"+e.prenom;
+        return `<option value="${id}">${e.nom} ${e.prenom} — ${e.poste}</option>`;
+      }).join("");
+    })();
 
     updateDashboard();
 
-    function switchMode(mode){
+    function switchMode(mode, btn) {
       currentMode = mode;
-      btnModeDay.classList.toggle('active', mode === 'day');
-      btnModeReport.classList.toggle('active', mode === 'report');
-      chartContainer.classList.toggle('hidden', mode !== 'report');
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
       updateDashboard();
     }
 
-    // ===== Dashboard update =====
-    function updateDashboard(){
-      const dateISO = dashDateEl.value;
-
+    function updateDashboard() {
       if(activeDayListenerRef){
         activeDayListenerRef.off();
         activeDayListenerRef = null;
       }
 
       if(currentMode === 'report'){
-        renderReportView(); // monthly summary + chart
+        renderReportView();
         return;
       }
 
-      activeDayListenerRef = database.ref('presences/' + dateISO);
-      activeDayListenerRef.on('value', snap => {
+      activeDayListenerRef = database.ref('presences/' + dateInput.value);
+      activeDayListenerRef.on('value', (snap) => {
         const data = snap.val() || {};
-        renderDayView(dateISO, data);
+        renderDayView(data);
       });
     }
 
-    // ===== Day view =====
-    function renderDayView(dateISO, data){
+    function renderDayView(data) {
+      const container = document.getElementById('dashBody');
       const groups = {};
       equipe.forEach(e => (groups[e.poste] ||= []).push(e));
 
       let html = '';
-      Object.keys(groups).sort().forEach(poste => {
+      Object.keys(groups).forEach(poste => {
         html += `<div class="mb-8">
           <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3>
           <div class="grid grid-cols-2 gap-4">`;
 
-        groups[poste]
-          .slice()
-          .sort((a,b)=>{
-            const A=a.nom+'_'+a.prenom, B=b.nom+'_'+b.prenom;
-            if(A==="BOUCHNAK_NAOUAL") return -1;
-            if(B==="BOUCHNAK_NAOUAL") return 1;
-            return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-          })
-          .forEach(emp => {
-            const id = emp.nom + '_' + emp.prenom;
-            const d = data[id] || null;
+        groups[poste].slice().sort((a,b)=>{
+          const A = a.nom + '_' + a.prenom;
+          const B = b.nom + '_' + b.prenom;
+          if(A === "BOUCHNAK_NAOUAL") return -1;
+          if(B === "BOUCHNAK_NAOUAL") return 1;
+          return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+        }).forEach(emp => {
+          const id = emp.nom + '_' + emp.prenom;
+          const d = data[id] || {};
 
-            // ✅ Règle demandée:
-            // - Jours futurs => "À venir" (ne pas compter congé)
-            // - Aujourd'hui sans data => "ATTENTE"
-            // - Jours passés sans data => "CONGÉ"
-            let label = 'ATTENTE';
-            let labelCls = 'text-slate-400';
-            let sClass = '';
+          const diff = getTimeDiff(d.hA, d.hP, id);
+          const sClass = getStatusClass(diff, d.off, !!d.hA);
 
-            if(isFutureDateISO(dateISO)){
-              label = "À venir";
-              labelCls = "text-slate-400";
-            } else if(!d){
-              if(isPastDateISO(dateISO)){
-                label = "CONGÉ";
-                labelCls = "text-slate-400";
-              } else {
-                label = "ATTENTE";
-                labelCls = "text-slate-400";
-              }
-            } else if(d.off){
-              label = "REPOS";
-              labelCls = "text-slate-400";
-              sClass = 'status-off';
-            } else if(d.hA){
-              const diff = getTimeDiff(d.hA, d.hP, id);
-              sClass = getStatusClass(diff, false, true);
+          let statusText = 'ATTENTE';
+          let statusColor = 'text-slate-400';
 
-              if(d.hP){
-                label = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
-                labelCls = diff > 0 ? 'text-rose-600' : 'text-emerald-600';
-              }else{
-                label = "OK"; // hA-only / planning non défini
-                labelCls = 'text-emerald-600';
-              }
+          if(d.off){
+            statusText = 'REPOS';
+            statusColor = 'text-slate-400';
+          } else if(d.hA){
+            if(d.hP){
+              statusText = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
+              statusColor = diff > 0 ? 'text-rose-600' : 'text-emerald-600';
             } else {
-              label = "ABSENT";
-              labelCls = "text-slate-400";
+              statusText = `OK`;
+              statusColor = 'text-emerald-600';
             }
+          }
 
-            html += `
-              <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
-                <div>
-                  <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
-                  <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
-                </div>
-                <p class="text-[10px] font-black ${labelCls}">${label}</p>
-              </button>`;
-          });
+          html += `
+            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
+              <div>
+                <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
+                <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
+              </div>
+              <p class="text-[10px] font-black ${statusColor}">${statusText}</p>
+            </button>`;
+        });
 
         html += `</div></div>`;
       });
 
-      dashBodyEl.innerHTML = html;
+      container.innerHTML = html;
     }
 
-    // ===== Report view (mensuel global) =====
-    async function renderReportView(){
-      const dates = getDatesInMonth(dashDateEl.value).filter(d => !isFutureDateISO(d)); // ✅ exclu futur
+    async function renderReportView() {
+      const dates = getDatesInMonth(dateInput.value);
+
       const stats = {};
-      equipe.forEach(e => stats[e.nom+'_'+e.prenom] = { info:e, present:0, lateMin:0 });
+      equipe.forEach(e => {
+        const id = e.nom+'_'+e.prenom;
+        stats[id] = { info: e, present: 0, lateMin: 0, repos: 0, conge: 0, excluded: 0 };
+      });
 
       const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
-      const dailyLates=[], dailyPresence=[], labels=[];
+      const dailyLates = [], dailyPresence = [], labels = [];
+      const today = todayISO();
+
       snaps.forEach((s, i) => {
         const dayISO = dates[i];
+        labels.push(dayISO.split('-')[2]);
+
+        // ✅ exclure jours futurs
+        if(dayISO > today){
+          dailyLates.push(0); dailyPresence.push(0);
+          return;
+        }
+
+        // ✅ exclure plage Janvier 2026
+        if(isExcluded(dayISO)){
+          dailyLates.push(0); dailyPresence.push(0);
+          Object.keys(stats).forEach(id => stats[id].excluded++);
+          return;
+        }
+
         const dData = s.val() || {};
-        let tL=0, tP=0;
+        let tL = 0, tP = 0;
 
-        Object.keys(stats).forEach(id => {
-          const entry = dData[id] || null;
+        if (!dData.disabled) {
+          Object.keys(stats).forEach(id => {
+            const e = dData[id] || null;
 
-          // ✅ "aucune donnée" jour passé = congé => ne compte pas comme présence
-          if(!entry) return;
-          if(entry.off) return;
+            // ✅ Pas de data => CONGÉ (uniquement jours passés / non exclus)
+            if(!e){
+              stats[id].conge++;
+              return;
+            }
 
-          if(entry.hA){
-            const diff = getTimeDiff(entry.hA, entry.hP, id);
-            stats[id].present++;
-            stats[id].lateMin += diff;
-            tP++;
-            tL += diff;
-          }
-        });
+            // repos
+            if(e.off){
+              stats[id].repos++;
+              return;
+            }
+
+            // présent si hA
+            if(e.hA){
+              const diff = getTimeDiff(e.hA, e.hP, id);
+              stats[id].present++;
+              stats[id].lateMin += diff;
+              tL += diff; tP++;
+              return;
+            }
+
+            // sinon: aucune arrivée => CONGÉ (jour passé / non exclu)
+            stats[id].conge++;
+          });
+        }
 
         dailyLates.push(tL);
         dailyPresence.push(tP);
-        labels.push(dayISO.split('-')[2]);
       });
 
-      renderChart(labels, dailyLates);
+      renderChart(labels, dailyLates, dailyPresence);
 
-      const lateList = Object.values(stats).filter(s => s.lateMin > 0).sort((a,b)=>b.lateMin-a.lateMin);
-      const goodList = Object.values(stats).filter(s => s.lateMin === 0 && s.present > 0).sort((a,b)=>b.present-a.present);
+      const lateList = Object.values(stats).filter(s => s.lateMin > 0).sort((a,b) => b.lateMin - a.lateMin);
+      const goodList = Object.values(stats).filter(s => s.lateMin === 0 && s.present > 0).sort((a,b) => b.present - a.present);
 
       let html = '<div class="space-y-8">';
-      html += `<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
-      lateList.slice(0, 7).forEach(s => {
+      html += `<div>
+        <h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
+      lateList.slice(0, 6).forEach(s => {
         html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-          <span class="text-xs font-extrabold uppercase">${s.info.nom} ${s.info.prenom}</span>
+          <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
           <span class="text-rose-600 font-black">${s.lateMin}m</span>
         </div>`;
       });
-      html += `</div><div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
-      goodList.slice(0, 7).forEach(s => {
+      html += `</div>`;
+
+      html += `<div>
+        <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
+      goodList.slice(0, 6).forEach(s => {
         html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-          <span class="text-xs font-extrabold uppercase">${s.info.nom} ${s.info.prenom}</span>
-          <span class="text-emerald-600 font-black">${s.present} j OK</span>
+          <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
+          <span class="text-emerald-600 font-black">${s.present}j OK</span>
         </div>`;
       });
       html += '</div></div>';
 
-      dashBodyEl.innerHTML = html;
+      document.getElementById('dashBody').innerHTML = html;
     }
 
-    function renderChart(labels, lates){
+    function renderChart(labels, lates) {
       const ctx = document.getElementById('trendsChart').getContext('2d');
-      if(myChart) myChart.destroy();
+      if (myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [{ data: lates, borderColor:'#c5a059', tension:.4, borderWidth:3, pointRadius:0, fill:true, backgroundColor:'rgba(197,160,89,.05)' }] },
-        options: { maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{display:false}, x:{grid:{display:false}, ticks:{font:{size:8}}} } }
-      });
-    }
-
-    // ===== Modal Historique + PDFs employé =====
-    async function openHistory(nom, prenom){
-      selectedEmpId = nom + '_' + prenom;
-      selectedEmpInfo = {nom, prenom};
-
-      modalTitleEl.innerText = nom + ' ' + prenom;
-      historyModalEl.classList.add('modal-active');
-      historyModalEl.classList.remove('hidden');
-
-      const monthDates = getDatesInMonth(dashDateEl.value);
-      const today = getMarocTodayISO();
-
-      const snaps = await Promise.all(monthDates.map(d => database.ref('presences/'+d).once('value')));
-
-      let html = '';
-      snaps.forEach((s, i) => {
-        const dayISO = monthDates[i];
-        const data = s.val() || null;
-        const entry = data ? (data[selectedEmpId] || null) : null;
-
-        let label = '';
-        let cls = 'text-slate-400';
-
-        if(dayISO > today){
-          label = 'À venir';
-          cls = 'text-slate-400';
-        } else if(!entry){
-          // ✅ jour passé sans data = congé
-          label = (dayISO < today) ? 'Congé' : 'Attente';
-          cls = 'text-slate-400';
-        } else if(entry.off){
-          label = 'Repos';
-          cls = 'text-slate-300';
-        } else if(entry.hA){
-          const diff = getTimeDiff(entry.hA, entry.hP, selectedEmpId);
-          label = entry.hP ? (diff>0 ? diff+'m' : 'OK') : 'OK';
-          cls = (entry.hP && diff>0) ? 'text-rose-500' : 'text-emerald-600';
-        } else {
-          label = 'Absent';
-          cls = 'text-slate-400';
+        data: {
+          labels: labels,
+          datasets: [{
+            data: lates,
+            borderColor: '#c5a059',
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: 'rgba(197, 160, 89, 0.05)'
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { display: false },
+            x: { grid: { display: false }, ticks: { font: { size: 8 } } }
+          }
         }
-
-        html += `
-          <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="text-[10px] font-black text-slate-400 uppercase">${dayISO.split('-').reverse().slice(0,2).join('/')}</span>
-            <span class="text-[10px] font-black ${cls} uppercase">${label}</span>
-          </div>
-        `;
       });
-
-      modalListEl.innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
 
-    function closeModal(){
-      historyModalEl.classList.remove('modal-active');
-      historyModalEl.classList.add('hidden');
-    }
-
-    // ===== Dates builders =====
-    function getDatesInMonth(fromISO){
-      const dates=[];
-      const curr = new Date(fromISO);
+    function getDatesInMonth(seedISO) {
+      const dates = [];
+      const curr = new Date(seedISO);
       const m = curr.getMonth();
       const y = curr.getFullYear();
-      let d = new Date(y, m, 1);
-      while(d.getMonth() === m){
+      const d = new Date(y, m, 1);
+      while(d.getMonth() === m) {
         dates.push(d.toISOString().split('T')[0]);
         d.setDate(d.getDate()+1);
       }
       return dates;
     }
 
-    function getDatesInYear(fromISO){
-      const dates=[];
-      const y = new Date(fromISO).getFullYear();
-      let d = new Date(y, 0, 1);
+    function getDatesInYear(seedISO){
+      const curr = new Date(seedISO);
+      const y = curr.getFullYear();
+      const dates = [];
+      const d = new Date(y, 0, 1);
       while(d.getFullYear() === y){
         dates.push(d.toISOString().split('T')[0]);
         d.setDate(d.getDate()+1);
@@ -486,103 +483,157 @@
       return dates;
     }
 
-    // ===== PDF helpers =====
-    function pdfKpi(label, value){
-      return `
-        <div class="pdfBox">
-          <div class="pdfKpiLabel">${label}</div>
-          <div class="pdfKpiVal">${value}</div>
-        </div>
-      `;
+    // ===== Historique modal (affiche aussi "Exclu") =====
+    async function openHistory(nom, prenom) {
+      const modal = document.getElementById('historyModal');
+      document.getElementById('modalTitle').innerText = nom;
+      modal.classList.add('modal-active');
+
+      const dates = getDatesInMonth(dateInput.value);
+      const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
+
+      const today = todayISO();
+      let html = '';
+
+      snaps.reverse().forEach((s, i) => {
+        const dayISO = dates.slice().reverse()[i];
+        const data = s.val() || {};
+        const id = nom+'_'+prenom;
+        const entry = data[id] || null;
+
+        let label = '';
+        let cls = 'text-slate-400';
+
+        if(dayISO > today){
+          label = 'À venir'; cls = 'text-slate-300';
+        } else if(isExcluded(dayISO)){
+          label = 'Exclu'; cls = 'text-slate-400';
+        } else if(!entry){
+          label = 'Congé'; cls = 'text-slate-500';
+        } else if(entry.off){
+          label = 'Repos'; cls = 'text-slate-300';
+        } else if(entry.hA){
+          const diff = getTimeDiff(entry.hA, entry.hP, id);
+          label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
+          cls = diff>0 ? 'text-rose-500' : 'text-emerald-500';
+        } else {
+          label = 'Congé'; cls = 'text-slate-500';
+        }
+
+        html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-[10px] font-black text-slate-400 uppercase">${fmtFR(dayISO)}</span>
+          <span class="text-[10px] font-black ${cls} uppercase">${label}</span>
+        </div>`;
+      });
+
+      document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
 
-    function makePdfHeader(title, subtitle, dateISO){
+    function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
+
+    // ===== PDF helpers =====
+    function showPDF(el){ el.style.display="block"; }
+    function hidePDF(el){ el.style.display="none"; }
+
+    function pdfHeader(title, sub){
+      const date = dateInput.value;
       return `
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;">
           <div>
             <div style="font-weight:900;letter-spacing:.12em;color:#b0892f;font-size:10px;text-transform:uppercase;">Fès — Maroc</div>
             <div style="font-weight:900;font-size:20px;letter-spacing:-.02em;">GREY CORNER</div>
             <div style="font-weight:800;color:#374151;font-size:12px;margin-top:2px;">${title}</div>
-            <div style="font-weight:700;color:#6b7280;font-size:10px;margin-top:2px;">${subtitle}</div>
+            <div style="font-weight:700;color:#6b7280;font-size:10px;margin-top:2px;">${sub || ""}</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-weight:900;color:#111827;font-size:12px;">Date : ${dateISO}</div>
+            <div style="font-weight:900;color:#111827;font-size:12px;">Date : ${date}</div>
+            <div style="font-weight:700;color:#6b7280;font-size:10px;">(Exclus: 01/01/2026 → 31/01/2026)</div>
           </div>
         </div>
         <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />
       `;
     }
 
-    function exportPdf(filename){
-      pdfArea.style.display = 'block';
-      return html2pdf().set({
-        margin: 8,
-        filename,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      }).from(pdfArea).save().finally(()=>{ pdfArea.style.display='none'; });
+    function kpiBox(t, v){
+      return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`;
     }
 
-    // ===== PDF JOUR =====
-    async function downloadDailyPDF(){
-      const dateISO = dashDateEl.value;
-      const snap = await database.ref('presences/'+dateISO).once('value');
+    async function downloadPDF_Day(){
+      const dayISO = dateInput.value;
+
+      // build pdf from day data
+      const snap = await database.ref('presences/'+dayISO).once('value');
       const data = snap.val() || {};
 
-      pdfHeader.innerHTML = makePdfHeader("Rapport journalier — RH", "Présences / Retards", dateISO);
+      document.getElementById("pdfHeader").innerHTML = pdfHeader("Rapport Jour — Supervision", `Jour: ${fmtFR(dayISO)}`);
 
-      let present=0, absent=0, lateCount=0, lateMinSum=0;
-      const rows = equipe.map(emp=>{
-        const id = emp.nom+'_'+emp.prenom;
-        const d = data[id] || null;
+      // KPIs
+      let present=0, repos=0, attente=0;
+      equipe.forEach(emp=>{
+        const id = emp.nom+"_"+emp.prenom;
+        const e = data[id] || null;
+        if(e && e.off) repos++;
+        else if(e && e.hA) present++;
+        else attente++;
+      });
 
-        // futur => à venir, ne compte pas
-        if(isFutureDateISO(dateISO)){
-          return `<tr><td>${emp.nom} ${emp.prenom}</td><td style="text-align:center;">À venir</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-        }
-
-        // aucune donnée
-        if(!d){
-          if(isPastDateISO(dateISO)){ absent++; }
-          else { /* today */ }
-          return `<tr><td>${emp.nom} ${emp.prenom}</td><td style="text-align:center;">${isPastDateISO(dateISO)?'Congé':'Attente'}</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-        }
-
-        if(d.off){
-          absent++;
-          return `<tr><td>${emp.nom} ${emp.prenom}</td><td style="text-align:center;">Repos</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-        }
-
-        if(d.hA){
-          present++;
-          const diff = getTimeDiff(d.hA, d.hP, id);
-          if(d.hP && diff>0){ lateCount++; lateMinSum += diff; }
-          const label = d.hP ? (diff>0?`+${diff}m`:'OK') : 'OK';
-          return `<tr><td>${emp.nom} ${emp.prenom}</td><td style="text-align:center;">Présent</td><td style="text-align:center;">${d.hA||''}</td><td style="text-align:center;">${label}</td></tr>`;
-        }
-
-        absent++;
-        return `<tr><td>${emp.nom} ${emp.prenom}</td><td style="text-align:center;">Absent</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-      }).join('');
-
-      pdfSummary.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-          ${pdfKpi("Présents", present)}
-          ${pdfKpi("Absents", absent)}
-          ${pdfKpi("Retards", lateCount)}
-          ${pdfKpi("Minutes retard", lateMinSum)}
+      document.getElementById("pdfKpis").innerHTML = `
+        <div class="pdfKpi">
+          ${kpiBox("Total", equipe.length)}
+          ${kpiBox("Présents", present)}
+          ${kpiBox("Repos", repos)}
+          ${kpiBox("Attente", attente)}
         </div>
       `;
 
-      pdfContent.innerHTML = `
+      // Table
+      const rows = equipe.slice().sort((a,b)=>{
+        const A=a.nom+"_"+a.prenom, B=b.nom+"_"+b.prenom;
+        if(A==="BOUCHNAK_NAOUAL") return -1;
+        if(B==="BOUCHNAK_NAOUAL") return 1;
+        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+      }).map(emp=>{
+        const id = emp.nom+"_"+emp.prenom;
+        const e = data[id] || null;
+
+        let statut="ATTENTE", hp="", ha="", retard="";
+        if(e){
+          hp = e.hP || "";
+          ha = e.hA || "";
+          if(e.off){ statut="REPOS"; }
+          else if(e.hA){
+            statut="OK";
+            if(e.hP){
+              const diff = getTimeDiff(e.hA, e.hP, id);
+              retard = diff>0 ? `+${diff}m` : "0";
+              if(diff>0) statut="RETARD";
+            }
+          }else{
+            statut="CONGÉ";
+          }
+        }else{
+          statut="CONGÉ";
+        }
+
+        return `
+          <tr>
+            <td>${emp.nom} ${emp.prenom}</td>
+            <td style="text-align:center;">${statut}</td>
+            <td style="text-align:center;">${hp}</td>
+            <td style="text-align:center;">${ha}</td>
+            <td style="text-align:center;">${retard}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
           <thead>
             <tr>
               <th style="text-align:left;">Employé</th>
               <th style="text-align:center;">Statut</th>
-              <th style="text-align:center;">Arrivée</th>
+              <th style="text-align:center;">HP</th>
+              <th style="text-align:center;">HA</th>
               <th style="text-align:center;">Retard</th>
             </tr>
           </thead>
@@ -590,77 +641,92 @@
         </table>
       `;
 
-      await exportPdf(`GC_RH_JOUR_${dateISO}.pdf`);
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      html2pdf().set({
+        margin: 8,
+        filename: `GC_RH_JOUR_${dayISO}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // ===== PDF MOIS EMPLOYÉ =====
-    async function downloadEmployeeMonthlyPDF(empId, info){
-      const baseISO = dashDateEl.value;
-      const monthDates = getDatesInMonth(baseISO);
-      const today = getMarocTodayISO();
+    async function downloadPDF_EmployeeMonth(){
+      const empId = document.getElementById("empSelect").value; // NOM_PRENOM
+      const [nom, prenom] = empId.split("_");
+      const seed = dateInput.value;
+      const dates = getDatesInMonth(seed);
+      const today = todayISO();
 
-      const snaps = await Promise.all(monthDates.map(d => database.ref('presences/'+d).once('value')));
+      // fetch all days
+      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
-      let countOK=0, countLate=0, countRepos=0, countConge=0, countAbsent=0;
-      let lateMinSum=0;
+      let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
-      const rows = snaps.map((s, i)=>{
-        const dayISO = monthDates[i];
-        const data = s.val() || null;
-        const entry = data ? (data[empId] || null) : null;
-
+      const rows = dates.map((dayISO, i)=>{
         if(dayISO > today){
-          return `<tr><td>${dayISO}</td><td>À venir</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+          ignoredFuture++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`;
+        }
+        if(isExcluded(dayISO)){
+          excluded++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`;
         }
 
-        if(!entry){
-          if(dayISO < today){ countConge++; }
-          return `<tr><td>${dayISO}</td><td>${dayISO<today?'Congé':'Attente'}</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+        const data = snaps[i].val() || {};
+        const e = data[empId] || null;
+
+        // ✅ Pas de data => CONGÉ (mais seulement si jour passé non exclu)
+        if(!e){
+          conge++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
         }
 
-        if(entry.off){
-          countRepos++;
-          return `<tr><td>${dayISO}</td><td>Repos</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+        if(e.off){
+          repos++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
         }
 
-        if(entry.hA){
-          const diff = getTimeDiff(entry.hA, entry.hP, empId);
-          if(entry.hP && diff>0){
-            countLate++; lateMinSum += diff;
-            return `<tr><td>${dayISO}</td><td>Présent</td><td style="text-align:center;">${entry.hA}</td><td style="text-align:center;">+${diff}m</td></tr>`;
-          }else{
-            countOK++;
-            return `<tr><td>${dayISO}</td><td>Présent</td><td style="text-align:center;">${entry.hA}</td><td style="text-align:center;">OK</td></tr>`;
-          }
+        if(e.hA){
+          present++;
+          const diff = getTimeDiff(e.hA, e.hP, empId);
+          lateMin += diff;
+          const st = (e.hP && diff>0) ? "Retard" : "OK";
+          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
 
-        countAbsent++;
-        return `<tr><td>${dayISO}</td><td>Absent</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-      }).join('');
+        // pas d'arrivée => congé
+        conge++;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+      }).join("");
 
-      pdfHeader.innerHTML = makePdfHeader(
-        "Rapport mensuel — Employé",
-        `${info.nom} ${info.prenom}`,
-        baseISO
-      );
+      document.getElementById("pdfHeader").innerHTML =
+        pdfHeader(`Rapport Mensuel — ${nom} ${prenom}`, `Mois: ${seed.slice(0,7)}`);
 
-      pdfSummary.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-          ${pdfKpi("OK", countOK)}
-          ${pdfKpi("Retards", countLate)}
-          ${pdfKpi("Min retard", lateMinSum)}
-          ${pdfKpi("Repos", countRepos)}
-          ${pdfKpi("Congés", countConge)}
+      document.getElementById("pdfKpis").innerHTML = `
+        <div class="pdfKpi">
+          ${kpiBox("Présents", present)}
+          ${kpiBox("Repos", repos)}
+          ${kpiBox("Congés", conge)}
+          ${kpiBox("Retard (min)", lateMin)}
+        </div>
+        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
+          Exclu: ${excluded} jour(s) • Jours futurs ignorés: ${ignoredFuture}
         </div>
       `;
 
-      pdfContent.innerHTML = `
+      document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
           <thead>
             <tr>
               <th style="text-align:left;">Date</th>
-              <th style="text-align:left;">Statut</th>
-              <th style="text-align:center;">Arrivée</th>
+              <th style="text-align:center;">Statut</th>
+              <th style="text-align:center;">HP</th>
+              <th style="text-align:center;">HA</th>
               <th style="text-align:center;">Retard</th>
             </tr>
           </thead>
@@ -668,77 +734,94 @@
         </table>
       `;
 
-      await exportPdf(`GC_RH_MOIS_${info.nom}_${info.prenom}_${baseISO}.pdf`);
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      const file = `GC_RH_MOIS_${nom}_${prenom}_${seed.slice(0,7)}.pdf`;
+
+      html2pdf().set({
+        margin: 8,
+        filename: file,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // ===== PDF ANNÉE EMPLOYÉ =====
-    async function downloadEmployeeYearlyPDF(empId, info){
-      const baseISO = dashDateEl.value;
-      const yearDates = getDatesInYear(baseISO);
-      const today = getMarocTodayISO();
+    async function downloadPDF_EmployeeYear(){
+      const empId = document.getElementById("empSelect").value;
+      const [nom, prenom] = empId.split("_");
+      const seed = dateInput.value;
+      const year = seed.slice(0,4);
 
-      const snaps = await Promise.all(yearDates.map(d => database.ref('presences/'+d).once('value')));
+      const dates = getDatesInYear(seed);
+      const today = todayISO();
 
-      let countOK=0, countLate=0, countRepos=0, countConge=0, countAbsent=0;
-      let lateMinSum=0;
+      // fetch all days
+      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
-      const rows = snaps.map((s, i)=>{
-        const dayISO = yearDates[i];
-        const data = s.val() || null;
-        const entry = data ? (data[empId] || null) : null;
+      let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
+      const rows = dates.map((dayISO, i)=>{
         if(dayISO > today){
-          return `<tr><td>${dayISO}</td><td>À venir</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+          ignoredFuture++;
+          return ''; // ✅ on ne liste pas les jours futurs (plus propre en annuel)
+        }
+        if(isExcluded(dayISO)){
+          excluded++;
+          return ''; // ✅ annuel: on n’imprime même pas les jours exclus
         }
 
-        if(!entry){
-          if(dayISO < today){ countConge++; }
-          return `<tr><td>${dayISO}</td><td>${dayISO<today?'Congé':'Attente'}</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+        const data = snaps[i].val() || {};
+        const e = data[empId] || null;
+
+        if(!e){
+          conge++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
         }
 
-        if(entry.off){
-          countRepos++;
-          return `<tr><td>${dayISO}</td><td>Repos</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
+        if(e.off){
+          repos++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
         }
 
-        if(entry.hA){
-          const diff = getTimeDiff(entry.hA, entry.hP, empId);
-          if(entry.hP && diff>0){
-            countLate++; lateMinSum += diff;
-            return `<tr><td>${dayISO}</td><td>Présent</td><td style="text-align:center;">${entry.hA}</td><td style="text-align:center;">+${diff}m</td></tr>`;
-          }else{
-            countOK++;
-            return `<tr><td>${dayISO}</td><td>Présent</td><td style="text-align:center;">${entry.hA||''}</td><td style="text-align:center;">OK</td></tr>`;
-          }
+        if(e.hA){
+          present++;
+          const diff = getTimeDiff(e.hA, e.hP, empId);
+          lateMin += diff;
+          const st = (e.hP && diff>0) ? "Retard" : "OK";
+          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
 
-        countAbsent++;
-        return `<tr><td>${dayISO}</td><td>Absent</td><td style="text-align:center;"></td><td style="text-align:center;"></td></tr>`;
-      }).join('');
+        conge++;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+      }).join("");
 
-      pdfHeader.innerHTML = makePdfHeader(
-        "Rapport annuel — Employé",
-        `${info.nom} ${info.prenom}`,
-        baseISO
-      );
+      document.getElementById("pdfHeader").innerHTML =
+        pdfHeader(`Rapport Annuel — ${nom} ${prenom}`, `Année: ${year}`);
 
-      pdfSummary.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-          ${pdfKpi("OK", countOK)}
-          ${pdfKpi("Retards", countLate)}
-          ${pdfKpi("Min retard", lateMinSum)}
-          ${pdfKpi("Repos", countRepos)}
-          ${pdfKpi("Congés", countConge)}
+      document.getElementById("pdfKpis").innerHTML = `
+        <div class="pdfKpi">
+          ${kpiBox("Présents", present)}
+          ${kpiBox("Repos", repos)}
+          ${kpiBox("Congés", conge)}
+          ${kpiBox("Retard (min)", lateMin)}
+        </div>
+        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
+          Exclu (01/01/2026 → 31/01/2026): ${excluded} jour(s) ignorés • Jours futurs ignorés: ${ignoredFuture}
         </div>
       `;
 
-      pdfContent.innerHTML = `
+      document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
           <thead>
             <tr>
               <th style="text-align:left;">Date</th>
-              <th style="text-align:left;">Statut</th>
-              <th style="text-align:center;">Arrivée</th>
+              <th style="text-align:center;">Statut</th>
+              <th style="text-align:center;">HP</th>
+              <th style="text-align:center;">HA</th>
               <th style="text-align:center;">Retard</th>
             </tr>
           </thead>
@@ -746,8 +829,19 @@
         </table>
       `;
 
-      const year = new Date(baseISO).getFullYear();
-      await exportPdf(`GC_RH_ANNEE_${info.nom}_${info.prenom}_${year}.pdf`);
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      const file = `GC_RH_ANNEE_${nom}_${prenom}_${year}.pdf`;
+
+      html2pdf().set({
+        margin: 8,
+        filename: file,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
   </script>
 </body>
