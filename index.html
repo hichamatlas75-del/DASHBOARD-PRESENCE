@@ -78,66 +78,120 @@
     .pdfTable{width:100%;border-collapse:collapse}
     .pdfTable th,.pdfTable td{border:1px solid #e5e7eb;padding:8px;font-size:11px}
     .pdfTable th{background:#f3f4f6;font-weight:900}
+
+    /* ✅ Login UI */
+    .inpt{
+      width:100%;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      padding:12px 12px;
+      color:#111827;
+      font-weight:800;
+      font-size:12px;
+      outline:none;
+    }
+    .inpt:focus{ border-color: rgba(197,160,89,.55); box-shadow: 0 0 0 3px rgba(197,160,89,.15); }
+    .btn-login{
+      width:100%;
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      background:#0f172a;
+      color:#fff;
+      border:1px solid #0f172a;
+    }
   </style>
 </head>
 
 <body class="antialiased pb-10">
   <div class="max-w-md mx-auto px-5 pt-8">
 
-    <header class="flex justify-between items-start mb-6">
-      <div>
-        <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
-        <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</p>
-      </div>
-
-      <!-- ✅ Actions PDF -->
-      <div class="flex items-center gap-2">
-        <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-          PDF JOUR
-        </button>
-      </div>
-    </header>
-
-    <div class="mb-6 space-y-4">
-      <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-        <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-        <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
-      </div>
-
-      <div class="relative">
-        <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
-      </div>
-
-      <!-- ✅ PDF employé (Mois / Année) -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
-
-        <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
-          <!-- rempli en JS -->
-        </select>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
-            PDF MOIS
-          </button>
-          <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">
-            PDF ANNÉE
-          </button>
+    <!-- ✅ LOGIN (GÉRANT ONLY) -->
+    <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Accès sécurisé</div>
+          <div class="text-xl font-black text-slate-900 mt-1">Connexion Gérant</div>
+          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</div>
         </div>
+        <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">RH</div>
+      </div>
 
-        <div class="text-[10px] text-slate-500 font-semibold leading-snug">
-          ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b> (ni congé, ni absent, ni repos).
-        </div>
+      <div class="mt-4 space-y-2">
+        <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username" />
+        <input id="loginPass" class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+        <button id="btnLogin" class="btn-login">Se connecter</button>
+        <div id="loginMsg" class="text-[11px] font-extrabold text-rose-600"></div>
       </div>
     </div>
 
-    <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-8 hidden">
-      <div class="h-[180px] w-full">
-        <canvas id="trendsChart"></canvas>
-      </div>
-    </div>
+    <!-- ✅ APP (hidden until gerant authenticated) -->
+    <div id="appWrap" class="hidden">
+      <header class="flex justify-between items-start mb-6">
+        <div>
+          <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
+          <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</p>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
+            Connecté : <span id="roleLabel" class="text-slate-900">—</span>
+          </p>
+        </div>
 
-    <div id="dashBody" class="space-y-6"></div>
+        <!-- ✅ Actions -->
+        <div class="flex flex-col items-end gap-2">
+          <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+            PDF JOUR
+          </button>
+          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+            Déconnexion
+          </button>
+        </div>
+      </header>
+
+      <div class="mb-6 space-y-4">
+        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+          <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
+          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
+        </div>
+
+        <div class="relative">
+          <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
+        </div>
+
+        <!-- ✅ PDF employé (Mois / Année) -->
+        <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
+          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
+
+          <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+            <!-- rempli en JS -->
+          </select>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
+              PDF MOIS
+            </button>
+            <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">
+              PDF ANNÉE
+            </button>
+          </div>
+
+          <div class="text-[10px] text-slate-500 font-semibold leading-snug">
+            ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b> (ni congé, ni absent, ni repos).
+          </div>
+        </div>
+      </div>
+
+      <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-8 hidden">
+        <div class="h-[180px] w-full">
+          <canvas id="trendsChart"></canvas>
+        </div>
+      </div>
+
+      <div id="dashBody" class="space-y-6"></div>
+    </div>
   </div>
 
   <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeModal()">
@@ -155,24 +209,41 @@
     <div id="pdfContent"></div>
   </div>
 
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== Firebase =====
-    const firebaseConfig = { databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app" };
+    // ===== Firebase (même projet que pointage/présences) =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",
+      authDomain: "grey-corner-presence.firebaseapp.com",
+      databaseURL: "https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "grey-corner-presence",
+      storageBucket: "grey-corner-presence.firebasestorage.app",
+      messagingSenderId: "730206093359",
+      appId: "1:730206093359:web:59e3c145120807f29e46da",
+      measurementId: "G-4HCKPGNED7"
+    };
+
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const auth = firebase.auth();
 
+    // ===== UI refs =====
     const dateInput = document.getElementById('dashDate');
+    const loginWrap = document.getElementById("loginWrap");
+    const appWrap = document.getElementById("appWrap");
+    const roleLabel = document.getElementById("roleLabel");
+
     let currentMode = 'day', myChart = null;
-
-    // ✅ listener unique (évite accumulation)
     let activeDayListenerRef = null;
+    let role = null; // must be "gerant"
 
-    // ✅ Chef cuisine ajouté
+    // ✅ Équipe (chef + tout le monde)
     const equipe = [
-      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'}, // hA-only possible
+      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'},
       {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'}, {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
       {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'}, {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
       {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'}, {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
@@ -187,15 +258,14 @@
       {nom:'SBAI', prenom:'HAKIMA', poste:'MENAGE'}, {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
     ];
 
-    // ✅ IDs hA-only
-    const haOnlyIds = new Set(["BOUCHNAK_NAOUAL"]);
+    // ✅ Exception "hA-only" (retard=0 si pas de HP ou exception)
+    // -> ajout demandé: ELMCHAOURI SOUAD + SBAI HAKIMA
+    const haOnlyIds = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
 
-    // ✅ EXCLUSION: du 2026-01-01 au 2026-01-31 (inclus) => JAMAIS comptabilisé
+    // ✅ EXCLUSION: du 2026-01-01 au 2026-01-31 (inclus) => jamais comptabilisé
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
-    function isExcluded(dayISO){
-      return dayISO >= EXCL_START && dayISO <= EXCL_END;
-    }
+    function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
 
     // ===== Helpers date (Casablanca) =====
     function todayISO(){
@@ -204,8 +274,7 @@
         year:'numeric',month:'2-digit',day:'2-digit'
       }).format(new Date());
     }
-
-    function fmtFR(iso){ // yyyy-mm-dd => dd/mm/yyyy
+    function fmtFR(iso){
       if(!iso || !iso.includes("-")) return iso || "";
       const [y,m,d] = iso.split("-");
       return `${d}/${m}/${y}`;
@@ -230,12 +299,81 @@
       return '';
     }
 
-    // ===== UI init =====
-    dateInput.value = todayISO();
-    dateInput.addEventListener('change', updateDashboard);
+    // ===== Auth (GERANT only) =====
+    async function fetchRole(uid){
+      const s = await database.ref("users/"+uid).once("value");
+      return s.val() || null;
+    }
 
-    // remplissage select employé
-    (function fillEmpSelect(){
+    function showLoginUI(msg){
+      if(activeDayListenerRef){ activeDayListenerRef.off(); activeDayListenerRef = null; }
+      role = null;
+
+      appWrap.classList.add("hidden");
+      loginWrap.classList.remove("hidden");
+      document.getElementById("loginMsg").textContent = msg || "";
+    }
+
+    function showAppUI(){
+      loginWrap.classList.add("hidden");
+      appWrap.classList.remove("hidden");
+      roleLabel.textContent = role || "—";
+    }
+
+    document.getElementById("btnLogin").onclick = async () => {
+      const email = (document.getElementById("loginEmail").value || "").trim();
+      const pass  = (document.getElementById("loginPass").value || "").trim();
+      document.getElementById("loginMsg").textContent = "";
+      try{
+        await auth.signInWithEmailAndPassword(email, pass);
+      }catch(e){
+        showLoginUI("Identifiants invalides.");
+      }
+    };
+
+    document.getElementById("btnLogout").onclick = async () => {
+      try{ await auth.signOut(); }catch(e){}
+      location.reload();
+    };
+
+    auth.onAuthStateChanged(async (user) => {
+      if(!user){
+        showLoginUI("");
+        return;
+      }
+
+      try{
+        role = await fetchRole(user.uid);
+        if(role !== "gerant"){
+          await auth.signOut();
+          showLoginUI("Accès refusé : compte non gérant.");
+          return;
+        }
+      }catch(e){
+        try{ await auth.signOut(); }catch(_){}
+        showLoginUI("Erreur d'accès.");
+        return;
+      }
+
+      // ✅ Init dashboard après validation rôle gérant
+      showAppUI();
+      bootDashboard();
+    });
+
+    // ===== Boot dashboard =====
+    function bootDashboard(){
+      // date default
+      dateInput.value = todayISO();
+      dateInput.addEventListener('change', updateDashboard);
+
+      // fill select
+      fillEmpSelect();
+
+      // first render
+      updateDashboard();
+    }
+
+    function fillEmpSelect(){
       const sel = document.getElementById("empSelect");
       const list = equipe.slice().sort((a,b)=>{
         const A = a.nom+"_"+a.prenom, B = b.nom+"_"+b.prenom;
@@ -247,10 +385,9 @@
         const id = e.nom+"_"+e.prenom;
         return `<option value="${id}">${e.nom} ${e.prenom} — ${e.poste}</option>`;
       }).join("");
-    })();
+    }
 
-    updateDashboard();
-
+    // ===== Mode switch =====
     function switchMode(mode, btn) {
       currentMode = mode;
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -259,7 +396,10 @@
       updateDashboard();
     }
 
+    // ===== Main updater =====
     function updateDashboard() {
+      if(role !== "gerant") return;
+
       if(activeDayListenerRef){
         activeDayListenerRef.off();
         activeDayListenerRef = null;
@@ -277,6 +417,7 @@
       });
     }
 
+    // ===== Day view =====
     function renderDayView(data) {
       const container = document.getElementById('dashBody');
       const groups = {};
@@ -333,6 +474,7 @@
       container.innerHTML = html;
     }
 
+    // ===== Report view (mensuel) =====
     async function renderReportView() {
       const dates = getDatesInMonth(dateInput.value);
 
@@ -377,13 +519,11 @@
               return;
             }
 
-            // repos
             if(e.off){
               stats[id].repos++;
               return;
             }
 
-            // présent si hA
             if(e.hA){
               const diff = getTimeDiff(e.hA, e.hP, id);
               stats[id].present++;
@@ -392,7 +532,6 @@
               return;
             }
 
-            // sinon: aucune arrivée => CONGÉ (jour passé / non exclu)
             stats[id].conge++;
           });
         }
@@ -407,49 +546,75 @@
       const goodList = Object.values(stats).filter(s => s.lateMin === 0 && s.present > 0).sort((a,b) => b.present - a.present);
 
       let html = '<div class="space-y-8">';
+
       html += `<div>
         <h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
-      lateList.slice(0, 6).forEach(s => {
-        html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-          <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
-          <span class="text-rose-600 font-black">${s.lateMin}m</span>
-        </div>`;
-      });
+      if(lateList.length === 0){
+        html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
+      }else{
+        lateList.slice(0, 6).forEach(s => {
+          html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
+            <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
+            <span class="text-rose-600 font-black">${s.lateMin}m</span>
+          </div>`;
+        });
+      }
       html += `</div>`;
 
       html += `<div>
         <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
-      goodList.slice(0, 6).forEach(s => {
-        html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-          <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
-          <span class="text-emerald-600 font-black">${s.present}j OK</span>
-        </div>`;
-      });
+      if(goodList.length === 0){
+        html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
+      }else{
+        goodList.slice(0, 6).forEach(s => {
+          html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
+            <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
+            <span class="text-emerald-600 font-black">${s.present}j OK</span>
+          </div>`;
+        });
+      }
       html += '</div></div>';
 
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    function renderChart(labels, lates) {
+    // ✅ FIX: chart maintenant accepte 2 séries (retards + présences)
+    function renderChart(labels, lates, presences) {
       const ctx = document.getElementById('trendsChart').getContext('2d');
       if (myChart) myChart.destroy();
+
       myChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{
-            data: lates,
-            borderColor: '#c5a059',
-            tension: 0.4,
-            borderWidth: 3,
-            pointRadius: 0,
-            fill: true,
-            backgroundColor: 'rgba(197, 160, 89, 0.05)'
-          }]
+          datasets: [
+            {
+              label: "Retards (min)",
+              data: lates,
+              borderColor: '#c5a059',
+              tension: 0.35,
+              borderWidth: 3,
+              pointRadius: 0,
+              fill: true,
+              backgroundColor: 'rgba(197, 160, 89, 0.08)'
+            },
+            {
+              label: "Présences (nb)",
+              data: presences,
+              borderColor: '#0f172a',
+              tension: 0.35,
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
         },
         options: {
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          },
           scales: {
             y: { display: false },
             x: { grid: { display: false }, ticks: { font: { size: 8 } } }
@@ -483,10 +648,10 @@
       return dates;
     }
 
-    // ===== Historique modal (affiche aussi "Exclu") =====
+    // ===== Historique modal =====
     async function openHistory(nom, prenom) {
       const modal = document.getElementById('historyModal');
-      document.getElementById('modalTitle').innerText = nom;
+      document.getElementById('modalTitle').innerText = nom + " " + prenom;
       modal.classList.add('modal-active');
 
       const dates = getDatesInMonth(dateInput.value);
@@ -495,8 +660,12 @@
       const today = todayISO();
       let html = '';
 
-      snaps.reverse().forEach((s, i) => {
-        const dayISO = dates.slice().reverse()[i];
+      // reverse display
+      const datesRev = dates.slice().reverse();
+      const snapsRev = snaps.slice().reverse();
+
+      snapsRev.forEach((s, i) => {
+        const dayISO = datesRev[i];
         const data = s.val() || {};
         const id = nom+'_'+prenom;
         const entry = data[id] || null;
@@ -529,7 +698,9 @@
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
 
-    function closeModal() { document.getElementById('historyModal').classList.remove('modal-active'); }
+    function closeModal() {
+      document.getElementById('historyModal').classList.remove('modal-active');
+    }
 
     // ===== PDF helpers =====
     function showPDF(el){ el.style.display="block"; }
@@ -561,13 +732,11 @@
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
 
-      // build pdf from day data
       const snap = await database.ref('presences/'+dayISO).once('value');
       const data = snap.val() || {};
 
       document.getElementById("pdfHeader").innerHTML = pdfHeader("Rapport Jour — Supervision", `Jour: ${fmtFR(dayISO)}`);
 
-      // KPIs
       let present=0, repos=0, attente=0;
       equipe.forEach(emp=>{
         const id = emp.nom+"_"+emp.prenom;
@@ -586,7 +755,6 @@
         </div>
       `;
 
-      // Table
       const rows = equipe.slice().sort((a,b)=>{
         const A=a.nom+"_"+a.prenom, B=b.nom+"_"+b.prenom;
         if(A==="BOUCHNAK_NAOUAL") return -1;
@@ -655,13 +823,12 @@
     }
 
     async function downloadPDF_EmployeeMonth(){
-      const empId = document.getElementById("empSelect").value; // NOM_PRENOM
+      const empId = document.getElementById("empSelect").value;
       const [nom, prenom] = empId.split("_");
       const seed = dateInput.value;
       const dates = getDatesInMonth(seed);
       const today = todayISO();
 
-      // fetch all days
       const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
@@ -679,7 +846,6 @@
         const data = snaps[i].val() || {};
         const e = data[empId] || null;
 
-        // ✅ Pas de data => CONGÉ (mais seulement si jour passé non exclu)
         if(!e){
           conge++;
           return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
@@ -699,7 +865,6 @@
           return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
 
-        // pas d'arrivée => congé
         conge++;
         return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
       }).join("");
@@ -758,20 +923,13 @@
       const dates = getDatesInYear(seed);
       const today = todayISO();
 
-      // fetch all days
       const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
       const rows = dates.map((dayISO, i)=>{
-        if(dayISO > today){
-          ignoredFuture++;
-          return ''; // ✅ on ne liste pas les jours futurs (plus propre en annuel)
-        }
-        if(isExcluded(dayISO)){
-          excluded++;
-          return ''; // ✅ annuel: on n’imprime même pas les jours exclus
-        }
+        if(dayISO > today){ ignoredFuture++; return ''; }
+        if(isExcluded(dayISO)){ excluded++; return ''; }
 
         const data = snaps[i].val() || {};
         const e = data[empId] || null;
