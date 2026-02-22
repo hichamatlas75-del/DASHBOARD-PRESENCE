@@ -138,6 +138,9 @@
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
             Connecté : <span id="roleLabel" class="text-slate-900">—</span>
           </p>
+          <p class="text-[9px] font-extrabold text-slate-400 uppercase tracking-[0.18em] mt-1">
+            hA depuis <span class="text-slate-900">punches</span> ✅ • off/hP depuis <span class="text-slate-900">presences</span>
+          </p>
         </div>
 
         <!-- ✅ Actions -->
@@ -215,7 +218,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== Firebase (même projet que pointage/présences) =====
+    // ===== Firebase =====
     const firebaseConfig = {
       apiKey: "AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",
       authDomain: "grey-corner-presence.firebaseapp.com",
@@ -238,10 +241,18 @@
     const roleLabel = document.getElementById("roleLabel");
 
     let currentMode = 'day', myChart = null;
-    let activeDayListenerRef = null;
     let role = null; // must be "gerant"
 
-    // ✅ Équipe (chef + tout le monde)
+    // listeners
+    let dayRefPres = null, dayCbPres = null;
+    let dayRefPunch = null, dayCbPunch = null;
+
+    // caches
+    let cachePresDay = {};
+    let cachePunchDay = {};
+    let mergedDay = {};
+
+    // ✅ Équipe
     const equipe = [
       {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'},
       {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'}, {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
@@ -258,11 +269,10 @@
       {nom:'SBAI', prenom:'HAKIMA', poste:'MENAGE'}, {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
     ];
 
-    // ✅ Exception "hA-only" (retard=0 si pas de HP ou exception)
-    // -> ajout demandé: ELMCHAOURI SOUAD + SBAI HAKIMA
+    // ✅ hA-only (retard=0 si pas de HP ou exception)
     const haOnlyIds = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
 
-    // ✅ EXCLUSION: du 2026-01-01 au 2026-01-31 (inclus) => jamais comptabilisé
+    // ✅ EXCLUSION: Jan 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -274,10 +284,17 @@
         year:'numeric',month:'2-digit',day:'2-digit'
       }).format(new Date());
     }
+
     function fmtFR(iso){
       if(!iso || !iso.includes("-")) return iso || "";
       const [y,m,d] = iso.split("-");
       return `${d}/${m}/${y}`;
+    }
+
+    // ✅ ISO safe sans UTC
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function toISODateLocal(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
     }
 
     function getTimeDiff(a, p, id) {
@@ -299,14 +316,40 @@
       return '';
     }
 
+    // ===== Merge day presences + punches =====
+    function mergeDay(){
+      const out = {};
+      equipe.forEach(emp=>{
+        const id = emp.nom + "_" + emp.prenom;
+        const pr = cachePresDay[id] || {};
+        const pu = cachePunchDay[id] || {};
+
+        out[id] = {
+          ...pr,
+          // priorité punches pour hA + retard
+          hA: (pu && pu.hA) ? pu.hA : (pr && pr.hA ? pr.hA : null),
+          retard: (pu && typeof pu.retard === "boolean") ? pu.retard : (pr && typeof pr.retard === "boolean" ? pr.retard : false),
+          retardMin: (pu && typeof pu.retardMin === "number") ? pu.retardMin : (pr && typeof pr.retardMin === "number" ? pr.retardMin : 0),
+        };
+      });
+      mergedDay = out;
+    }
+
     // ===== Auth (GERANT only) =====
     async function fetchRole(uid){
       const s = await database.ref("users/"+uid).once("value");
       return s.val() || null;
     }
 
+    function clearDayListeners(){
+      if(dayRefPres && dayCbPres){ dayRefPres.off('value', dayCbPres); }
+      if(dayRefPunch && dayCbPunch){ dayRefPunch.off('value', dayCbPunch); }
+      dayRefPres = dayCbPres = null;
+      dayRefPunch = dayCbPunch = null;
+    }
+
     function showLoginUI(msg){
-      if(activeDayListenerRef){ activeDayListenerRef.off(); activeDayListenerRef = null; }
+      clearDayListeners();
       role = null;
 
       appWrap.classList.add("hidden");
@@ -355,21 +398,16 @@
         return;
       }
 
-      // ✅ Init dashboard après validation rôle gérant
       showAppUI();
       bootDashboard();
     });
 
     // ===== Boot dashboard =====
     function bootDashboard(){
-      // date default
       dateInput.value = todayISO();
       dateInput.addEventListener('change', updateDashboard);
 
-      // fill select
       fillEmpSelect();
-
-      // first render
       updateDashboard();
     }
 
@@ -400,21 +438,35 @@
     function updateDashboard() {
       if(role !== "gerant") return;
 
-      if(activeDayListenerRef){
-        activeDayListenerRef.off();
-        activeDayListenerRef = null;
-      }
+      clearDayListeners();
 
       if(currentMode === 'report'){
         renderReportView();
         return;
       }
 
-      activeDayListenerRef = database.ref('presences/' + dateInput.value);
-      activeDayListenerRef.on('value', (snap) => {
-        const data = snap.val() || {};
-        renderDayView(data);
-      });
+      // === DAY MODE: listen presences + punches ===
+      cachePresDay = {};
+      cachePunchDay = {};
+      mergedDay = {};
+
+      const dayISO = dateInput.value;
+
+      dayRefPres = database.ref('presences/' + dayISO);
+      dayCbPres = (snap) => {
+        cachePresDay = snap.val() || {};
+        mergeDay();
+        renderDayView(mergedDay);
+      };
+      dayRefPres.on('value', dayCbPres);
+
+      dayRefPunch = database.ref('punches/' + dayISO);
+      dayCbPunch = (snap) => {
+        cachePunchDay = snap.val() || {};
+        mergeDay();
+        renderDayView(mergedDay);
+      };
+      dayRefPunch.on('value', dayCbPunch);
     }
 
     // ===== Day view =====
@@ -484,54 +536,63 @@
         stats[id] = { info: e, present: 0, lateMin: 0, repos: 0, conge: 0, excluded: 0 };
       });
 
-      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      // On charge presences + punches pour chaque jour
+      const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const punSnaps  = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
 
       const dailyLates = [], dailyPresence = [], labels = [];
       const today = todayISO();
 
-      snaps.forEach((s, i) => {
-        const dayISO = dates[i];
+      dates.forEach((dayISO, i) => {
         labels.push(dayISO.split('-')[2]);
 
-        // ✅ exclure jours futurs
+        // futurs ignorés
         if(dayISO > today){
           dailyLates.push(0); dailyPresence.push(0);
           return;
         }
 
-        // ✅ exclure plage Janvier 2026
+        // exclus janvier 2026
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
           Object.keys(stats).forEach(id => stats[id].excluded++);
           return;
         }
 
-        const dData = s.val() || {};
+        const pres = presSnaps[i].val() || {};
+        const pun  = punSnaps[i].val() || {};
+
         let tL = 0, tP = 0;
 
-        if (!dData.disabled) {
+        if (!pres.disabled) {
           Object.keys(stats).forEach(id => {
-            const e = dData[id] || null;
+            const ep = pres[id] || null; // off + hP
+            const pu = pun[id]  || null; // hA
 
-            // ✅ Pas de data => CONGÉ (uniquement jours passés / non exclus)
-            if(!e){
+            const isOff = !!(ep && ep.off);
+            const hP = ep ? (ep.hP || "") : "";
+            const hA = pu && pu.hA ? pu.hA : (ep && ep.hA ? ep.hA : "");
+
+            // pas d'entrée du tout => congé (jour passé)
+            if(!ep && !pu){
               stats[id].conge++;
               return;
             }
 
-            if(e.off){
+            if(isOff){
               stats[id].repos++;
               return;
             }
 
-            if(e.hA){
-              const diff = getTimeDiff(e.hA, e.hP, id);
+            if(hA){
+              const diff = getTimeDiff(hA, hP, id);
               stats[id].present++;
               stats[id].lateMin += diff;
               tL += diff; tP++;
               return;
             }
 
+            // sinon congé
             stats[id].conge++;
           });
         }
@@ -578,7 +639,7 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    // ✅ FIX: chart maintenant accepte 2 séries (retards + présences)
+    // ✅ chart 2 séries
     function renderChart(labels, lates, presences) {
       const ctx = document.getElementById('trendsChart').getContext('2d');
       if (myChart) myChart.destroy();
@@ -623,52 +684,59 @@
       });
     }
 
+    // ✅ FIX: dates du mois sans UTC
     function getDatesInMonth(seedISO) {
+      const [y,m] = seedISO.split('-').map(Number);
       const dates = [];
-      const curr = new Date(seedISO);
-      const m = curr.getMonth();
-      const y = curr.getFullYear();
-      const d = new Date(y, m, 1);
-      while(d.getMonth() === m) {
-        dates.push(d.toISOString().split('T')[0]);
+      const d = new Date(y, m-1, 1);
+      while(d.getMonth() === (m-1)){
+        dates.push(toISODateLocal(d));
         d.setDate(d.getDate()+1);
       }
       return dates;
     }
 
     function getDatesInYear(seedISO){
-      const curr = new Date(seedISO);
-      const y = curr.getFullYear();
+      const y = Number(seedISO.split('-')[0]);
       const dates = [];
       const d = new Date(y, 0, 1);
       while(d.getFullYear() === y){
-        dates.push(d.toISOString().split('T')[0]);
+        dates.push(toISODateLocal(d));
         d.setDate(d.getDate()+1);
       }
       return dates;
     }
 
-    // ===== Historique modal =====
+    // ===== Historique modal (fusion presences+punches) =====
     async function openHistory(nom, prenom) {
       const modal = document.getElementById('historyModal');
       document.getElementById('modalTitle').innerText = nom + " " + prenom;
       modal.classList.add('modal-active');
 
       const dates = getDatesInMonth(dateInput.value);
-      const snaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
+
+      const presSnaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
+      const punSnaps  = await Promise.all(dates.map(dt => database.ref('punches/'+dt).once('value')));
 
       const today = todayISO();
       let html = '';
 
-      // reverse display
       const datesRev = dates.slice().reverse();
-      const snapsRev = snaps.slice().reverse();
+      const presRev = presSnaps.slice().reverse();
+      const punRev  = punSnaps.slice().reverse();
 
-      snapsRev.forEach((s, i) => {
+      presRev.forEach((s, i) => {
         const dayISO = datesRev[i];
-        const data = s.val() || {};
+        const pres = s.val() || {};
+        const pun  = (punRev[i].val() || {});
         const id = nom+'_'+prenom;
-        const entry = data[id] || null;
+
+        const ep = pres[id] || null;
+        const pu = pun[id]  || null;
+
+        const isOff = !!(ep && ep.off);
+        const hP = ep ? (ep.hP || "") : "";
+        const hA = (pu && pu.hA) ? pu.hA : (ep && ep.hA ? ep.hA : "");
 
         let label = '';
         let cls = 'text-slate-400';
@@ -677,13 +745,13 @@
           label = 'À venir'; cls = 'text-slate-300';
         } else if(isExcluded(dayISO)){
           label = 'Exclu'; cls = 'text-slate-400';
-        } else if(!entry){
+        } else if(!ep && !pu){
           label = 'Congé'; cls = 'text-slate-500';
-        } else if(entry.off){
+        } else if(isOff){
           label = 'Repos'; cls = 'text-slate-300';
-        } else if(entry.hA){
-          const diff = getTimeDiff(entry.hA, entry.hP, id);
-          label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
+        } else if(hA){
+          const diff = getTimeDiff(hA, hP, id);
+          label = hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
           cls = diff>0 ? 'text-rose-500' : 'text-emerald-500';
         } else {
           label = 'Congé'; cls = 'text-slate-500';
@@ -729,20 +797,28 @@
       return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`;
     }
 
+    // ===== PDF DAY (fusion) =====
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
 
-      const snap = await database.ref('presences/'+dayISO).once('value');
-      const data = snap.val() || {};
+      const presSnap = await database.ref('presences/'+dayISO).once('value');
+      const punSnap  = await database.ref('punches/'+dayISO).once('value');
+
+      const pres = presSnap.val() || {};
+      const pun  = punSnap.val()  || {};
 
       document.getElementById("pdfHeader").innerHTML = pdfHeader("Rapport Jour — Supervision", `Jour: ${fmtFR(dayISO)}`);
 
       let present=0, repos=0, attente=0;
       equipe.forEach(emp=>{
         const id = emp.nom+"_"+emp.prenom;
-        const e = data[id] || null;
-        if(e && e.off) repos++;
-        else if(e && e.hA) present++;
+        const ep = pres[id] || null;
+        const pu = pun[id]  || null;
+        const isOff = !!(ep && ep.off);
+        const hA = (pu && pu.hA) ? pu.hA : (ep && ep.hA ? ep.hA : "");
+
+        if(isOff) repos++;
+        else if(hA) present++;
         else attente++;
       });
 
@@ -762,24 +838,27 @@
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       }).map(emp=>{
         const id = emp.nom+"_"+emp.prenom;
-        const e = data[id] || null;
+        const ep = pres[id] || null;
+        const pu = pun[id]  || null;
 
-        let statut="ATTENTE", hp="", ha="", retard="";
-        if(e){
-          hp = e.hP || "";
-          ha = e.hA || "";
-          if(e.off){ statut="REPOS"; }
-          else if(e.hA){
-            statut="OK";
-            if(e.hP){
-              const diff = getTimeDiff(e.hA, e.hP, id);
-              retard = diff>0 ? `+${diff}m` : "0";
-              if(diff>0) statut="RETARD";
-            }
-          }else{
-            statut="CONGÉ";
+        const isOff = !!(ep && ep.off);
+        const hP = ep ? (ep.hP || "") : "";
+        const hA = (pu && pu.hA) ? pu.hA : (ep && ep.hA ? ep.hA : "");
+
+        let statut="ATTENTE", retard="";
+
+        if(!ep && !pu){
+          statut="CONGÉ";
+        } else if(isOff){
+          statut="REPOS";
+        } else if(hA){
+          statut="OK";
+          if(hP){
+            const diff = getTimeDiff(hA, hP, id);
+            retard = diff>0 ? `+${diff}m` : "0";
+            if(diff>0) statut="RETARD";
           }
-        }else{
+        } else {
           statut="CONGÉ";
         }
 
@@ -787,8 +866,8 @@
           <tr>
             <td>${emp.nom} ${emp.prenom}</td>
             <td style="text-align:center;">${statut}</td>
-            <td style="text-align:center;">${hp}</td>
-            <td style="text-align:center;">${ha}</td>
+            <td style="text-align:center;">${hP}</td>
+            <td style="text-align:center;">${hA}</td>
             <td style="text-align:center;">${retard}</td>
           </tr>
         `;
@@ -822,6 +901,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // ===== PDF EMP MONTH (fusion) =====
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const [nom, prenom] = empId.split("_");
@@ -829,7 +909,8 @@
       const dates = getDatesInMonth(seed);
       const today = todayISO();
 
-      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const punSnaps  = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
@@ -843,30 +924,36 @@
           return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`;
         }
 
-        const data = snaps[i].val() || {};
-        const e = data[empId] || null;
+        const pres = presSnaps[i].val() || {};
+        const pun  = punSnaps[i].val()  || {};
+        const ep = pres[empId] || null;
+        const pu = pun[empId]  || null;
 
-        if(!e){
+        const isOff = !!(ep && ep.off);
+        const hP = ep ? (ep.hP || "") : "";
+        const hA = (pu && pu.hA) ? pu.hA : (ep && ep.hA ? ep.hA : "");
+
+        if(!ep && !pu){
           conge++;
           return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
         }
 
-        if(e.off){
+        if(isOff){
           repos++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${hP}</td><td>${hA}</td><td></td></tr>`;
         }
 
-        if(e.hA){
+        if(hA){
           present++;
-          const diff = getTimeDiff(e.hA, e.hP, empId);
+          const diff = getTimeDiff(hA, hP, empId);
           lateMin += diff;
-          const st = (e.hP && diff>0) ? "Retard" : "OK";
-          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+          const st = (hP && diff>0) ? "Retard" : "OK";
+          const r = (hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${hP}</td><td>${hA}</td><td>${r}</td></tr>`;
         }
 
         conge++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${hP}</td><td>${hA}</td><td></td></tr>`;
       }).join("");
 
       document.getElementById("pdfHeader").innerHTML =
@@ -914,6 +1001,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // ===== PDF EMP YEAR (fusion) =====
     async function downloadPDF_EmployeeYear(){
       const empId = document.getElementById("empSelect").value;
       const [nom, prenom] = empId.split("_");
@@ -923,7 +1011,8 @@
       const dates = getDatesInYear(seed);
       const today = todayISO();
 
-      const snaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const punSnaps  = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
@@ -931,30 +1020,36 @@
         if(dayISO > today){ ignoredFuture++; return ''; }
         if(isExcluded(dayISO)){ excluded++; return ''; }
 
-        const data = snaps[i].val() || {};
-        const e = data[empId] || null;
+        const pres = presSnaps[i].val() || {};
+        const pun  = punSnaps[i].val()  || {};
+        const ep = pres[empId] || null;
+        const pu = pun[empId]  || null;
 
-        if(!e){
+        const isOff = !!(ep && ep.off);
+        const hP = ep ? (ep.hP || "") : "";
+        const hA = (pu && pu.hA) ? pu.hA : (ep && ep.hA ? ep.hA : "");
+
+        if(!ep && !pu){
           conge++;
           return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
         }
 
-        if(e.off){
+        if(isOff){
           repos++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${hP}</td><td>${hA}</td><td></td></tr>`;
         }
 
-        if(e.hA){
+        if(hA){
           present++;
-          const diff = getTimeDiff(e.hA, e.hP, empId);
+          const diff = getTimeDiff(hA, hP, empId);
           lateMin += diff;
-          const st = (e.hP && diff>0) ? "Retard" : "OK";
-          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+          const st = (hP && diff>0) ? "Retard" : "OK";
+          const r = (hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${hP}</td><td>${hA}</td><td>${r}</td></tr>`;
         }
 
         conge++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${hP}</td><td>${hA}</td><td></td></tr>`;
       }).join("");
 
       document.getElementById("pdfHeader").innerHTML =
