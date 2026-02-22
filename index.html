@@ -277,6 +277,55 @@
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
 
+    // ✅ CAISSIERS: pas de repos d'office (tout off = congé)
+    const CASHIER_NO_REPOS = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
+    function isCashierNoRepos(empId){ return CASHIER_NO_REPOS.has(empId); }
+
+    // ✅ Dates sûres (UTC) pour éviter les bugs de timezone
+    function parseISO(iso){
+      const [y,m,d] = iso.split("-").map(Number);
+      return { y, m, d };
+    }
+    function toISO(y,m,d){
+      return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    }
+    function addDaysISO(iso, delta){
+      const {y,m,d} = parseISO(iso);
+      const t = Date.UTC(y, m-1, d) + delta*86400000;
+      const dt = new Date(t);
+      return toISO(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate());
+    }
+
+    // ✅ Semaine LUNDI → DIMANCHE (start = lundi)
+    function weekStartMondayISO(iso){
+      const {y,m,d} = parseISO(iso);
+      const dt = new Date(Date.UTC(y, m-1, d));
+      // 0=dim,1=lun,...6=sam
+      const dow = dt.getUTCDay();
+      const shift = (dow === 0) ? 6 : (dow - 1);
+      return addDaysISO(iso, -shift);
+    }
+    function getWeekDatesISO(iso){
+      const start = weekStartMondayISO(iso);
+      return Array.from({length:7}, (_,i)=> addDaysISO(start, i));
+    }
+
+    // ✅ Classement hebdo OFF => REPOS ou CONGÉ
+    // weekOffCount[weekKey][empId] = nb off déjà comptés cette semaine
+    function classifyOffDay(empId, dayISO, weekOffCount){
+      if(isCashierNoRepos(empId)) return "CONGÉ";
+      const weekKey = weekStartMondayISO(dayISO);
+      weekOffCount[weekKey] ||= {};
+      weekOffCount[weekKey][empId] ||= 0;
+
+      if(weekOffCount[weekKey][empId] === 0){
+        weekOffCount[weekKey][empId] = 1;
+        return "REPOS";
+      }
+      weekOffCount[weekKey][empId] += 1;
+      return "CONGÉ";
+    }
+
     // ===== Helpers date (Casablanca) =====
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
@@ -566,6 +615,9 @@
         stats[id] = { info: e, present: 0, lateMin: 0, repos: 0, conge: 0, excluded: 0 };
       });
 
+      // ✅ compteur OFF hebdomadaire (repos 1/semaine, le reste congé)
+      const weekOffCount = {};
+
       // ✅ on fetch presences + punches (punches = vrai pointage)
       const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
       const punchSnaps = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
@@ -614,7 +666,9 @@
           }
 
           if(e.off){
-            stats[id].repos++;
+            const typeOff = classifyOffDay(id, dayISO, weekOffCount);
+            if(typeOff === "REPOS") stats[id].repos++;
+            else stats[id].conge++;
             return;
           }
 
@@ -755,19 +809,25 @@
       const presSnaps = await Promise.all(dates.map(dt => database.ref('presences/'+dt).once('value')));
       const punchSnaps = await Promise.all(dates.map(dt => database.ref('punches/'+dt).once('value')));
 
-      let html = '';
+      const id = nom + '_' + prenom;
 
-      const datesRev = dates.slice().reverse();
-      const presRev = presSnaps.slice().reverse();
-      const punchRev = punchSnaps.slice().reverse();
+      // ✅ Pré-calcul statut par date avec règle hebdo (pour l'employé sélectionné)
+      const weekOffCount = {};
+      const statusMap = {}; // dayISO -> {label, cls}
 
-      presRev.forEach((s, i) => {
-        const dayISO = datesRev[i];
-        const pres = s.val() || {};
-        const punches = punchRev[i].val() || {};
-        const id = nom+'_'+prenom;
+      dates.forEach((dayISO, idx) => {
+        if(dayISO > today){
+          statusMap[dayISO] = { label:"À venir", cls:"text-slate-300" };
+          return;
+        }
+        if(isExcluded(dayISO)){
+          statusMap[dayISO] = { label:"Exclu", cls:"text-slate-400" };
+          return;
+        }
 
-        // merge day
+        const pres = presSnaps[idx].val() || {};
+        const punches = punchSnaps[idx].val() || {};
+
         const merged = JSON.parse(JSON.stringify(pres));
         Object.keys(punches).forEach(empId=>{
           merged[empId] ||= {};
@@ -780,28 +840,40 @@
 
         const entry = merged[id] || null;
 
-        let label = '';
-        let cls = 'text-slate-400';
-
-        if(dayISO > today){
-          label = 'À venir'; cls = 'text-slate-300';
-        } else if(isExcluded(dayISO)){
-          label = 'Exclu'; cls = 'text-slate-400';
-        } else if(!entry){
-          label = 'Congé'; cls = 'text-slate-500';
-        } else if(entry.hA){
-          const diff = getTimeDiff(entry.hA, entry.hP, id);
-          label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
-          cls = diff>0 ? 'text-rose-500' : 'text-emerald-500';
-        } else if(entry.off){
-          label = 'Repos'; cls = 'text-slate-300';
-        } else {
-          label = 'Congé'; cls = 'text-slate-500';
+        if(!entry){
+          statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" };
+          return;
         }
 
+        if(entry.hA){
+          const diff = getTimeDiff(entry.hA, entry.hP, id);
+          const label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
+          const cls = (entry.hP && diff>0) ? 'text-rose-500' : 'text-emerald-500';
+          statusMap[dayISO] = { label, cls };
+          return;
+        }
+
+        if(entry.off){
+          const typeOff = classifyOffDay(id, dayISO, weekOffCount);
+          statusMap[dayISO] = {
+            label: (typeOff === "REPOS") ? "Repos" : "Congé",
+            cls: (typeOff === "REPOS") ? "text-slate-300" : "text-slate-500"
+          };
+          return;
+        }
+
+        statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" };
+      });
+
+      let html = '';
+
+      const datesRev = dates.slice().reverse();
+
+      datesRev.forEach((dayISO) => {
+        const st = statusMap[dayISO] || { label:"—", cls:"text-slate-400" };
         html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
           <span class="text-[10px] font-black text-slate-400 uppercase">${fmtFR(dayISO)}</span>
-          <span class="text-[10px] font-black ${cls} uppercase">${label}</span>
+          <span class="text-[10px] font-black ${st.cls} uppercase">${st.label}</span>
         </div>`;
       });
 
@@ -839,10 +911,45 @@
       return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`;
     }
 
-    // ✅ PDF JOUR : merge presences + punches + priorité hA>off
+    // ✅ PDF JOUR : merge presences + punches + priorité hA>off + REPOS vs CONGÉ (hebdo)
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
 
+      // ✅ Récupérer la semaine (lundi→dimanche) pour classer off du jour (repos vs congé)
+      const weekDates = getWeekDatesISO(dayISO);
+      const presWeek = await Promise.all(weekDates.map(d => database.ref('presences/'+d).once('value')));
+      const punchWeek = await Promise.all(weekDates.map(d => database.ref('punches/'+d).once('value')));
+
+      const weekOffCount = {};
+      const offTypeToday = {}; // empId -> "REPOS" | "CONGÉ"
+
+      weekDates.forEach((dISO, i) => {
+        if(isExcluded(dISO)) return;
+
+        const presD = presWeek[i].val() || {};
+        const punchD = punchWeek[i].val() || {};
+
+        const mergedD = JSON.parse(JSON.stringify(presD));
+        Object.keys(punchD).forEach(empId=>{
+          mergedD[empId] ||= {};
+          const punchHA = punchD[empId]?.hA;
+          if(punchHA){
+            if(!mergedD[empId].hA) mergedD[empId].hA = punchHA;
+            if(mergedD[empId].off === true) mergedD[empId].off = false;
+          }
+        });
+
+        equipe.forEach(emp=>{
+          const id = emp.nom+"_"+emp.prenom;
+          const e = mergedD[id] || null;
+          if(e && e.off){
+            const typeOff = classifyOffDay(id, dISO, weekOffCount);
+            if(dISO === dayISO) offTypeToday[id] = typeOff;
+          }
+        });
+      });
+
+      // ✅ jour: fetch direct (pour garder comportement actuel)
       const presSnap = await database.ref('presences/'+dayISO).once('value');
       const punchSnap = await database.ref('punches/'+dayISO).once('value');
 
@@ -865,9 +972,16 @@
       equipe.forEach(emp=>{
         const id = emp.nom+"_"+emp.prenom;
         const e = merged[id] || null;
-        if(e && e.hA) present++;
-        else if(e && e.off) repos++;
-        else attente++;
+
+        if(e && e.hA){
+          present++;
+        } else if(e && e.off){
+          const t = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
+          if(t === "REPOS") repos++;
+          else attente++; // off compté congé => pas "attente", mais KPI d'origine n'a pas "congé". On le garde en attente pour ne rien casser.
+        } else {
+          attente++;
+        }
       });
 
       document.getElementById("pdfKpis").innerHTML = `
@@ -900,7 +1014,8 @@
               if(diff>0) statut="RETARD";
             }
           } else if(e.off){
-            statut="REPOS";
+            const t = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
+            statut = (t === "REPOS") ? "REPOS" : "CONGÉ";
           } else {
             statut="CONGÉ";
           }
@@ -947,7 +1062,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // ✅ PDFs employé : merge presences + punches
+    // ✅ PDFs employé : merge presences + punches + REPOS vs CONGÉ (hebdo)
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const [nom, prenom] = empId.split("_");
@@ -959,6 +1074,9 @@
       const punchSnaps = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
+
+      // ✅ compteur OFF hebdo pour cet employé
+      const weekOffCount = {};
 
       const rows = dates.map((dayISO, i)=>{
         if(dayISO > today){
@@ -1000,8 +1118,14 @@
         }
 
         if(e.off){
-          repos++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
+          if(typeOff === "REPOS"){
+            repos++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }else{
+            conge++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }
         }
 
         conge++;
@@ -1067,6 +1191,9 @@
 
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
 
+      // ✅ compteur OFF hebdo pour cet employé
+      const weekOffCount = {};
+
       const rows = dates.map((dayISO, i)=>{
         if(dayISO > today){ ignoredFuture++; return ''; }
         if(isExcluded(dayISO)){ excluded++; return ''; }
@@ -1101,8 +1228,14 @@
         }
 
         if(e.off){
-          repos++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
+          if(typeOff === "REPOS"){
+            repos++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }else{
+            conge++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }
         }
 
         conge++;
@@ -1156,4 +1289,3 @@
   </script>
 </body>
 </html>
-```0
