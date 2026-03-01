@@ -14,60 +14,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --grey-dark: #2c2c2c;
-      --grey-light: #f4f4f4;
-      --gold: #c5a059;
-      --gold-light: #e2cfab;
-      --status-ok: #10b981;
-      --status-late: #f59e0b;
-      --status-crit: #ef4444;
+    :root{
+      --grey-dark:#2c2c2c;
+      --grey-light:#f4f4f4;
+      --gold:#c5a059;
+      --status-ok:#10b981;
+      --status-late:#f59e0b;
+      --status-crit:#ef4444;
     }
-
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--grey-light);
-      color: var(--grey-dark);
-      -webkit-tap-highlight-color: transparent;
+    body{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      background:var(--grey-light);
+      color:var(--grey-dark);
+      -webkit-tap-highlight-color:transparent;
     }
-
-    .glass-card {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+    .glass-card{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      box-shadow:0 4px 20px -5px rgba(0,0,0,.05);
     }
-
-    .view-btn {
-      color: var(--grey-dark);
-      border: 1px solid transparent;
-      transition: all 0.3s ease;
+    .view-btn{color:var(--grey-dark);border:1px solid transparent;transition:.3s}
+    .view-btn.active{background:var(--grey-dark);color:var(--gold);border-color:var(--gold)}
+    .staff-card{border-left-width:5px;transition:transform .2s}
+    .status-green{border-left-color:var(--status-ok)!important;background:#f0fdf4}
+    .status-orange{border-left-color:var(--status-late)!important;background:#fffbeb}
+    .status-red{border-left-color:var(--status-crit)!important;background:#fef2f2}
+    .status-flash{
+      border-left-color:var(--status-crit)!important;background:#fef2f2;
+      animation:flash-red 1s infinite;
     }
-    .view-btn.active {
-      background: var(--grey-dark);
-      color: var(--gold);
-      border-color: var(--gold);
+    @keyframes flash-red{
+      0%{box-shadow:inset 0 0 0px #ef4444}
+      50%{box-shadow:inset 0 0 15px rgba(239,68,68,.2);border-left-width:8px}
+      100%{box-shadow:inset 0 0 0px #ef4444}
     }
+    .status-off{border-left-color:#94a3b8!important;background:#f8fafc;opacity:.6}
 
-    .staff-card { border-left-width: 5px; transition: transform 0.2s; }
-    .status-green { border-left-color: var(--status-ok) !important; background: #f0fdf4; }
-    .status-orange { border-left-color: var(--status-late) !important; background: #fffbeb; }
-    .status-red { border-left-color: var(--status-crit) !important; background: #fef2f2; }
-
-    .status-flash {
-      border-left-color: var(--status-crit) !important;
-      background: #fef2f2;
-      animation: flash-red 1s infinite;
-    }
-    @keyframes flash-red {
-      0% { box-shadow: inset 0 0 0px #ef4444; }
-      50% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.2); border-left-width: 8px; }
-      100% { box-shadow: inset 0 0 0px #ef4444; }
-    }
-
-    .status-off { border-left-color: #94a3b8 !important; background: #f8fafc; opacity: 0.6; }
-
-    .modal-active { display: flex !important; animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1); }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
     /* ✅ PDF hidden area */
     #pdfArea{display:none;background:#fff;color:#111827}
@@ -91,7 +75,7 @@
       font-size:12px;
       outline:none;
     }
-    .inpt:focus{ border-color: rgba(197,160,89,.55); box-shadow: 0 0 0 3px rgba(197,160,89,.15); }
+    .inpt:focus{border-color:rgba(197,160,89,.55);box-shadow:0 0 0 3px rgba(197,160,89,.15)}
     .btn-login{
       width:100%;
       border-radius:16px;
@@ -129,7 +113,7 @@
       </div>
     </div>
 
-    <!-- ✅ APP (hidden until gerant authenticated) -->
+    <!-- ✅ APP -->
     <div id="appWrap" class="hidden">
       <header class="flex justify-between items-start mb-6">
         <div>
@@ -138,12 +122,9 @@
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
             Connecté : <span id="roleLabel" class="text-slate-900">—</span>
           </p>
-          <p id="syncLine" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mt-2">
-            Sync : —
-          </p>
+          <p id="syncLine" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mt-2">Sync : —</p>
         </div>
 
-        <!-- ✅ Actions -->
         <div class="flex flex-col items-end gap-2">
           <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
             PDF JOUR
@@ -154,7 +135,8 @@
         </div>
       </header>
 
-      <div class="mb-6 space-y-4">
+      <!-- ✅ CONTROLS (au-dessus) -->
+      <div class="mb-4 space-y-4">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
           <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
           <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
@@ -163,14 +145,67 @@
         <div class="relative">
           <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
         </div>
+      </div>
+
+      <!-- ✅ (5) AFFICHAGE PERSONNEL AU DESSUS -->
+      <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
+        <div class="h-[180px] w-full">
+          <canvas id="trendsChart"></canvas>
+        </div>
+      </div>
+
+      <div id="dashBody" class="space-y-6"></div>
+
+      <!-- ✅ (5) TOUTES LES FONCTIONNALITÉS AU DESSOUS -->
+      <div class="mt-6 space-y-4">
+
+        <!-- ✅ KPI global Congés/Repos (par poste + global) -->
+        <div id="kpiOffBlock" class="glass-card rounded-3xl p-5 hidden"></div>
+
+        <!-- ✅ (3) Congé par personne + choix du mois -->
+        <div class="glass-card rounded-3xl p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Congés / Repos</div>
+              <div class="text-[12px] font-extrabold text-slate-700 mt-1">Par personne (choisir mois)</div>
+            </div>
+            <button id="btnToggleCongeTable" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+              Voir tableau
+            </button>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Mois</div>
+              <input id="congeMonth" type="month" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+            </div>
+            <div>
+              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Poste</div>
+              <select id="congePosteFilter" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+                <option value="ALL">TOUS</option>
+                <option value="SERVICE">SERVICE</option>
+                <option value="BAR">BAR</option>
+                <option value="CUISINE">CUISINE</option>
+                <option value="CAISSE">CAISSE</option>
+                <option value="MENAGE">MENAGE</option>
+                <option value="ECONOMAT">ECONOMAT</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- (2) "Supprimer congé par poste" = ici on filtre par poste (donc tu peux “enlever” l’affichage des congés d’un poste en choisissant un autre poste) -->
+          <div class="text-[10px] text-slate-500 font-semibold leading-snug mt-2">
+            Astuce: choisis un <b>poste</b> pour afficher/masquer les congés d’un poste (filtre).
+          </div>
+
+          <div id="congeTableWrap" class="hidden mt-4"></div>
+        </div>
 
         <!-- ✅ PDF employé (Mois / Année) -->
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
 
-          <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
-            <!-- rempli en JS -->
-          </select>
+          <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none"></select>
 
           <div class="grid grid-cols-2 gap-2">
             <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
@@ -182,11 +217,11 @@
           </div>
 
           <div class="text-[10px] text-slate-500 font-semibold leading-snug">
-            ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b> (ni congé, ni absent, ni repos).
+            ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b>.
           </div>
         </div>
 
-        <!-- ✅ COLLABORATEURS (admin) -->
+        <!-- ✅ Gestion équipe -->
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">COLLABORATEURS</div>
 
@@ -199,37 +234,12 @@
             </button>
           </div>
 
-          <div class="text-[10px] text-slate-500 font-semibold leading-snug">
-            Ajouter / supprimer un collaborateur (poste: caisse, bar, cuisine, service…). Stocké dans Firebase: <b>settings/equipe</b>.
+          <div id="teamPermHint" class="text-[10px] text-slate-500 font-semibold leading-snug">
+            Stocké dans Firebase: <b>settings/equipe</b>.
           </div>
         </div>
 
-        <!-- ✅ KPI global congés/repos -->
-        <div id="kpiOffBlock" class="glass-card rounded-3xl p-5 hidden"></div>
-
-        <!-- ✅ Bouton + tableau congés par personne -->
-        <div class="glass-card rounded-3xl p-5">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Congés pris</div>
-              <div class="text-[12px] font-extrabold text-slate-700 mt-1">Par personne (mois)</div>
-            </div>
-            <button id="btnToggleCongeTable" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-              Voir tableau
-            </button>
-          </div>
-
-          <div id="congeTableWrap" class="hidden mt-4"></div>
-        </div>
       </div>
-
-      <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-8 hidden">
-        <div class="h-[180px] w-full">
-          <canvas id="trendsChart"></canvas>
-        </div>
-      </div>
-
-      <div id="dashBody" class="space-y-6"></div>
     </div>
   </div>
 
@@ -282,9 +292,7 @@
 
       <!-- ✅ SUPPRESSION PAR POSTE -->
       <div class="rounded-2xl border border-slate-100 p-4 mt-4">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">
-          Supprimer collaborateur
-        </div>
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Supprimer collaborateur</div>
 
         <select id="delPosteSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
           <option value="">-- Choisir poste --</option>
@@ -307,6 +315,11 @@
         <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold text-slate-500"></div>
       </div>
 
+      <!-- ✅ (1) Info Permission Denied -->
+      <div class="mt-4 text-[10px] text-slate-500 font-semibold leading-snug">
+        Si tu vois <b>PERMISSION_DENIED</b> à l’ajout/suppression, c’est tes <b>rules Firebase</b> qui bloquent l’écriture de <b>settings/equipe</b>.
+        La solution est juste en bas du code (commentaire “RULES À AJOUTER”).
+      </div>
     </div>
   </div>
 
@@ -323,7 +336,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== Firebase (même projet que pointage/présences) =====
+    // ===== Firebase =====
     const firebaseConfig = {
       apiKey: "AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",
       authDomain: "grey-corner-presence.firebaseapp.com",
@@ -349,7 +362,7 @@
     let currentMode = 'day', myChart = null;
     let role = null; // must be "gerant"
 
-    // ✅ listeners temps réel (par date)
+    // ✅ listeners temps réel
     let activePresRef = null;
     let activePunchRef = null;
 
@@ -357,16 +370,15 @@
     let presCache = {};
     let punchCache = {};
 
-    // ✅ cache agrégé (mois): congés/repos pris jusqu'à la date sélectionnée
-    let monthAggCache = null; // { seedKey, congeById, reposById }
+    // ✅ cache conge/mois sélectionné (table + KPI)
+    let monthAggCache = null; // { monthKey:"YYYY-MM", congeById, reposById }
 
     /** =========================
-     *  ÉQUIPE STOCKÉE EN FIREBASE
-     *  Path: settings/equipe
+     *  Équipe stockée en Firebase
      *  ========================= */
     const EQUIPE_PATH = "settings/equipe";
 
-    // ===== Équipe (fallback si settings/equipe vide) =====
+    // ===== Équipe fallback (GUETIBI retiré) =====
     const equipe = [
       {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'},
       {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'}, {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
@@ -386,10 +398,10 @@
       {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
     ];
 
-    // ✅ Exception "hA-only" (retard=0 si pas de HP ou exception)
+    // ✅ exceptions
     const haOnlyIds = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
 
-    // ✅ EXCLUSION: du 2026-01-01 au 2026-01-31 (inclus) => jamais comptabilisé
+    // ✅ EXCLUSION Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -399,13 +411,8 @@
     function isCashierNoRepos(empId){ return CASHIER_NO_REPOS.has(empId); }
 
     // ✅ Dates sûres (UTC)
-    function parseISO(iso){
-      const [y,m,d] = iso.split("-").map(Number);
-      return { y, m, d };
-    }
-    function toISO(y,m,d){
-      return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    }
+    function parseISO(iso){ const [y,m,d] = iso.split("-").map(Number); return {y,m,d}; }
+    function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
     function addDaysISO(iso, delta){
       const {y,m,d} = parseISO(iso);
       const t = Date.UTC(y, m-1, d) + delta*86400000;
@@ -413,11 +420,11 @@
       return toISO(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate());
     }
 
-    // ✅ Semaine LUNDI → DIMANCHE
+    // ✅ Week Monday
     function weekStartMondayISO(iso){
       const {y,m,d} = parseISO(iso);
       const dt = new Date(Date.UTC(y, m-1, d));
-      const dow = dt.getUTCDay(); // 0 dim
+      const dow = dt.getUTCDay();
       const shift = (dow === 0) ? 6 : (dow - 1);
       return addDaysISO(iso, -shift);
     }
@@ -426,17 +433,13 @@
       return Array.from({length:7}, (_,i)=> addDaysISO(start, i));
     }
 
-    // ✅ OFF => REPOS(1/semaine) sinon CONGÉ (sauf caissiers)
+    // ✅ OFF => 1 repos/semaine sinon congé (sauf caissiers)
     function classifyOffDay(empId, dayISO, weekOffCount){
       if(isCashierNoRepos(empId)) return "CONGÉ";
       const weekKey = weekStartMondayISO(dayISO);
       weekOffCount[weekKey] ||= {};
       weekOffCount[weekKey][empId] ||= 0;
-
-      if(weekOffCount[weekKey][empId] === 0){
-        weekOffCount[weekKey][empId] = 1;
-        return "REPOS";
-      }
+      if(weekOffCount[weekKey][empId] === 0){ weekOffCount[weekKey][empId] = 1; return "REPOS"; }
       weekOffCount[weekKey][empId] += 1;
       return "CONGÉ";
     }
@@ -444,8 +447,7 @@
     // ===== Helpers date (Casablanca) =====
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
-        timeZone:'Africa/Casablanca',
-        year:'numeric',month:'2-digit',day:'2-digit'
+        timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'
       }).format(new Date());
     }
     function fmtFR(iso){
@@ -469,44 +471,47 @@
         if (diff > 0 && diff < 30) return 'status-orange';
         if (diff >= 30 && diff < 60) return 'status-red';
         if (diff >= 60) return 'status-flash';
-        return '';
       }
       if (isOff) return 'status-off';
       return '';
     }
 
-    /** =========================
-     *  Admin équipe helpers
-     *  ========================= */
+    // ===== Équipe admin helpers =====
     function normName(s){
-      return (s || "")
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g,' ')
-        .replace(/[’']/g,"'");
+      return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/[’']/g,"'");
     }
-    function makeEmpId(nom, prenom){
-      return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_');
-    }
+    function makeEmpId(nom, prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
+
     async function loadEquipeFromDB(){
       const snap = await database.ref(EQUIPE_PATH).once("value");
       const arr = snap.val();
       if(Array.isArray(arr) && arr.length) return arr;
       return equipe; // fallback
     }
+
     async function saveEquipeToDB(list){
-      await database.ref(EQUIPE_PATH).set(list);
+      // (1) PERMISSION_DENIED vient des rules => on catch et on affiche un message clair
+      try{
+        await database.ref(EQUIPE_PATH).set(list);
+        document.getElementById("teamPermHint").innerHTML =
+          `Stocké dans Firebase: <b>settings/equipe</b> ✅`;
+        return true;
+      }catch(e){
+        const msg = (e && e.message) ? e.message : String(e||"");
+        document.getElementById("teamPermHint").innerHTML =
+          `<span class="text-rose-600 font-extrabold">⚠️ PERMISSION_DENIED</span> :
+           Ajoute la règle Firebase pour autoriser le gérant à écrire <b>settings/equipe</b>.`;
+        throw e;
+      }
     }
 
     function openStaffAdmin(){
       const m = document.getElementById("staffAdminModal");
-      m.classList.remove("hidden");
-      m.classList.add("modal-active");
+      m.classList.remove("hidden"); m.classList.add("modal-active");
     }
     function closeStaffAdmin(){
       const m = document.getElementById("staffAdminModal");
-      m.classList.add("hidden");
-      m.classList.remove("modal-active");
+      m.classList.add("hidden"); m.classList.remove("modal-active");
     }
 
     function exportEquipeJSON(){
@@ -515,16 +520,14 @@
       const a = document.createElement("a");
       a.href = url;
       a.download = `GC_EQUIPE_${todayISO()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
     function fillEmpSelect(){
       const sel = document.getElementById("empSelect");
       const list = equipe.slice().sort((a,b)=>{
-        const A = a.nom+"_"+a.prenom, B = b.nom+"_"+b.prenom;
+        const A=a.nom+"_"+a.prenom, B=b.nom+"_"+b.prenom;
         if(A==="BOUCHNAK_NAOUAL") return -1;
         if(B==="BOUCHNAK_NAOUAL") return 1;
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
@@ -539,19 +542,13 @@
       const sel = document.getElementById("delEmpSelect");
       if(!sel) return;
 
-      if(!poste){
-        sel.innerHTML = `<option value="">Choisir poste d'abord</option>`;
-        return;
-      }
+      if(!poste){ sel.innerHTML = `<option value="">Choisir poste d'abord</option>`; return; }
 
       const list = equipe
         .filter(e => e.poste === poste)
         .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
 
-      if(list.length === 0){
-        sel.innerHTML = `<option value="">Aucun collaborateur</option>`;
-        return;
-      }
+      if(!list.length){ sel.innerHTML = `<option value="">Aucun collaborateur</option>`; return; }
 
       sel.innerHTML = list.map(e=>{
         const id = e.nom+"_"+e.prenom;
@@ -561,9 +558,13 @@
 
     function refreshEquipeUI(){
       fillEmpSelect();
-      // refresh del select if poste chosen
       const p = document.getElementById("delPosteSelect")?.value || "";
       fillDelEmpSelectByPoste(p);
+      // recalcul congés si table ouverte
+      const wrap = document.getElementById("congeTableWrap");
+      if(wrap && !wrap.classList.contains("hidden")){
+        computeAggForSelectedMonth().then(()=> renderCongeTable());
+      }
       updateDashboard();
     }
 
@@ -577,6 +578,8 @@
 
       document.getElementById("btnAddStaff").onclick = async () => {
         const addMsg = document.getElementById("addMsg");
+        addMsg.textContent = "";
+
         const nom = normName(document.getElementById("addNom").value);
         const prenom = normName(document.getElementById("addPrenom").value);
         const poste = (document.getElementById("addPoste").value || "").trim().toUpperCase();
@@ -602,21 +605,19 @@
           refreshEquipeUI();
           closeStaffAdmin();
         }catch(e){
-          // rollback
+          // rollback local
           const idx = equipe.findIndex(x => (x.nom+"_"+x.prenom) === id);
           if(idx >= 0) equipe.splice(idx,1);
-          addMsg.textContent = "⚠️ Erreur : " + (e?.message || "inconnue");
+          addMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
         }
       };
 
       document.getElementById("btnDeleteStaff").onclick = async () => {
         const delMsg = document.getElementById("delAnyMsg");
-        const empId = document.getElementById("delEmpSelect").value;
+        delMsg.textContent = "";
 
-        if(!empId){
-          delMsg.textContent = "⚠️ Choisis un collaborateur.";
-          return;
-        }
+        const empId = document.getElementById("delEmpSelect").value;
+        if(!empId){ delMsg.textContent = "⚠️ Choisis un collaborateur."; return; }
 
         const ok = confirm(`Confirmer suppression de ${empId} de l’équipe ?`);
         if(!ok) return;
@@ -632,7 +633,7 @@
           refreshEquipeUI();
           closeStaffAdmin();
         }catch(e){
-          delMsg.textContent = "⚠️ Erreur : " + (e?.message || "inconnue");
+          delMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
         }
       };
     }
@@ -662,11 +663,8 @@
       const email = (document.getElementById("loginEmail").value || "").trim();
       const pass  = (document.getElementById("loginPass").value || "").trim();
       document.getElementById("loginMsg").textContent = "";
-      try{
-        await auth.signInWithEmailAndPassword(email, pass);
-      }catch(e){
-        showLoginUI("Identifiants invalides.");
-      }
+      try{ await auth.signInWithEmailAndPassword(email, pass); }
+      catch(e){ showLoginUI("Identifiants invalides."); }
     };
 
     document.getElementById("btnLogout").onclick = async () => {
@@ -675,10 +673,7 @@
     };
 
     auth.onAuthStateChanged(async (user) => {
-      if(!user){
-        showLoginUI("");
-        return;
-      }
+      if(!user){ showLoginUI(""); return; }
 
       try{
         role = await fetchRole(user.uid);
@@ -697,7 +692,7 @@
       bootDashboard();
     });
 
-    // ===== Temps réel : detach/attach =====
+    // ===== Temps réel =====
     function detachRealtime(){
       try{
         if(activePresRef){ activePresRef.off(); activePresRef = null; }
@@ -707,21 +702,17 @@
       punchCache = {};
     }
 
-    // ✅ MERGE (presences + punches) + priorité hA > off
     function mergedDayData(){
       const out = JSON.parse(JSON.stringify(presCache || {}));
       const p = punchCache || {};
-
       Object.keys(p).forEach(empId => {
         out[empId] ||= {};
         const punchHA = p[empId]?.hA;
-
         if(punchHA){
           if(!out[empId].hA) out[empId].hA = punchHA;
           if(out[empId].off === true) out[empId].off = false;
         }
       });
-
       return out;
     }
 
@@ -735,7 +726,6 @@
     function setSyncWaiting(){ syncLine.textContent = "Sync : connexion…"; }
     function setSyncError(){ syncLine.textContent = "Sync : erreur (réseau ?) ⚠️"; }
 
-    // ✅ attach realtime sur date choisie
     function attachRealtimeForDate(dayISO){
       detachRealtime();
       setSyncWaiting();
@@ -743,24 +733,20 @@
       activePresRef = database.ref('presences/' + dayISO);
       activePresRef.on('value', (snap) => {
         presCache = snap.val() || {};
-        if(currentMode === "day"){
-          renderDayView(mergedDayData());
-        }
+        if(currentMode === "day") renderDayView(mergedDayData());
         setSyncOK();
       }, () => setSyncError());
 
       activePunchRef = database.ref('punches/' + dayISO);
       activePunchRef.on('value', (snap) => {
         punchCache = snap.val() || {};
-        if(currentMode === "day"){
-          renderDayView(mergedDayData());
-        }
+        if(currentMode === "day") renderDayView(mergedDayData());
         setSyncOK();
       }, () => setSyncError());
     }
 
     // ===== Mode switch =====
-    function switchMode(mode, btn) {
+    function switchMode(mode, btn){
       currentMode = mode;
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -775,12 +761,42 @@
       updateDashboard();
     }
 
-    // ===== Agrégat mois (jusqu'à date) =====
-    async function computeMonthAggUpTo(dayISO){
-      const seedKey = dayISO.slice(0,7);
-      const dates = getDatesInMonth(dayISO);
+    // ===== Dates in month/year =====
+    function getDatesInMonth(seedISO){
+      const dates = [];
+      const curr = new Date(seedISO);
+      const m = curr.getMonth();
+      const y = curr.getFullYear();
+      const d = new Date(y, m, 1);
+      while(d.getMonth() === m){
+        dates.push(d.toISOString().split('T')[0]);
+        d.setDate(d.getDate()+1);
+      }
+      return dates;
+    }
+    function getDatesInYear(seedISO){
+      const curr = new Date(seedISO);
+      const y = curr.getFullYear();
+      const dates = [];
+      const d = new Date(y, 0, 1);
+      while(d.getFullYear() === y){
+        dates.push(d.toISOString().split('T')[0]);
+        d.setDate(d.getDate()+1);
+      }
+      return dates;
+    }
+    function getDatesInMonthKey(monthKey){ // "YYYY-MM"
+      const seedISO = monthKey + "-01";
+      return getDatesInMonth(seedISO);
+    }
+
+    // ===== (3) Calcul congés/repos pour le mois choisi =====
+    async function computeAggForMonth(monthKey){
+      const dates = getDatesInMonthKey(monthKey);
       const today = todayISO();
-      const endISO = (dayISO < today) ? dayISO : today;
+
+      // bornage: ignorer futurs
+      const endISO = (monthKey === today.slice(0,7)) ? today : dates[dates.length-1];
 
       const presSnaps  = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
       const punchSnaps = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
@@ -801,8 +817,8 @@
 
         const pres = presSnaps[i].val() || {};
         const punches = punchSnaps[i].val() || {};
-
         const merged = JSON.parse(JSON.stringify(pres));
+
         Object.keys(punches).forEach(empId=>{
           merged[empId] ||= {};
           const punchHA = punches[empId]?.hA;
@@ -816,10 +832,7 @@
           const id = emp.nom+"_"+emp.prenom;
           const entry = merged[id] || null;
 
-          if(!entry){
-            congeById[id] += 1;
-            return;
-          }
+          if(!entry){ congeById[id] += 1; return; }
 
           if(entry.off){
             const typeOff = classifyOffDay(id, dISO, weekOffCount);
@@ -833,19 +846,19 @@
         });
       });
 
-      monthAggCache = { seedKey, congeById, reposById };
+      monthAggCache = { monthKey, congeById, reposById, endISO };
       return monthAggCache;
     }
 
-    function renderOffKpiBlock(dayISO){
-      const box = document.getElementById("kpiOffBlock");
-      const seedKey = dayISO.slice(0,7);
+    async function computeAggForSelectedMonth(){
+      const m = document.getElementById("congeMonth").value; // "YYYY-MM"
+      if(!m) return null;
+      return computeAggForMonth(m);
+    }
 
-      if(!monthAggCache || monthAggCache.seedKey !== seedKey){
-        box.classList.add("hidden");
-        box.innerHTML = "";
-        return;
-      }
+    function renderOffKpiBlockFromAgg(){
+      const box = document.getElementById("kpiOffBlock");
+      if(!monthAggCache){ box.classList.add("hidden"); box.innerHTML=""; return; }
 
       let totalConge = 0, totalRepos = 0;
       const perPoste = {};
@@ -853,13 +866,10 @@
       equipe.forEach(emp=>{
         perPoste[emp.poste] ||= { conge:0, repos:0 };
         const id = emp.nom+"_"+emp.prenom;
-
         const c = monthAggCache.congeById[id] || 0;
         const r = monthAggCache.reposById[id] || 0;
 
-        totalConge += c;
-        totalRepos += r;
-
+        totalConge += c; totalRepos += r;
         perPoste[emp.poste].conge += c;
         perPoste[emp.poste].repos += r;
       });
@@ -881,7 +891,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Congés / Repos pris</div>
-            <div class="text-[12px] font-extrabold text-slate-700 mt-1">Mois : ${seedKey} (jusqu’au ${fmtFR(dayISO)})</div>
+            <div class="text-[12px] font-extrabold text-slate-700 mt-1">Mois : ${monthAggCache.monthKey} (jusqu’au ${fmtFR(monthAggCache.endISO)})</div>
           </div>
           <div class="text-right">
             <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total</div>
@@ -910,26 +920,27 @@
       box.classList.remove("hidden");
     }
 
-    function renderCongeTable(dayISO){
+    function renderCongeTable(){
       const wrap = document.getElementById("congeTableWrap");
-      const seedKey = dayISO.slice(0,7);
-
-      if(!monthAggCache || monthAggCache.seedKey !== seedKey){
-        wrap.innerHTML = `<div class="text-[11px] font-extrabold text-slate-400">Aucune donnée (cache non prêt).</div>`;
+      if(!monthAggCache){
+        wrap.innerHTML = `<div class="text-[11px] font-extrabold text-slate-400">Aucune donnée.</div>`;
         return;
       }
 
-      const rows = equipe.map(emp=>{
-        const id = emp.nom+"_"+emp.prenom;
-        return {
-          id,
-          nom: emp.nom,
-          prenom: emp.prenom,
-          poste: emp.poste,
-          conge: monthAggCache.congeById[id] || 0,
-          repos: monthAggCache.reposById[id] || 0
-        };
-      }).sort((a,b)=> (b.conge - a.conge) || (b.repos - a.repos) || (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+      const posteFilter = document.getElementById("congePosteFilter").value || "ALL";
+
+      const rows = equipe
+        .filter(emp => posteFilter === "ALL" ? true : emp.poste === posteFilter)
+        .map(emp=>{
+          const id = emp.nom+"_"+emp.prenom;
+          return {
+            id,
+            nom: emp.nom, prenom: emp.prenom, poste: emp.poste,
+            conge: monthAggCache.congeById[id] || 0,
+            repos: monthAggCache.reposById[id] || 0
+          };
+        })
+        .sort((a,b)=> (b.conge - a.conge) || (b.repos - a.repos) || (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
 
       const htmlRows = rows.map(r=>`
         <tr class="border-t border-slate-100">
@@ -948,7 +959,7 @@
 
       wrap.innerHTML = `
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
-          Mois: ${seedKey} (jusqu’au ${fmtFR(dayISO)})
+          Mois: ${monthAggCache.monthKey} (jusqu’au ${fmtFR(monthAggCache.endISO)}) • Poste: ${posteFilter}
         </div>
 
         <div class="rounded-2xl border border-slate-100 overflow-hidden bg-white">
@@ -967,24 +978,13 @@
     }
 
     // ===== Main updater =====
-    function updateDashboard() {
+    function updateDashboard(){
       if(role !== "gerant") return;
 
       const dayISO = dateInput.value;
 
-      if(currentMode === 'day'){
+      if(currentMode === "day"){
         attachRealtimeForDate(dayISO);
-
-        computeMonthAggUpTo(dayISO).then(()=>{
-          renderOffKpiBlock(dayISO);
-          const wrap = document.getElementById("congeTableWrap");
-          if(wrap && !wrap.classList.contains("hidden")){
-            renderCongeTable(dayISO);
-          }
-        }).catch(()=>{
-          document.getElementById("kpiOffBlock").classList.add("hidden");
-        });
-
         renderDayView(mergedDayData());
         return;
       }
@@ -995,7 +995,7 @@
     }
 
     // ===== Day view =====
-    function renderDayView(data) {
+    function renderDayView(data){
       const container = document.getElementById('dashBody');
       const groups = {};
       equipe.forEach(e => (groups[e.poste] ||= []).push(e));
@@ -1052,7 +1052,7 @@
     }
 
     // ===== Report view (mensuel) =====
-    async function renderReportView() {
+    async function renderReportView(){
       const seedISO = dateInput.value;
       const dates = getDatesInMonth(seedISO);
       const today = todayISO();
@@ -1073,10 +1073,7 @@
       dates.forEach((dayISO, i) => {
         labels.push(dayISO.split('-')[2]);
 
-        if(dayISO > today){
-          dailyLates.push(0); dailyPresence.push(0);
-          return;
-        }
+        if(dayISO > today){ dailyLates.push(0); dailyPresence.push(0); return; }
 
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
@@ -1086,8 +1083,8 @@
 
         const pres = presSnaps[i].val() || {};
         const punches = punchSnaps[i].val() || {};
-
         const merged = JSON.parse(JSON.stringify(pres));
+
         Object.keys(punches).forEach(empId=>{
           merged[empId] ||= {};
           const punchHA = punches[empId]?.hA;
@@ -1102,10 +1099,7 @@
         Object.keys(stats).forEach(id => {
           const e = merged[id] || null;
 
-          if(!e){
-            stats[id].conge++;
-            return;
-          }
+          if(!e){ stats[id].conge++; return; }
 
           if(e.off){
             const typeOff = classifyOffDay(id, dayISO, weekOffCount);
@@ -1167,21 +1161,20 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    // ✅ chart
-    function renderChart(labels, lates, presences) {
+    function renderChart(labels, lates, presences){
       const ctx = document.getElementById('trendsChart').getContext('2d');
-      if (myChart) myChart.destroy();
+      if(myChart) myChart.destroy();
 
       myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            { label:"Retards (min)", data: lates, borderColor:'#c5a059', tension:0.35, borderWidth:3, pointRadius:0, fill:true, backgroundColor:'rgba(197,160,89,0.08)' },
-            { label:"Présences (nb)", data: presences, borderColor:'#0f172a', tension:0.35, borderWidth:2, pointRadius:0, fill:false }
+        type:'line',
+        data:{
+          labels,
+          datasets:[
+            { label:"Retards (min)", data:lates, borderColor:'#c5a059', tension:.35, borderWidth:3, pointRadius:0, fill:true, backgroundColor:'rgba(197,160,89,0.08)' },
+            { label:"Présences (nb)", data:presences, borderColor:'#0f172a', tension:.35, borderWidth:2, pointRadius:0, fill:false }
           ]
         },
-        options: {
+        options:{
           maintainAspectRatio:false,
           plugins:{ legend:{display:false}, tooltip:{enabled:true} },
           scales:{ y:{display:false}, x:{grid:{display:false}, ticks:{font:{size:8}}} }
@@ -1189,21 +1182,8 @@
       });
     }
 
-    function getDatesInMonth(seedISO) {
-      const dates = [];
-      const curr = new Date(seedISO);
-      const m = curr.getMonth();
-      const y = curr.getFullYear();
-      const d = new Date(y, m, 1);
-      while(d.getMonth() === m) {
-        dates.push(d.toISOString().split('T')[0]);
-        d.setDate(d.getDate()+1);
-      }
-      return dates;
-    }
-
-    // ===== Historique modal (mensuel) =====
-    async function openHistory(nom, prenom) {
+    // ===== Historique modal =====
+    async function openHistory(nom, prenom){
       const modal = document.getElementById('historyModal');
       document.getElementById('modalTitle').innerText = nom + " " + prenom;
       modal.classList.add('modal-active');
@@ -1221,19 +1201,13 @@
       const statusMap = {};
 
       dates.forEach((dayISO, idx) => {
-        if(dayISO > today){
-          statusMap[dayISO] = { label:"À venir", cls:"text-slate-300" };
-          return;
-        }
-        if(isExcluded(dayISO)){
-          statusMap[dayISO] = { label:"Exclu", cls:"text-slate-400" };
-          return;
-        }
+        if(dayISO > today){ statusMap[dayISO] = { label:"À venir", cls:"text-slate-300" }; return; }
+        if(isExcluded(dayISO)){ statusMap[dayISO] = { label:"Exclu", cls:"text-slate-400" }; return; }
 
         const pres = presSnaps[idx].val() || {};
         const punches = punchSnaps[idx].val() || {};
-
         const merged = JSON.parse(JSON.stringify(pres));
+
         Object.keys(punches).forEach(empId=>{
           merged[empId] ||= {};
           const punchHA = punches[empId]?.hA;
@@ -1245,10 +1219,7 @@
 
         const entry = merged[id] || null;
 
-        if(!entry){
-          statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" };
-          return;
-        }
+        if(!entry){ statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" }; return; }
 
         if(entry.hA){
           const diff = getTimeDiff(entry.hA, entry.hP, id);
@@ -1270,9 +1241,8 @@
         statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" };
       });
 
-      let html = '';
       const datesRev = dates.slice().reverse();
-
+      let html = '';
       datesRev.forEach((dayISO) => {
         const st = statusMap[dayISO] || { label:"—", cls:"text-slate-400" };
         html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -1283,10 +1253,7 @@
 
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
-
-    function closeModal() {
-      document.getElementById('historyModal').classList.remove('modal-active');
-    }
+    function closeModal(){ document.getElementById('historyModal').classList.remove('modal-active'); }
 
     // ===== PDF helpers =====
     function showPDF(el){ el.style.display="block"; }
@@ -1310,11 +1277,9 @@
         <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />
       `;
     }
-    function kpiBox(t, v){
-      return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`;
-    }
+    function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
 
-    // ===== PDF JOUR (reprend ta logique) =====
+    // ✅ PDF JOUR (inchangé logique)
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
 
@@ -1323,7 +1288,7 @@
       const punchWeek = await Promise.all(weekDates.map(d => database.ref('punches/'+d).once('value')));
 
       const weekOffCount = {};
-      const offTypeToday = {};
+      const offTypeToday = {}; // empId -> "REPOS" | "CONGÉ"
 
       weekDates.forEach((dISO, i) => {
         if(isExcluded(dISO)) return;
@@ -1463,16 +1428,239 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // ===== TODO: PDF Employé (si tu veux je te recolle aussi les 2 fonctions mois/année) =====
-    async function downloadPDF_EmployeeMonth(){ alert("Garde tes fonctions existantes ici (PDF MOIS)"); }
-    async function downloadPDF_EmployeeYear(){ alert("Garde tes fonctions existantes ici (PDF ANNÉE)"); }
+    // ✅ (4) RÉINTÉGRÉ: PDF EMPLOYÉ MOIS (ta version complète)
+    async function downloadPDF_EmployeeMonth(){
+      const empId = document.getElementById("empSelect").value;
+      const [nom, prenom] = empId.split("_");
+      const seed = dateInput.value;
+      const dates = getDatesInMonth(seed);
+      const today = todayISO();
 
-    // ===== Boot dashboard =====
+      const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const punchSnaps = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
+
+      let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
+
+      const weekOffCount = {};
+
+      const rows = dates.map((dayISO, i)=>{
+        if(dayISO > today){
+          ignoredFuture++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`;
+        }
+        if(isExcluded(dayISO)){
+          excluded++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`;
+        }
+
+        const pres = presSnaps[i].val() || {};
+        const punches = punchSnaps[i].val() || {};
+
+        const merged = JSON.parse(JSON.stringify(pres));
+        Object.keys(punches).forEach(eid=>{
+          merged[eid] ||= {};
+          const punchHA = punches[eid]?.hA;
+          if(punchHA){
+            if(!merged[eid].hA) merged[eid].hA = punchHA;
+            if(merged[eid].off === true) merged[eid].off = false;
+          }
+        });
+
+        const e = merged[empId] || null;
+
+        if(!e){
+          conge++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
+        }
+
+        if(e.hA){
+          present++;
+          const diff = getTimeDiff(e.hA, e.hP, empId);
+          lateMin += diff;
+          const st = (e.hP && diff>0) ? "Retard" : "OK";
+          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+        }
+
+        if(e.off){
+          const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
+          if(typeOff === "REPOS"){
+            repos++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }else{
+            conge++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }
+        }
+
+        conge++;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+      }).join("");
+
+      document.getElementById("pdfHeader").innerHTML =
+        pdfHeader(`Rapport Mensuel — ${nom} ${prenom}`, `Mois: ${seed.slice(0,7)}`);
+
+      document.getElementById("pdfKpis").innerHTML = `
+        <div class="pdfKpi">
+          ${kpiBox("Présents", present)}
+          ${kpiBox("Repos", repos)}
+          ${kpiBox("Congés", conge)}
+          ${kpiBox("Retard (min)", lateMin)}
+        </div>
+        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
+          Exclu: ${excluded} jour(s) • Jours futurs ignorés: ${ignoredFuture}
+        </div>
+      `;
+
+      document.getElementById("pdfContent").innerHTML = `
+        <table class="pdfTable">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Date</th>
+              <th style="text-align:center;">Statut</th>
+              <th style="text-align:center;">HP</th>
+              <th style="text-align:center;">HA</th>
+              <th style="text-align:center;">Retard</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      const file = `GC_RH_MOIS_${nom}_${prenom}_${seed.slice(0,7)}.pdf`;
+
+      html2pdf().set({
+        margin: 8,
+        filename: file,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
+    }
+
+    // ✅ (4) RÉINTÉGRÉ: PDF EMPLOYÉ ANNÉE (ta version complète)
+    async function downloadPDF_EmployeeYear(){
+      const empId = document.getElementById("empSelect").value;
+      const [nom, prenom] = empId.split("_");
+      const seed = dateInput.value;
+      const year = seed.slice(0,4);
+
+      const dates = getDatesInYear(seed);
+      const today = todayISO();
+
+      const presSnaps = await Promise.all(dates.map(d => database.ref('presences/'+d).once('value')));
+      const punchSnaps = await Promise.all(dates.map(d => database.ref('punches/'+d).once('value')));
+
+      let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
+
+      const weekOffCount = {};
+
+      const rows = dates.map((dayISO, i)=>{
+        if(dayISO > today){ ignoredFuture++; return ''; }
+        if(isExcluded(dayISO)){ excluded++; return ''; }
+
+        const pres = presSnaps[i].val() || {};
+        const punches = punchSnaps[i].val() || {};
+
+        const merged = JSON.parse(JSON.stringify(pres));
+        Object.keys(punches).forEach(eid=>{
+          merged[eid] ||= {};
+          const punchHA = punches[eid]?.hA;
+          if(punchHA){
+            if(!merged[eid].hA) merged[eid].hA = punchHA;
+            if(merged[eid].off === true) merged[eid].off = false;
+          }
+        });
+
+        const e = merged[empId] || null;
+
+        if(!e){
+          conge++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
+        }
+
+        if(e.hA){
+          present++;
+          const diff = getTimeDiff(e.hA, e.hP, empId);
+          lateMin += diff;
+          const st = (e.hP && diff>0) ? "Retard" : "OK";
+          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+        }
+
+        if(e.off){
+          const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
+          if(typeOff === "REPOS"){
+            repos++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }else{
+            conge++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }
+        }
+
+        conge++;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+      }).join("");
+
+      document.getElementById("pdfHeader").innerHTML =
+        pdfHeader(`Rapport Annuel — ${nom} ${prenom}`, `Année: ${year}`);
+
+      document.getElementById("pdfKpis").innerHTML = `
+        <div class="pdfKpi">
+          ${kpiBox("Présents", present)}
+          ${kpiBox("Repos", repos)}
+          ${kpiBox("Congés", conge)}
+          ${kpiBox("Retard (min)", lateMin)}
+        </div>
+        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
+          Exclu (01/01/2026 → 31/01/2026): ${excluded} jour(s) ignorés • Jours futurs ignorés: ${ignoredFuture}
+        </div>
+      `;
+
+      document.getElementById("pdfContent").innerHTML = `
+        <table class="pdfTable">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Date</th>
+              <th style="text-align:center;">Statut</th>
+              <th style="text-align:center;">HP</th>
+              <th style="text-align:center;">HA</th>
+              <th style="text-align:center;">Retard</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      const file = `GC_RH_ANNEE_${nom}_${prenom}_${year}.pdf`;
+
+      html2pdf().set({
+        margin: 8,
+        filename: file,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
+    }
+
+    // ===== Boot =====
     async function bootDashboard(){
       dateInput.value = todayISO();
       dateInput.addEventListener('change', updateDashboard);
 
-      // ✅ Charger équipe depuis DB si dispo
+      // default month selector = month of selected date
+      document.getElementById("congeMonth").value = dateInput.value.slice(0,7);
+
+      // load team from DB
       try{
         const list = await loadEquipeFromDB();
         equipe.splice(0, equipe.length, ...list);
@@ -1481,38 +1669,56 @@
       fillEmpSelect();
       await initStaffAdminUI();
 
-      // toggle tableau congés
-      document.getElementById("btnToggleCongeTable").onclick = () => {
+      // congé controls
+      document.getElementById("congePosteFilter").onchange = () => {
+        const wrap = document.getElementById("congeTableWrap");
+        if(wrap && !wrap.classList.contains("hidden")) renderCongeTable();
+      };
+
+      document.getElementById("congeMonth").onchange = async () => {
+        const wrap = document.getElementById("congeTableWrap");
+        if(wrap && !wrap.classList.contains("hidden")){
+          await computeAggForSelectedMonth();
+          renderOffKpiBlockFromAgg();
+          renderCongeTable();
+        }
+      };
+
+      document.getElementById("btnToggleCongeTable").onclick = async () => {
         const wrap = document.getElementById("congeTableWrap");
         const btn = document.getElementById("btnToggleCongeTable");
-        const dayISO = dateInput.value;
-
         const willShow = wrap.classList.contains("hidden");
         wrap.classList.toggle("hidden");
-
         if(willShow){
           btn.textContent = "Masquer tableau";
-          renderCongeTable(dayISO);
+          await computeAggForSelectedMonth();
+          renderOffKpiBlockFromAgg();
+          renderCongeTable();
         }else{
           btn.textContent = "Voir tableau";
         }
       };
 
+      // show KPI block when day mode and month selected computed (optional)
+      // only shown when table opened OR you can uncomment next lines to always show:
+      // await computeAggForSelectedMonth();
+      // renderOffKpiBlockFromAgg();
+
       updateDashboard();
     }
-  </script>
 
-  <script>
-    /* ✅ IMPORTANT :
-       Tu avais déjà ces fonctions dans ton code d’origine :
-       - renderReportView()
-       - attachRealtimeForDate()
-       - detachRealtime()
-       - mergedDayData()
-       Elles sont déjà présentes au-dessus, sauf renderReportView est complet,
-       mais attachRealtimeForDate/detachRealtime/mergedDayData le sont aussi.
+    /* =========================
+       (1) RULES À AJOUTER (Firebase RTDB)
+       =========================
+       Dans Firebase > Realtime Database > Rules, ajoute cette branche :
 
-       Si tu veux je te recolle aussi les PDF employé MOIS/ANNÉE complets (tes versions).
+       "settings": {
+         ".read": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+         ".write":"auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+         "equipe": { ".validate": "newData.isArray()" }
+       }
+
+       => Sans ça, l’ajout/suppression donne PERMISSION_DENIED.
     */
   </script>
 </body>
