@@ -34,7 +34,6 @@
     .view-btn{color:var(--grey-dark);border:1px solid transparent;transition:.3s}
     .view-btn.active{background:var(--grey-dark);color:var(--gold);border-color:var(--gold)}
 
-    /* [3] ✅ cursor:pointer ajouté */
     .staff-card{border-left-width:5px;transition:transform .2s;cursor:pointer}
 
     .status-green{border-left-color:var(--status-ok)!important;background:#f0fdf4}
@@ -434,7 +433,6 @@
     function getEmpById(empId){
       const emp = equipe.find(e => empIdOf(e) === empId);
       if(emp) return emp;
-      // fallback sans split si nom composé
       return { nom: empId, prenom: "", poste: "" };
     }
 
@@ -509,15 +507,14 @@
 
     function clearMonthCache(){ monthDataCache.clear(); monthAggCache = null; }
 
-    // [1] ✅ clearMonthCache AVANT computeAggForSelectedMonth
     function refreshEquipeUI(){
       fillEmpSelect();
       const p = document.getElementById("delPosteSelect")?.value || "";
       fillDelEmpSelectByPoste(p);
-      clearMonthCache(); // ← en premier
+      clearMonthCache();
       const wrap = document.getElementById("congeTableWrap");
       if(wrap && !wrap.classList.contains("hidden")){
-        computeAggForSelectedMonth().then(()=> renderCongeTable()); // ← cache frais
+        computeAggForSelectedMonth().then(()=> renderCongeTable());
       }
       updateDashboard();
     }
@@ -637,17 +634,26 @@
       punchCache = {};
     }
 
+    // ✅ PATCH: mergeDay priorise punch.retardMin (si présent) + punch.hP (si présent)
     function mergeDay(pres, punches){
       const merged = JSON.parse(JSON.stringify(pres || {}));
       const p = punches || {};
       Object.keys(p).forEach(empId => {
         merged[empId] ||= {};
         const pe = p[empId] || {};
+
+        // punch peut fournir hp/ha
         if(pe.hP && !merged[empId].hP) merged[empId].hP = pe.hP;
         if(pe.hA && !merged[empId].hA) merged[empId].hA = pe.hA;
-        if(typeof pe.retardMin === "number" && typeof merged[empId].retardMin !== "number"){
+
+        // ✅ si punch fournit retardMin, on le prend (c’est la source la plus fiable)
+        if(typeof pe.retardMin === "number"){
           merged[empId].retardMin = pe.retardMin;
+        }else if(typeof pe.retardMin === "string" && pe.retardMin.trim() !== "" && !Number.isNaN(Number(pe.retardMin))){
+          merged[empId].retardMin = Number(pe.retardMin);
         }
+
+        // punch => pas off
         if(merged[empId].hA && merged[empId].off === true) merged[empId].off = false;
       });
       return merged;
@@ -908,7 +914,6 @@
         </div>`;
     }
 
-    // [2] ✅ Ordre postes fixe via POSTES_ORDER
     const POSTES_ORDER = ['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
 
     function renderDayView(data, offTypeToday = {}){
@@ -917,7 +922,6 @@
       equipe.forEach(e => (groups[e.poste] ||= []).push(e));
 
       let html = '';
-      // [2] ✅ Ordre garanti
       POSTES_ORDER.filter(p => groups[p]).forEach(poste => {
         html += `<div class="mb-8">
           <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3>
@@ -931,10 +935,13 @@
         }).forEach(emp => {
           const id = empIdOf(emp);
           const d = data[id] || {};
+
           const diff = (typeof d.retardMin === "number") ? d.retardMin : getTimeDiff(d.hA, d.hP, id);
           const sClass = getStatusClass(diff, !!d.off, !!d.hA);
 
-          let statusText = 'ATTENTE', statusColor = 'text-slate-400';
+          // ✅ FIX: par défaut on affiche CONGÉ (pas ATTENTE)
+          let statusText = 'CONGÉ', statusColor = 'text-slate-500';
+
           if(d.hA){
             if(d.hP){
               statusText = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
@@ -945,9 +952,9 @@
           } else if(d.off){
             const offLabel = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
             statusText = offLabel;
+            statusColor = (offLabel === "REPOS") ? "text-slate-400" : "text-slate-500";
           }
 
-          // [5] ✅ data-empid au lieu de onclick inline (sécurise les apostrophes)
           html += `
             <button data-empid="${id}" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
               <div>
@@ -963,7 +970,6 @@
 
       container.innerHTML = html;
 
-      // [5] ✅ event listeners après injection du HTML
       container.querySelectorAll('[data-empid]').forEach(btn => {
         btn.addEventListener('click', () => {
           const emp = getEmpById(btn.dataset.empid);
@@ -1180,7 +1186,6 @@
     }
     function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
 
-    // [4] ✅ downloadPDF_Day — plus de double fetch
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
       const weekDates = getWeekDatesISO(dayISO);
@@ -1201,7 +1206,6 @@
         });
       });
 
-      // [4] ✅ Réutilise les données semaine déjà chargées — plus de fetch séparé
       const idx = weekDates.indexOf(dayISO);
       const merged = mergeDay(presWeek[idx].val() || {}, punchWeek[idx].val() || {});
 
@@ -1234,7 +1238,7 @@
       }).map(emp=>{
         const id = empIdOf(emp);
         const e = merged[id] || null;
-        let statut="ATTENTE", hp="", ha="", retard="";
+        let statut="CONGÉ", hp="", ha="", retard="";
         if(e){
           hp=e.hP||""; ha=e.hA||"";
           if(e.hA){
@@ -1281,7 +1285,6 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // PDF employé mois
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
@@ -1339,7 +1342,6 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // PDF employé année
     async function downloadPDF_EmployeeYear(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
@@ -1406,7 +1408,6 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // Export CSV mensuel
     async function exportCSV_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
@@ -1444,7 +1445,6 @@
       URL.revokeObjectURL(url);
     }
 
-    // Boot
     async function bootDashboard(){
       dateInput.value = todayISO();
       document.getElementById("congeMonth").value = monthKeyFromISO(dateInput.value);
