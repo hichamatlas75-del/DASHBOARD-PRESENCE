@@ -33,7 +33,10 @@
     }
     .view-btn{color:var(--grey-dark);border:1px solid transparent;transition:.3s}
     .view-btn.active{background:var(--grey-dark);color:var(--gold);border-color:var(--gold)}
-    .staff-card{border-left-width:5px;transition:transform .2s}
+
+    /* [3] ✅ cursor:pointer ajouté */
+    .staff-card{border-left-width:5px;transition:transform .2s;cursor:pointer}
+
     .status-green{border-left-color:var(--status-ok)!important;background:#f0fdf4}
     .status-orange{border-left-color:var(--status-late)!important;background:#fffbeb}
     .status-red{border-left-color:var(--status-crit)!important;background:#fef2f2}
@@ -51,7 +54,6 @@
     .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-    /* ✅ PDF hidden area */
     #pdfArea{display:none;background:#fff;color:#111827}
     .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
     .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -61,7 +63,6 @@
     .pdfTable th,.pdfTable td{border:1px solid #e5e7eb;padding:8px;font-size:11px}
     .pdfTable th{background:#f3f4f6;font-weight:900}
 
-    /* ✅ Login UI */
     .inpt{
       width:100%;
       background:#fff;
@@ -100,7 +101,7 @@
 <body class="antialiased pb-10">
   <div class="max-w-md mx-auto px-5 pt-8">
 
-    <!-- ✅ LOGIN (GÉRANT ONLY) -->
+    <!-- LOGIN -->
     <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
       <div class="flex items-start justify-between gap-3">
         <div>
@@ -110,7 +111,6 @@
         </div>
         <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">RH</div>
       </div>
-
       <div class="mt-4 space-y-2">
         <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username" />
         <input id="loginPass" class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <!-- ✅ APP -->
+    <!-- APP -->
     <div id="appWrap" class="hidden">
       <header class="flex justify-between items-start mb-6">
         <div>
@@ -130,33 +130,25 @@
           </p>
           <p id="syncLine" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mt-2">Sync : —</p>
         </div>
-
         <div class="flex flex-col items-end gap-2">
-          <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-            PDF JOUR
-          </button>
-          <button onclick="exportCSV_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
-            EXPORT CSV
-          </button>
-          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
-            Déconnexion
-          </button>
+          <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">PDF JOUR</button>
+          <button onclick="exportCSV_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">EXPORT CSV</button>
+          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">Déconnexion</button>
         </div>
       </header>
 
-      <!-- ✅ CONTROLS -->
+      <!-- CONTROLS -->
       <div class="mb-4 space-y-4">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
           <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
           <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
         </div>
-
         <div class="relative">
           <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
         </div>
       </div>
 
-      <!-- ✅ CHART -->
+      <!-- CHART -->
       <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
         <div class="h-[180px] w-full">
           <canvas id="trendsChart"></canvas>
@@ -165,7 +157,7 @@
 
       <div id="dashBody" class="space-y-6"></div>
 
-      <!-- ✅ OUTILS -->
+      <!-- OUTILS -->
       <div class="mt-6 space-y-4">
 
         <div id="kpiOffBlock" class="glass-card rounded-3xl p-5 hidden"></div>
@@ -176,11 +168,8 @@
               <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Congés / Repos</div>
               <div class="text-[12px] font-extrabold text-slate-700 mt-1">Par personne (choisir mois)</div>
             </div>
-            <button id="btnToggleCongeTable" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-              Voir tableau
-            </button>
+            <button id="btnToggleCongeTable" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">Voir tableau</button>
           </div>
-
           <div class="mt-3 grid grid-cols-2 gap-2">
             <div>
               <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Mois</div>
@@ -199,28 +188,19 @@
               </select>
             </div>
           </div>
-
           <div class="text-[10px] text-slate-500 font-semibold leading-snug mt-2">
-            Astuce: choisis un <b>poste</b> pour afficher/masquer les congés d’un poste (filtre).
+            Astuce: choisis un <b>poste</b> pour afficher/masquer les congés d'un poste (filtre).
           </div>
-
           <div id="congeTableWrap" class="hidden mt-4"></div>
         </div>
 
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
-
           <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none"></select>
-
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
-              PDF MOIS
-            </button>
-            <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">
-              PDF ANNÉE
-            </button>
+            <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">PDF MOIS</button>
+            <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">PDF ANNÉE</button>
           </div>
-
           <div class="text-[10px] text-slate-500 font-semibold leading-snug">
             ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b>.
           </div>
@@ -228,16 +208,10 @@
 
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">COLLABORATEURS</div>
-
           <div class="grid grid-cols-2 gap-2">
-            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">
-              GÉRER ÉQUIPE
-            </button>
-            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-[12px] border border-slate-200">
-              EXPORT JSON
-            </button>
+            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">GÉRER ÉQUIPE</button>
+            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-[12px] border border-slate-200">EXPORT JSON</button>
           </div>
-
           <div id="teamPermHint" class="text-[10px] text-slate-500 font-semibold leading-snug">
             Stocké dans Firebase: <b>settings/equipe</b>.
           </div>
@@ -247,7 +221,7 @@
     </div>
   </div>
 
-  <!-- ✅ MODAL Historique -->
+  <!-- MODAL Historique -->
   <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeModal()">
     <div class="bg-white w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
@@ -256,15 +230,15 @@
     </div>
   </div>
 
-  <!-- ✅ MODAL Admin Équipe -->
+  <!-- MODAL Admin Équipe -->
   <div id="staffAdminModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeStaffAdmin()">
-    <div class="bg-white w-full rounded-t-[40px] p-6 pb-10 shadow-2xl" onclick="event.stopPropagation()">
+    <div class="bg-white w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
 
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
           <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Admin</div>
-          <div class="text-xl font-black text-slate-900 mt-1">Gérer l’équipe</div>
+          <div class="text-xl font-black text-slate-900 mt-1">Gérer l'équipe</div>
           <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</div>
         </div>
         <button class="px-3 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold" onclick="closeStaffAdmin()">Fermer</button>
@@ -272,12 +246,10 @@
 
       <div class="rounded-2xl border border-slate-100 p-4 bg-slate-50">
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Ajouter collaborateur</div>
-
         <div class="grid grid-cols-2 gap-2">
           <input id="addNom" class="inpt" placeholder="NOM (ex: ELALAMI)" />
           <input id="addPrenom" class="inpt" placeholder="Prénom (ex: HASSAN)" />
         </div>
-
         <select id="addPoste" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none mt-2">
           <option value="SERVICE">SERVICE</option>
           <option value="BAR">BAR</option>
@@ -286,16 +258,12 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-
-        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">
-          AJOUTER
-        </button>
+        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">AJOUTER</button>
         <div id="addMsg" class="mt-2 text-[11px] font-extrabold text-slate-500"></div>
       </div>
 
       <div class="rounded-2xl border border-slate-100 p-4 mt-4">
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Supprimer collaborateur</div>
-
         <select id="delPosteSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
           <option value="">-- Choisir poste --</option>
           <option value="SERVICE">SERVICE</option>
@@ -305,26 +273,20 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-
         <select id="delEmpSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none mt-2">
           <option value="">Choisir poste d'abord</option>
         </select>
-
-        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-rose-600 text-white font-extrabold text-[12px]">
-          SUPPRIMER
-        </button>
-
+        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-rose-600 text-white font-extrabold text-[12px]">SUPPRIMER</button>
         <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold text-slate-500"></div>
       </div>
 
       <div class="mt-4 text-[10px] text-slate-500 font-semibold leading-snug">
-        Si tu vois <b>PERMISSION_DENIED</b> à l’ajout/suppression, c’est tes <b>rules Firebase</b> qui bloquent l’écriture de <b>settings/equipe</b>.
-        La solution est juste en bas du code (commentaire “RULES À AJOUTER”).
+        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
       </div>
     </div>
   </div>
 
-  <!-- ✅ Hidden PDF container -->
+  <!-- Hidden PDF container -->
   <div id="pdfArea" class="p-6">
     <div id="pdfHeader" class="mb-4"></div>
     <div id="pdfKpis" class="mb-4"></div>
@@ -337,7 +299,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ===== Firebase =====
     const firebaseConfig = {
       apiKey: "AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",
       authDomain: "grey-corner-presence.firebaseapp.com",
@@ -353,7 +314,6 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    // ===== UI refs =====
     const dateInput = document.getElementById('dashDate');
     const loginWrap = document.getElementById("loginWrap");
     const appWrap = document.getElementById("appWrap");
@@ -361,35 +321,33 @@
     const syncLine = document.getElementById("syncLine");
 
     let currentMode = 'day', myChart = null;
-    let role = null; // must be "gerant"
-
-    // ✅ listeners temps réel
-    let activePresRef = null;
-    let activePunchRef = null;
-
-    // ✅ caches temps réel
-    let presCache = {};
-    let punchCache = {};
-
-    // ✅ cache conge/mois sélectionné
+    let role = null;
+    let activePresRef = null, activePunchRef = null;
+    let presCache = {}, punchCache = {};
     let monthAggCache = null;
-
-    // ✅ OFF type du jour (pour cartes Jour : REPOS vs CONGÉ fiable)
-    let offTypeTodayCache = {}; // empId -> "REPOS" | "CONGÉ"
+    let offTypeTodayCache = {};
 
     const EQUIPE_PATH = "settings/equipe";
 
     const equipe = [
       {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'},
-      {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'}, {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
-      {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'}, {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
-      {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'}, {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
-      {nom:'ELGORRAMY', prenom:'ANISSA', poste:'MENAGE'}, {nom:'ELGORRAMY', prenom:'SOUAD', poste:'MENAGE'},
-      {nom:'ELMCHAOURI', prenom:'SOUAD', poste:'MENAGE'}, {nom:'ENNHAILI', prenom:'SOUMIA', poste:'ECONOMAT'},
+      {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'},
+      {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
+      {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'},
+      {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
+      {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'},
+      {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
+      {nom:'ELGORRAMY', prenom:'ANISSA', poste:'MENAGE'},
+      {nom:'ELGORRAMY', prenom:'SOUAD', poste:'MENAGE'},
+      {nom:'ELMCHAOURI', prenom:'SOUAD', poste:'MENAGE'},
+      {nom:'ENNHAILI', prenom:'SOUMIA', poste:'ECONOMAT'},
       {nom:'FILALI', prenom:'ABDERAFI', poste:'BAR'},
-      {nom:'HATTAF', prenom:'MOHAMED', poste:'SERVICE'}, {nom:'HIDARA', prenom:'YOUSSEF', poste:'SERVICE'},
-      {nom:'IDRISSI', prenom:'SAAD', poste:'CUISINE'}, {nom:'KAFOUNI', prenom:'ZAKARIAE', poste:'SERVICE'},
-      {nom:'KHALOUQ', prenom:'RACHID', poste:'BAR'}, {nom:'LEMSSIEH', prenom:'JAWAD', poste:'CUISINE'},
+      {nom:'HATTAF', prenom:'MOHAMED', poste:'SERVICE'},
+      {nom:'HIDARA', prenom:'YOUSSEF', poste:'SERVICE'},
+      {nom:'IDRISSI', prenom:'SAAD', poste:'CUISINE'},
+      {nom:'KAFOUNI', prenom:'ZAKARIAE', poste:'SERVICE'},
+      {nom:'KHALOUQ', prenom:'RACHID', poste:'BAR'},
+      {nom:'LEMSSIEH', prenom:'JAWAD', poste:'CUISINE'},
       {nom:'MAJDOUB', prenom:'JIHANE', poste:'CUISINE'},
       {nom:'MOHSINE', prenom:'YOUNESS', poste:'SERVICE'},
       {nom:'MOUJAHID', prenom:'IMANE', poste:'CUISINE'},
@@ -399,7 +357,6 @@
     ];
 
     const haOnlyIds = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
-
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -407,7 +364,7 @@
     const CASHIER_NO_REPOS = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
     function isCashierNoRepos(empId){ return CASHIER_NO_REPOS.has(empId); }
 
-    // ✅ Dates sûres (UTC)
+    // Dates sûres UTC
     function parseISO(iso){ const [y,m,d] = iso.split("-").map(Number); return {y,m,d}; }
     function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
     function addDaysISO(iso, delta){
@@ -416,7 +373,6 @@
       const dt = new Date(t);
       return toISO(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate());
     }
-
     function weekStartMondayISO(iso){
       const {y,m,d} = parseISO(iso);
       const dt = new Date(Date.UTC(y, m-1, d));
@@ -430,23 +386,17 @@
     }
 
     function classifyOffDay(empId, dayISO, weekOffCount){
-  if(isCashierNoRepos(empId)) return "CONGÉ";
+      if(isCashierNoRepos(empId)) return "CONGÉ";
+      const weekKey = weekStartMondayISO(dayISO);
+      weekOffCount[weekKey] ||= {};
+      weekOffCount[weekKey][empId] ||= 0;
+      if(weekOffCount[weekKey][empId] === 0){
+        weekOffCount[weekKey][empId] = 1;
+        return "REPOS";
+      }
+      return "CONGÉ";
+    }
 
-  const weekKey = weekStartMondayISO(dayISO);
-  weekOffCount[weekKey] ||= {};
-  weekOffCount[weekKey][empId] ||= 0;
-
-  // 1er OFF de la semaine => REPOS
-  if(weekOffCount[weekKey][empId] === 0){
-    weekOffCount[weekKey][empId] = 1;
-    return "REPOS";
-  }
-
-  // Tous les autres OFF => CONGÉ (jamais R2)
-  return "CONGÉ";
-}
-
-    // Casablanca
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
         timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'
@@ -479,19 +429,18 @@
       return '';
     }
 
-    // ===== equipe helpers =====
+    // equipe helpers
     function empIdOf(emp){ return (emp.nom+"_"+emp.prenom); }
     function getEmpById(empId){
       const emp = equipe.find(e => empIdOf(e) === empId);
       if(emp) return emp;
-      // fallback si pas trouvé : affiche empId brut
-      const [nom, prenom] = (empId || "").split("_");
-      return { nom: nom || empId, prenom: prenom || "", poste: "" };
+      // fallback sans split si nom composé
+      return { nom: empId, prenom: "", poste: "" };
     }
 
-    // ===== Admin helpers =====
+    // Admin helpers
     function normName(s){
-      return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/[’']/g,"'");
+      return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'");
     }
     function makeEmpId(nom, prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
 
@@ -504,8 +453,7 @@
     async function saveEquipeToDB(list){
       try{
         await database.ref(EQUIPE_PATH).set(list);
-        document.getElementById("teamPermHint").innerHTML =
-          `Stocké dans Firebase: <b>settings/equipe</b> ✅`;
+        document.getElementById("teamPermHint").innerHTML = `Stocké dans Firebase: <b>settings/equipe</b> ✅`;
         return true;
       }catch(e){
         document.getElementById("teamPermHint").innerHTML =
@@ -553,33 +501,24 @@
     function fillDelEmpSelectByPoste(poste){
       const sel = document.getElementById("delEmpSelect");
       if(!sel) return;
-
       if(!poste){ sel.innerHTML = `<option value="">Choisir poste d'abord</option>`; return; }
-
-      const list = equipe
-        .filter(e => e.poste === poste)
-        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
-
+      const list = equipe.filter(e => e.poste === poste).sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
       if(!list.length){ sel.innerHTML = `<option value="">Aucun collaborateur</option>`; return; }
-
-      sel.innerHTML = list.map(e=>{
-        const id = empIdOf(e);
-        return `<option value="${id}">${e.nom} ${e.prenom}</option>`;
-      }).join("");
+      sel.innerHTML = list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom}</option>`).join("");
     }
 
     function clearMonthCache(){ monthDataCache.clear(); monthAggCache = null; }
 
+    // [1] ✅ clearMonthCache AVANT computeAggForSelectedMonth
     function refreshEquipeUI(){
       fillEmpSelect();
       const p = document.getElementById("delPosteSelect")?.value || "";
       fillDelEmpSelectByPoste(p);
-
+      clearMonthCache(); // ← en premier
       const wrap = document.getElementById("congeTableWrap");
       if(wrap && !wrap.classList.contains("hidden")){
-        computeAggForSelectedMonth().then(()=> renderCongeTable());
+        computeAggForSelectedMonth().then(()=> renderCongeTable()); // ← cache frais
       }
-      clearMonthCache();
       updateDashboard();
     }
 
@@ -594,16 +533,12 @@
       document.getElementById("btnAddStaff").onclick = async () => {
         const addMsg = document.getElementById("addMsg");
         addMsg.textContent = "";
-
         const nom = normName(document.getElementById("addNom").value);
         const prenom = normName(document.getElementById("addPrenom").value);
         const poste = (document.getElementById("addPoste").value || "").trim().toUpperCase();
-
         if(!nom || !prenom || !poste){ addMsg.textContent = "⚠️ Remplis NOM, Prénom et Poste."; return; }
-
         const id = makeEmpId(nom, prenom);
         if(equipe.some(e => empIdOf(e) === id)){ addMsg.textContent = "⚠️ Déjà existant."; return; }
-
         addMsg.textContent = "Ajout…";
         try{
           equipe.push({ nom, prenom, poste });
@@ -623,20 +558,14 @@
       document.getElementById("btnDeleteStaff").onclick = async () => {
         const delMsg = document.getElementById("delAnyMsg");
         delMsg.textContent = "";
-
         const empId = document.getElementById("delEmpSelect").value;
         if(!empId){ delMsg.textContent = "⚠️ Choisis un collaborateur."; return; }
-
-        const ok = confirm(`Confirmer suppression de ${empId} de l’équipe ?`);
+        const ok = confirm(`Confirmer suppression de ${empId} de l'équipe ?`);
         if(!ok) return;
-
         delMsg.textContent = "Suppression…";
         try{
           const idx = equipe.findIndex(e => empIdOf(e) === empId);
-          if(idx >= 0){
-            equipe.splice(idx, 1);
-            await saveEquipeToDB(equipe);
-          }
+          if(idx >= 0){ equipe.splice(idx, 1); await saveEquipeToDB(equipe); }
           delMsg.textContent = "✅ Supprimé.";
           refreshEquipeUI();
           closeStaffAdmin();
@@ -646,7 +575,7 @@
       };
     }
 
-    // ===== Auth =====
+    // Auth
     async function fetchRole(uid){
       const s = await database.ref("users/"+uid).once("value");
       return s.val() || null;
@@ -682,7 +611,6 @@
 
     auth.onAuthStateChanged(async (user) => {
       if(!user){ showLoginUI(""); return; }
-
       try{
         role = await fetchRole(user.uid);
         if(role !== "gerant"){
@@ -695,12 +623,11 @@
         showLoginUI("Erreur d'accès.");
         return;
       }
-
       showAppUI();
       bootDashboard();
     });
 
-    // ===== Temps réel =====
+    // Temps réel
     function detachRealtime(){
       try{
         if(activePresRef){ activePresRef.off(); activePresRef = null; }
@@ -740,14 +667,12 @@
     function attachRealtimeForDate(dayISO){
       detachRealtime();
       setSyncWaiting();
-
       activePresRef = database.ref('presences/' + dayISO);
       activePresRef.on('value', (snap) => {
         presCache = snap.val() || {};
         if(currentMode === "day") renderDayView(mergedDayData(), offTypeTodayCache);
         setSyncOK();
       }, () => setSyncError());
-
       activePunchRef = database.ref('punches/' + dayISO);
       activePunchRef.on('value', (snap) => {
         punchCache = snap.val() || {};
@@ -761,19 +686,15 @@
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
-
       if(mode !== "day"){
         document.getElementById("kpiOffBlock").classList.add("hidden");
         document.getElementById("congeTableWrap").classList.add("hidden");
         document.getElementById("btnToggleCongeTable").textContent = "Voir tableau";
       }
-
       updateDashboard();
     }
 
-    // =========================
-    // (1) getDatesInMonth/Year => UTC
-    // =========================
+    // getDatesInMonth/Year — UTC pur
     function getDatesInMonth(seedISO){
       const {y,m} = parseISO(seedISO);
       const dates = [];
@@ -786,7 +707,6 @@
       }
       return dates;
     }
-
     function getDatesInYear(seedISO){
       const {y} = parseISO(seedISO);
       const dates = [];
@@ -799,20 +719,16 @@
       }
       return dates;
     }
-
     function getDatesInMonthKey(monthKey){ return getDatesInMonth(monthKey + "-01"); }
 
-    // =========================
     // BatchFetch + Month cache
-    // =========================
-    const monthDataCache = new Map(); // "YYYY-MM" -> { dates, presByDay, punchByDay }
+    const monthDataCache = new Map();
     async function batchFetchPresPunch(dates){
       const [presSnaps, punchSnaps] = await Promise.all([
         Promise.all(dates.map(d => database.ref('presences/'+d).once('value'))),
         Promise.all(dates.map(d => database.ref('punches/'+d).once('value')))
       ]);
-      const presByDay = {};
-      const punchByDay = {};
+      const presByDay = {}, punchByDay = {};
       dates.forEach((d, i) => {
         presByDay[d] = presSnaps[i].val() || {};
         punchByDay[d] = punchSnaps[i].val() || {};
@@ -828,19 +744,14 @@
       return pack;
     }
 
-    // =========================
     // OFF type fiable pour un jour
-    // =========================
     async function computeOffTypeToday(dayISO){
       const weekDates = getWeekDatesISO(dayISO);
       const [presWeek, punchWeek] = await Promise.all([
         Promise.all(weekDates.map(d => database.ref('presences/'+d).once('value'))),
         Promise.all(weekDates.map(d => database.ref('punches/'+d).once('value')))
       ]);
-
-      const weekOffCount = {};
-      const offTypeToday = {};
-
+      const weekOffCount = {}, offTypeToday = {};
       weekDates.forEach((dISO, i) => {
         if(isExcluded(dISO)) return;
         const mergedD = mergeDay(presWeek[i].val() || {}, punchWeek[i].val() || {});
@@ -853,50 +764,35 @@
           }
         });
       });
-
       offTypeTodayCache = offTypeToday;
       return offTypeTodayCache;
     }
 
-    // =========================
-    // Congés/Repos Month agg
-    // =========================
+    // Congés/Repos agg mensuel
     async function computeAggForMonth(monthKey){
       const pack = await getMonthData(monthKey);
       const { dates, presByDay, punchByDay } = pack;
       const today = todayISO();
-
       const endISO = (monthKey === today.slice(0,7)) ? today : dates[dates.length-1];
 
-      const congeById = {};
-      const reposById = {};
-      equipe.forEach(e=>{
-        const id = empIdOf(e);
-        congeById[id] = 0;
-        reposById[id] = 0;
-      });
+      const congeById = {}, reposById = {};
+      equipe.forEach(e=>{ const id=empIdOf(e); congeById[id]=0; reposById[id]=0; });
 
       const weekOffCount = {};
-
       dates.forEach((dISO)=>{
         if(dISO > endISO) return;
         if(isExcluded(dISO)) return;
-
         const merged = mergeDay(presByDay[dISO], punchByDay[dISO]);
-
         equipe.forEach(emp=>{
           const id = empIdOf(emp);
           const entry = merged[id] || null;
-
           if(!entry){ congeById[id] += 1; return; }
-
           if(entry.off){
             const typeOff = classifyOffDay(id, dISO, weekOffCount);
             if(typeOff === "REPOS") reposById[id] += 1;
             else congeById[id] += 1;
             return;
           }
-
           if(entry.hA) return;
           congeById[id] += 1;
         });
@@ -918,13 +814,11 @@
 
       let totalConge = 0, totalRepos = 0;
       const perPoste = {};
-
       equipe.forEach(emp=>{
         perPoste[emp.poste] ||= { conge:0, repos:0 };
         const id = empIdOf(emp);
         const c = monthAggCache.congeById[id] || 0;
         const r = monthAggCache.reposById[id] || 0;
-
         totalConge += c; totalRepos += r;
         perPoste[emp.poste].conge += c;
         perPoste[emp.poste].repos += r;
@@ -939,15 +833,14 @@
               <span class="px-2 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black">C ${v.conge}</span>
               <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black border border-slate-200">R ${v.repos}</span>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join("");
 
       box.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Congés / Repos pris</div>
-            <div class="text-[12px] font-extrabold text-slate-700 mt-1">Mois : ${monthAggCache.monthKey} (jusqu’au ${fmtFR(monthAggCache.endISO)})</div>
+            <div class="text-[12px] font-extrabold text-slate-700 mt-1">Mois : ${monthAggCache.monthKey} (jusqu'au ${fmtFR(monthAggCache.endISO)})</div>
           </div>
           <div class="text-right">
             <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total</div>
@@ -957,7 +850,6 @@
             </div>
           </div>
         </div>
-
         <div class="mt-4">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Par poste</div>
           <div class="rounded-2xl bg-white border border-slate-100 overflow-hidden">
@@ -967,36 +859,26 @@
             </div>
             <div class="px-4">${posteRows}</div>
           </div>
-
           <div class="mt-3 text-[10px] text-slate-500 font-semibold leading-snug">
             Règles: 1 repos/semaine (sauf caissiers: off = congé) • Jours futurs ignorés • Janvier 2026 exclu.
           </div>
-        </div>
-      `;
+        </div>`;
       box.classList.remove("hidden");
     }
 
     function renderCongeTable(){
       const wrap = document.getElementById("congeTableWrap");
-      if(!monthAggCache){
-        wrap.innerHTML = `<div class="text-[11px] font-extrabold text-slate-400">Aucune donnée.</div>`;
-        return;
-      }
+      if(!monthAggCache){ wrap.innerHTML = `<div class="text-[11px] font-extrabold text-slate-400">Aucune donnée.</div>`; return; }
 
       const posteFilter = document.getElementById("congePosteFilter").value || "ALL";
-
       const rows = equipe
         .filter(emp => posteFilter === "ALL" ? true : emp.poste === posteFilter)
         .map(emp=>{
           const id = empIdOf(emp);
-          return {
-            id,
-            nom: emp.nom, prenom: emp.prenom, poste: emp.poste,
-            conge: monthAggCache.congeById[id] || 0,
-            repos: monthAggCache.reposById[id] || 0
-          };
+          return { id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste,
+            conge: monthAggCache.congeById[id]||0, repos: monthAggCache.reposById[id]||0 };
         })
-        .sort((a,b)=> (b.conge - a.conge) || (b.repos - a.repos) || (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+        .sort((a,b)=> (b.conge-a.conge)||(b.repos-a.repos)||(a.nom+a.prenom).localeCompare(b.nom+b.prenom));
 
       const htmlRows = rows.map(r=>`
         <tr class="border-t border-slate-100">
@@ -1004,20 +886,14 @@
             <div class="text-[11px] font-black uppercase text-slate-800">${r.nom}</div>
             <div class="text-[10px] font-semibold text-slate-400">${r.prenom} • ${r.poste}</div>
           </td>
-          <td class="py-2 text-right">
-            <span class="px-2 py-1 rounded-full bg-[#c5a059] text-white text-[10px] font-black">C ${r.conge}</span>
-          </td>
-          <td class="py-2 text-right">
-            <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black border border-slate-200">R ${r.repos}</span>
-          </td>
-        </tr>
-      `).join("");
+          <td class="py-2 text-right"><span class="px-2 py-1 rounded-full bg-[#c5a059] text-white text-[10px] font-black">C ${r.conge}</span></td>
+          <td class="py-2 text-right"><span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black border border-slate-200">R ${r.repos}</span></td>
+        </tr>`).join("");
 
       wrap.innerHTML = `
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
-          Mois: ${monthAggCache.monthKey} (jusqu’au ${fmtFR(monthAggCache.endISO)}) • Poste: ${posteFilter}
+          Mois: ${monthAggCache.monthKey} (jusqu'au ${fmtFR(monthAggCache.endISO)}) • Poste: ${posteFilter}
         </div>
-
         <div class="rounded-2xl border border-slate-100 overflow-hidden bg-white">
           <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex justify-between">
             <span class="text-[10px] font-black uppercase text-slate-400">Employé</span>
@@ -1029,54 +905,51 @@
               <tbody>${htmlRows}</tbody>
             </table>
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    // ===== Day view =====
+    // [2] ✅ Ordre postes fixe via POSTES_ORDER
+    const POSTES_ORDER = ['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
+
     function renderDayView(data, offTypeToday = {}){
       const container = document.getElementById('dashBody');
       const groups = {};
       equipe.forEach(e => (groups[e.poste] ||= []).push(e));
 
       let html = '';
-      Object.keys(groups).forEach(poste => {
+      // [2] ✅ Ordre garanti
+      POSTES_ORDER.filter(p => groups[p]).forEach(poste => {
         html += `<div class="mb-8">
           <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3>
-          <div class="grid grid-cols-2 gap-4">`;
+          <div id="grid-${poste}" class="grid grid-cols-2 gap-4">`;
 
         groups[poste].slice().sort((a,b)=>{
-          const A = empIdOf(a);
-          const B = empIdOf(b);
+          const A = empIdOf(a), B = empIdOf(b);
           if(A === "BOUCHNAK_NAOUAL") return -1;
           if(B === "BOUCHNAK_NAOUAL") return 1;
           return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
         }).forEach(emp => {
           const id = empIdOf(emp);
           const d = data[id] || {};
-
           const diff = (typeof d.retardMin === "number") ? d.retardMin : getTimeDiff(d.hA, d.hP, id);
           const sClass = getStatusClass(diff, !!d.off, !!d.hA);
 
-          let statusText = 'ATTENTE';
-          let statusColor = 'text-slate-400';
-
+          let statusText = 'ATTENTE', statusColor = 'text-slate-400';
           if(d.hA){
             if(d.hP){
               statusText = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
               statusColor = diff > 0 ? 'text-rose-600' : 'text-emerald-600';
             }else{
-              statusText = `OK`;
-              statusColor = 'text-emerald-600';
+              statusText = `OK`; statusColor = 'text-emerald-600';
             }
           } else if(d.off){
             const offLabel = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
             statusText = offLabel;
-            statusColor = 'text-slate-400';
           }
 
+          // [5] ✅ data-empid au lieu de onclick inline (sécurise les apostrophes)
           html += `
-            <button onclick="openHistory('${emp.nom}','${emp.prenom}')" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
+            <button data-empid="${id}" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
               <div>
                 <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
                 <p class="text-[9px] font-medium text-slate-400">${emp.prenom}</p>
@@ -1089,13 +962,20 @@
       });
 
       container.innerHTML = html;
+
+      // [5] ✅ event listeners après injection du HTML
+      container.querySelectorAll('[data-empid]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const emp = getEmpById(btn.dataset.empid);
+          openHistory(emp.nom, emp.prenom);
+        });
+      });
     }
 
-    // ===== Chart =====
+    // Chart
     function renderChart(labels, lates, presences){
       const ctx = document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
-
       myChart = new Chart(ctx, {
         type:'line',
         data:{
@@ -1113,14 +993,12 @@
       });
     }
 
-    // ===== (5) updateDashboard spinner + await renderReportView() =====
     function loadingCard(text){
       return `
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
           <div class="text-[11px] font-extrabold text-slate-600">${text}</div>
-        </div>
-      `;
+        </div>`;
     }
 
     async function updateDashboard(){
@@ -1136,13 +1014,10 @@
 
       detachRealtime();
       document.getElementById("kpiOffBlock").classList.add("hidden");
-
-      // spinner report
       document.getElementById('dashBody').innerHTML = loadingCard("Chargement du bilan mensuel…");
       await renderReportView();
     }
 
-    // ===== Report view (mensuel) =====
     async function renderReportView(){
       const seedISO = dateInput.value;
       const mk = monthKeyFromISO(seedISO);
@@ -1152,7 +1027,7 @@
       const stats = {};
       equipe.forEach(e => {
         const id = empIdOf(e);
-        stats[id] = { info: e, present: 0, lateMin: 0, repos: 0, conge: 0, excluded: 0 };
+        stats[id] = { info:e, present:0, lateMin:0, repos:0, conge:0, excluded:0 };
       });
 
       const weekOffCount = {};
@@ -1160,31 +1035,23 @@
 
       dates.forEach((dayISO) => {
         labels.push(dayISO.split('-')[2]);
-
         if(dayISO > today){ dailyLates.push(0); dailyPresence.push(0); return; }
-
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
           Object.keys(stats).forEach(id => stats[id].excluded++);
           return;
         }
-
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
         let tL = 0, tP = 0;
-
         Object.keys(stats).forEach(id => {
           const e = merged[id] || null;
-
           if(!e){ stats[id].conge++; return; }
-
           if(e.off){
             const typeOff = classifyOffDay(id, dayISO, weekOffCount);
             if(typeOff === "REPOS") stats[id].repos++;
             else stats[id].conge++;
             return;
           }
-
           if(e.hA){
             const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, id);
             stats[id].present++;
@@ -1192,10 +1059,8 @@
             tL += diff; tP++;
             return;
           }
-
           stats[id].conge++;
         });
-
         dailyLates.push(tL);
         dailyPresence.push(tP);
       });
@@ -1206,13 +1071,11 @@
       const goodList = Object.values(stats).filter(s => s.lateMin === 0 && s.present > 0).sort((a,b) => b.present - a.present);
 
       let html = '<div class="space-y-8">';
-
-      html += `<div>
-        <h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
-      if(lateList.length === 0){
+      html += `<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
+      if(!lateList.length){
         html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
       }else{
-        lateList.slice(0, 6).forEach(s => {
+        lateList.slice(0,6).forEach(s => {
           html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
             <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
             <span class="text-rose-600 font-black">${s.lateMin}m</span>
@@ -1220,13 +1083,11 @@
         });
       }
       html += `</div>`;
-
-      html += `<div>
-        <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
-      if(goodList.length === 0){
+      html += `<div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
+      if(!goodList.length){
         html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
       }else{
-        goodList.slice(0, 6).forEach(s => {
+        goodList.slice(0,6).forEach(s => {
           html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
             <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
             <span class="text-emerald-600 font-black">${s.present}j OK</span>
@@ -1234,45 +1095,33 @@
         });
       }
       html += '</div></div>';
-
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    // ===== (4) openHistory spinner + modal mobile fix =====
+    // openHistory — spinner + modal sécurisée
     async function openHistory(nom, prenom){
       const modal = document.getElementById('historyModal');
-
-      // mobile: remove hidden + add modal-active
       modal.classList.remove("hidden");
       modal.classList.add('modal-active');
-
       document.getElementById('modalTitle').innerText = nom + " " + prenom;
-
-      // spinner instant
       document.getElementById('modalList').innerHTML = `
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
           <div class="text-[11px] font-extrabold text-slate-600">Chargement historique…</div>
-        </div>
-      `;
+        </div>`;
 
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
       const today = todayISO();
-
       const id = nom + '_' + prenom;
-      const weekOffCount = {};
-      const statusMap = {};
+      const weekOffCount = {}, statusMap = {};
 
       dates.forEach((dayISO) => {
         if(dayISO > today){ statusMap[dayISO] = { label:"À venir", cls:"text-slate-300" }; return; }
         if(isExcluded(dayISO)){ statusMap[dayISO] = { label:"Exclu", cls:"text-slate-400" }; return; }
-
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
         const entry = merged[id] || null;
-
         if(!entry){ statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" }; return; }
-
         if(entry.hA){
           const diff = (typeof entry.retardMin === "number") ? entry.retardMin : getTimeDiff(entry.hA, entry.hP, id);
           const label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
@@ -1280,29 +1129,25 @@
           statusMap[dayISO] = { label, cls };
           return;
         }
-
         if(entry.off){
           const typeOff = classifyOffDay(id, dayISO, weekOffCount);
           statusMap[dayISO] = {
             label: (typeOff === "REPOS") ? "Repos" : "Congé",
-            cls: (typeOff === "REPOS") ? "text-slate-300" : "text-slate-500"
+            cls:   (typeOff === "REPOS") ? "text-slate-300" : "text-slate-500"
           };
           return;
         }
-
         statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" };
       });
 
-      const datesRev = dates.slice().reverse();
       let html = '';
-      datesRev.forEach((dayISO) => {
+      dates.slice().reverse().forEach((dayISO) => {
         const st = statusMap[dayISO] || { label:"—", cls:"text-slate-400" };
         html += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
           <span class="text-[10px] font-black text-slate-400 uppercase">${fmtFR(dayISO)}</span>
           <span class="text-[10px] font-black ${st.cls} uppercase">${st.label}</span>
         </div>`;
       });
-
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
 
@@ -1312,7 +1157,7 @@
       m.classList.add('hidden');
     }
 
-    // ===== PDF helpers =====
+    // PDF helpers
     function showPDF(el){ el.style.display="block"; }
     function hidePDF(el){ el.style.display="none"; }
 
@@ -1331,21 +1176,18 @@
             <div style="font-weight:700;color:#6b7280;font-size:10px;">(Exclus: 01/01/2026 → 31/01/2026)</div>
           </div>
         </div>
-        <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />
-      `;
+        <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />`;
     }
     function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
 
+    // [4] ✅ downloadPDF_Day — plus de double fetch
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
-
       const weekDates = getWeekDatesISO(dayISO);
       const presWeek = await Promise.all(weekDates.map(d => database.ref('presences/'+d).once('value')));
       const punchWeek = await Promise.all(weekDates.map(d => database.ref('punches/'+d).once('value')));
 
-      const weekOffCount = {};
-      const offTypeToday = {};
-
+      const weekOffCount = {}, offTypeToday = {};
       weekDates.forEach((dISO, i) => {
         if(isExcluded(dISO)) return;
         const mergedD = mergeDay(presWeek[i].val() || {}, punchWeek[i].val() || {});
@@ -1359,9 +1201,9 @@
         });
       });
 
-      const presSnap = await database.ref('presences/'+dayISO).once('value');
-      const punchSnap = await database.ref('punches/'+dayISO).once('value');
-      const merged = mergeDay(presSnap.val() || {}, punchSnap.val() || {});
+      // [4] ✅ Réutilise les données semaine déjà chargées — plus de fetch séparé
+      const idx = weekDates.indexOf(dayISO);
+      const merged = mergeDay(presWeek[idx].val() || {}, punchWeek[idx].val() || {});
 
       document.getElementById("pdfHeader").innerHTML = pdfHeader("Rapport Jour — Supervision", `Jour: ${fmtFR(dayISO)}`);
 
@@ -1369,16 +1211,11 @@
       equipe.forEach(emp=>{
         const id = empIdOf(emp);
         const e = merged[id] || null;
-
-        if(e && e.hA){
-          present++;
-        } else if(e && e.off){
+        if(e && e.hA){ present++; }
+        else if(e && e.off){
           const t = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
-          if(t === "REPOS") repos++;
-          else attente++;
-        } else {
-          attente++;
-        }
+          if(t === "REPOS") repos++; else attente++;
+        } else { attente++; }
       });
 
       document.getElementById("pdfKpis").innerHTML = `
@@ -1387,8 +1224,7 @@
           ${kpiBox("Présents", present)}
           ${kpiBox("Repos", repos)}
           ${kpiBox("Attente", attente)}
-        </div>
-      `;
+        </div>`;
 
       const rows = equipe.slice().sort((a,b)=>{
         const A=empIdOf(a), B=empIdOf(b);
@@ -1398,339 +1234,233 @@
       }).map(emp=>{
         const id = empIdOf(emp);
         const e = merged[id] || null;
-
         let statut="ATTENTE", hp="", ha="", retard="";
         if(e){
-          hp = e.hP || "";
-          ha = e.hA || "";
+          hp=e.hP||""; ha=e.hA||"";
           if(e.hA){
             statut="OK";
             if(e.hP){
-              const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, id);
+              const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,id);
               retard = diff>0 ? `+${diff}m` : "0";
               if(diff>0) statut="RETARD";
             }
           } else if(e.off){
             const t = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
-            statut = (t === "REPOS") ? "REPOS" : "CONGÉ";
-          } else {
-            statut="CONGÉ";
-          }
-        }else{
-          statut="CONGÉ";
-        }
-
-        return `
-          <tr>
-            <td>${emp.nom} ${emp.prenom}</td>
-            <td style="text-align:center;">${statut}</td>
-            <td style="text-align:center;">${hp}</td>
-            <td style="text-align:center;">${ha}</td>
-            <td style="text-align:center;">${retard}</td>
-          </tr>
-        `;
+            statut = (t==="REPOS") ? "REPOS" : "CONGÉ";
+          } else { statut="CONGÉ"; }
+        } else { statut="CONGÉ"; }
+        return `<tr>
+          <td>${emp.nom} ${emp.prenom}</td>
+          <td style="text-align:center;">${statut}</td>
+          <td style="text-align:center;">${hp}</td>
+          <td style="text-align:center;">${ha}</td>
+          <td style="text-align:center;">${retard}</td>
+        </tr>`;
       }).join("");
 
       document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
-          <thead>
-            <tr>
-              <th style="text-align:left;">Employé</th>
-              <th style="text-align:center;">Statut</th>
-              <th style="text-align:center;">HP</th>
-              <th style="text-align:center;">HA</th>
-              <th style="text-align:center;">Retard</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th style="text-align:left;">Employé</th>
+            <th style="text-align:center;">Statut</th>
+            <th style="text-align:center;">HP</th>
+            <th style="text-align:center;">HA</th>
+            <th style="text-align:center;">Retard</th>
+          </tr></thead>
           <tbody>${rows}</tbody>
-        </table>
-      `;
+        </table>`;
 
       const el = document.getElementById("pdfArea");
       showPDF(el);
-
       html2pdf().set({
-        margin: 8,
-        filename: `GC_RH_JOUR_${dayISO}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        margin:8, filename:`GC_RH_JOUR_${dayISO}.pdf`,
+        image:{type:'jpeg',quality:1},
+        html2canvas:{scale:3,useCORS:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['avoid-all','css','legacy']}
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // (2) PDF emp => equipe.find()
+    // PDF employé mois
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
-
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
       const today = todayISO();
-
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
       const weekOffCount = {};
 
       const rows = dates.map((dayISO)=>{
-        if(dayISO > today){
-          ignoredFuture++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`;
-        }
-        if(isExcluded(dayISO)){
-          excluded++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`;
-        }
-
+        if(dayISO > today){ ignoredFuture++; return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`; }
+        if(isExcluded(dayISO)){ excluded++; return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`; }
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
         const e = merged[empId] || null;
-
-        if(!e){
-          conge++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`;
-        }
-
+        if(!e){ conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`; }
         if(e.hA){
           present++;
-          const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, empId);
+          const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,empId);
           lateMin += diff;
-          const st = (e.hP && diff>0) ? "Retard" : "OK";
-          const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+          const st = (e.hP&&diff>0) ? "Retard" : "OK";
+          const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
           return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
-
         if(e.off){
           const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
-          if(typeOff === "REPOS"){ repos++; return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`; }
+          if(typeOff==="REPOS"){ repos++; return `<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`; }
           conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
         }
-
-        conge++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
       }).join("");
 
-      document.getElementById("pdfHeader").innerHTML =
-        pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`, `Mois: ${mk}`);
-
+      document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`, `Mois: ${mk}`);
       document.getElementById("pdfKpis").innerHTML = `
         <div class="pdfKpi">
-          ${kpiBox("Présents", present)}
-          ${kpiBox("Repos", repos)}
-          ${kpiBox("Congés", conge)}
-          ${kpiBox("Retard (min)", lateMin)}
+          ${kpiBox("Présents",present)}${kpiBox("Repos",repos)}${kpiBox("Congés",conge)}${kpiBox("Retard (min)",lateMin)}
         </div>
-        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
-          Exclu: ${excluded} jour(s) • Jours futurs ignorés: ${ignoredFuture}
-        </div>
-      `;
-
+        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">Exclu: ${excluded} jour(s) • Jours futurs ignorés: ${ignoredFuture}</div>`;
       document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
-          <thead>
-            <tr>
-              <th style="text-align:left;">Date</th>
-              <th style="text-align:center;">Statut</th>
-              <th style="text-align:center;">HP</th>
-              <th style="text-align:center;">HA</th>
-              <th style="text-align:center;">Retard</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
+            <th style="text-align:center;">HP</th><th style="text-align:center;">HA</th><th style="text-align:center;">Retard</th>
+          </tr></thead>
           <tbody>${rows}</tbody>
-        </table>
-      `;
+        </table>`;
 
       const el = document.getElementById("pdfArea");
       showPDF(el);
-
-      const file = `GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`;
-
       html2pdf().set({
-        margin: 8,
-        filename: file,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        margin:8, filename:`GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`,
+        image:{type:'jpeg',quality:1},
+        html2canvas:{scale:3,useCORS:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['avoid-all','css','legacy']}
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // PDF employé année
     async function downloadPDF_EmployeeYear(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
-
-      const seed = dateInput.value;
-      const year = seed.slice(0,4);
+      const year = dateInput.value.slice(0,4);
       const today = todayISO();
-
       let present=0, repos=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
       const weekOffCount = {};
-
-      const months = Array.from({length:12}, (_,i)=> `${year}-${String(i+1).padStart(2,"0")}`);
       const rowsParts = [];
+      const months = Array.from({length:12}, (_,i)=> `${year}-${String(i+1).padStart(2,"0")}`);
 
       for(const mk of months){
         const { dates, presByDay, punchByDay } = await getMonthData(mk);
-
         dates.forEach((dayISO)=>{
           if(dayISO > today){ ignoredFuture++; return; }
           if(isExcluded(dayISO)){ excluded++; return; }
-
           const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
           const e = merged[empId] || null;
-
-          if(!e){
-            conge++;
-            rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`);
-            return;
-          }
-
+          if(!e){ conge++; rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`); return; }
           if(e.hA){
             present++;
-            const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, empId);
+            const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,empId);
             lateMin += diff;
-            const st = (e.hP && diff>0) ? "Retard" : "OK";
-            const r = (e.hP) ? (diff>0 ? `+${diff}m` : "0") : "";
+            const st = (e.hP&&diff>0) ? "Retard" : "OK";
+            const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
             rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`);
             return;
           }
-
           if(e.off){
             const typeOff = classifyOffDay(empId, dayISO, weekOffCount);
-            if(typeOff === "REPOS"){ repos++; rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`); }
+            if(typeOff==="REPOS"){ repos++; rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Repos</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`); }
             else { conge++; rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`); }
             return;
           }
-
           conge++;
           rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`);
         });
       }
 
-      document.getElementById("pdfHeader").innerHTML =
-        pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`, `Année: ${year}`);
-
+      document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`, `Année: ${year}`);
       document.getElementById("pdfKpis").innerHTML = `
         <div class="pdfKpi">
-          ${kpiBox("Présents", present)}
-          ${kpiBox("Repos", repos)}
-          ${kpiBox("Congés", conge)}
-          ${kpiBox("Retard (min)", lateMin)}
+          ${kpiBox("Présents",present)}${kpiBox("Repos",repos)}${kpiBox("Congés",conge)}${kpiBox("Retard (min)",lateMin)}
         </div>
         <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
           Exclu (01/01/2026 → 31/01/2026): ${excluded} jour(s) ignorés • Jours futurs ignorés: ${ignoredFuture}
-        </div>
-      `;
-
+        </div>`;
       document.getElementById("pdfContent").innerHTML = `
         <table class="pdfTable">
-          <thead>
-            <tr>
-              <th style="text-align:left;">Date</th>
-              <th style="text-align:center;">Statut</th>
-              <th style="text-align:center;">HP</th>
-              <th style="text-align:center;">HA</th>
-              <th style="text-align:center;">Retard</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
+            <th style="text-align:center;">HP</th><th style="text-align:center;">HA</th><th style="text-align:center;">Retard</th>
+          </tr></thead>
           <tbody>${rowsParts.join("")}</tbody>
-        </table>
-      `;
+        </table>`;
 
       const el = document.getElementById("pdfArea");
       showPDF(el);
-
-      const file = `GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`;
-
       html2pdf().set({
-        margin: 8,
-        filename: file,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        margin:8, filename:`GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`,
+        image:{type:'jpeg',quality:1},
+        html2canvas:{scale:3,useCORS:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['avoid-all','css','legacy']}
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
-    // ===== Export CSV mensuel =====
+    // Export CSV mensuel
     async function exportCSV_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
       const today = todayISO();
-
-      const header = ["Date","Employe","Poste","Statut","HP","HA","RetardMin"].join(",");
-      const lines = [header];
+      const lines = [["Date","Employe","Poste","Statut","HP","HA","RetardMin"].join(",")];
       const weekOffCount = {};
 
       dates.forEach(dayISO => {
         if(dayISO > today) return;
         if(isExcluded(dayISO)) return;
-
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
         equipe.forEach(emp=>{
           const id = empIdOf(emp);
           const e = merged[id] || null;
-
           let statut="CONGÉ", hp="", ha="", rmin="";
           if(e){
-            hp = e.hP || "";
-            ha = e.hA || "";
+            hp=e.hP||""; ha=e.hA||"";
             if(e.hA){
-              const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, id);
-              rmin = String(diff || 0);
-              statut = (e.hP && diff>0) ? "RETARD" : "OK";
+              const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,id);
+              rmin = String(diff||0);
+              statut = (e.hP&&diff>0) ? "RETARD" : "OK";
             } else if(e.off){
               statut = classifyOffDay(id, dayISO, weekOffCount);
             }
           }
-
-          const row = [
-            fmtFR(dayISO),
-            `"${emp.nom} ${emp.prenom}"`,
-            emp.poste,
-            statut,
-            hp,
-            ha,
-            rmin
-          ].join(",");
-
-          lines.push(row);
+          lines.push([fmtFR(dayISO), `"${emp.nom} ${emp.prenom}"`, emp.poste, statut, hp, ha, rmin].join(","));
         });
       });
 
       const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `GC_RH_${mk}.csv`;
+      a.href=url; a.download=`GC_RH_${mk}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
-    // ===== Boot =====
+    // Boot
     async function bootDashboard(){
       dateInput.value = todayISO();
-
-      // (6) sync congeMonth sur dateInput
       document.getElementById("congeMonth").value = monthKeyFromISO(dateInput.value);
 
       dateInput.addEventListener('change', async () => {
         clearMonthCache();
-
-        // sync month picker sur la date sélectionnée
         document.getElementById("congeMonth").value = monthKeyFromISO(dateInput.value);
-
-        // si table ouverte, recalcul immédiatement
         const wrap = document.getElementById("congeTableWrap");
         if(wrap && !wrap.classList.contains("hidden")){
           await computeAggForSelectedMonth();
           renderOffKpiBlockFromAgg();
           renderCongeTable();
         }
-
         await updateDashboard();
       });
 
-      // load team from DB
       try{
         const list = await loadEquipeFromDB();
         equipe.splice(0, equipe.length, ...list);
