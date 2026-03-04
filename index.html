@@ -430,14 +430,21 @@
     }
 
     function classifyOffDay(empId, dayISO, weekOffCount){
-      if(isCashierNoRepos(empId)) return "CONGÉ";
-      const weekKey = weekStartMondayISO(dayISO);
-      weekOffCount[weekKey] ||= {};
-      weekOffCount[weekKey][empId] ||= 0;
-      if(weekOffCount[weekKey][empId] === 0){ weekOffCount[weekKey][empId] = 1; return "REPOS"; }
-      weekOffCount[weekKey][empId] += 1;
-      return "CONGÉ";
-    }
+  if(isCashierNoRepos(empId)) return "CONGÉ";
+
+  const weekKey = weekStartMondayISO(dayISO);
+  weekOffCount[weekKey] ||= {};
+  weekOffCount[weekKey][empId] ||= 0;
+
+  // 1er OFF de la semaine => REPOS
+  if(weekOffCount[weekKey][empId] === 0){
+    weekOffCount[weekKey][empId] = 1;
+    return "REPOS";
+  }
+
+  // Tous les autres OFF => CONGÉ (jamais R2)
+  return "CONGÉ";
+}
 
     // Casablanca
     function todayISO(){
