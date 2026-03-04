@@ -411,6 +411,7 @@
     function getTimeDiff(a, p, id) {
       if(!a) return 0;
       if(id && haOnlyIds.has(id)) return 0;
+      // Si p absent, on ne peut pas calculer. Donc 0.
       if(!p) return 0;
       const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number);
       const d=(ha*60+ma)-(hp*60+mp);
@@ -505,6 +506,7 @@
       sel.innerHTML = list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom}</option>`).join("");
     }
 
+    const monthDataCache = new Map();
     function clearMonthCache(){ monthDataCache.clear(); monthAggCache = null; }
 
     function refreshEquipeUI(){
@@ -634,26 +636,18 @@
       punchCache = {};
     }
 
-    // ✅ PATCH: mergeDay priorise punch.retardMin (si présent) + punch.hP (si présent)
     function mergeDay(pres, punches){
       const merged = JSON.parse(JSON.stringify(pres || {}));
       const p = punches || {};
       Object.keys(p).forEach(empId => {
         merged[empId] ||= {};
         const pe = p[empId] || {};
-
-        // punch peut fournir hp/ha
         if(pe.hP && !merged[empId].hP) merged[empId].hP = pe.hP;
         if(pe.hA && !merged[empId].hA) merged[empId].hA = pe.hA;
 
-        // ✅ si punch fournit retardMin, on le prend (c’est la source la plus fiable)
-        if(typeof pe.retardMin === "number"){
-          merged[empId].retardMin = pe.retardMin;
-        }else if(typeof pe.retardMin === "string" && pe.retardMin.trim() !== "" && !Number.isNaN(Number(pe.retardMin))){
-          merged[empId].retardMin = Number(pe.retardMin);
-        }
+        // ✅ retardMin venant de punches doit toujours être pris en priorité
+        if(typeof pe.retardMin === "number") merged[empId].retardMin = pe.retardMin;
 
-        // punch => pas off
         if(merged[empId].hA && merged[empId].off === true) merged[empId].off = false;
       });
       return merged;
@@ -727,8 +721,6 @@
     }
     function getDatesInMonthKey(monthKey){ return getDatesInMonth(monthKey + "-01"); }
 
-    // BatchFetch + Month cache
-    const monthDataCache = new Map();
     async function batchFetchPresPunch(dates){
       const [presSnaps, punchSnaps] = await Promise.all([
         Promise.all(dates.map(d => database.ref('presences/'+d).once('value'))),
@@ -914,7 +906,15 @@
         </div>`;
     }
 
+    // ✅ Ordre postes fixe
     const POSTES_ORDER = ['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
+
+    // ✅ helper retard: priorité retardMin (punches). Sinon calc HA-HP.
+    function diffFromEntry(entry, empId){
+      if(!entry) return 0;
+      if(typeof entry.retardMin === "number") return entry.retardMin;
+      return getTimeDiff(entry.hA, entry.hP, empId);
+    }
 
     function renderDayView(data, offTypeToday = {}){
       const container = document.getElementById('dashBody');
@@ -935,24 +935,24 @@
         }).forEach(emp => {
           const id = empIdOf(emp);
           const d = data[id] || {};
-
-          const diff = (typeof d.retardMin === "number") ? d.retardMin : getTimeDiff(d.hA, d.hP, id);
+          const diff = diffFromEntry(d, id);
           const sClass = getStatusClass(diff, !!d.off, !!d.hA);
 
-          // ✅ FIX: par défaut on affiche CONGÉ (pas ATTENTE)
-          let statusText = 'CONGÉ', statusColor = 'text-slate-500';
+          let statusText = 'ATTENTE', statusColor = 'text-slate-400';
 
+          // ✅ FIX: afficher retard même si hP n'existe pas (retardMin suffit)
           if(d.hA){
-            if(d.hP){
-              statusText = diff > 0 ? `${diff}m retard` : `À L'HEURE`;
-              statusColor = diff > 0 ? 'text-rose-600' : 'text-emerald-600';
+            if(typeof diff === "number" && diff > 0){
+              statusText = `${diff}m retard`;
+              statusColor = 'text-rose-600';
             }else{
-              statusText = `OK`; statusColor = 'text-emerald-600';
+              statusText = 'OK';
+              statusColor = 'text-emerald-600';
             }
           } else if(d.off){
             const offLabel = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
             statusText = offLabel;
-            statusColor = (offLabel === "REPOS") ? "text-slate-400" : "text-slate-500";
+            statusColor = (offLabel === "REPOS") ? 'text-slate-400' : 'text-slate-500';
           }
 
           html += `
@@ -1059,7 +1059,7 @@
             return;
           }
           if(e.hA){
-            const diff = (typeof e.retardMin === "number") ? e.retardMin : getTimeDiff(e.hA, e.hP, id);
+            const diff = diffFromEntry(e, id);
             stats[id].present++;
             stats[id].lateMin += diff;
             tL += diff; tP++;
@@ -1104,7 +1104,7 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    // openHistory — spinner + modal sécurisée
+    // openHistory — ✅ retard basé sur diff>0 (retardMin prioritaire)
     async function openHistory(nom, prenom){
       const modal = document.getElementById('historyModal');
       modal.classList.remove("hidden");
@@ -1129,9 +1129,9 @@
         const entry = merged[id] || null;
         if(!entry){ statusMap[dayISO] = { label:"Congé", cls:"text-slate-500" }; return; }
         if(entry.hA){
-          const diff = (typeof entry.retardMin === "number") ? entry.retardMin : getTimeDiff(entry.hA, entry.hP, id);
-          const label = entry.hP ? (diff>0 ? `${diff}m` : 'OK') : 'OK';
-          const cls = (entry.hP && diff>0) ? 'text-rose-500' : 'text-emerald-500';
+          const diff = diffFromEntry(entry, id);
+          const label = (diff > 0) ? `${diff}m` : 'OK';
+          const cls = (diff > 0) ? 'text-rose-500' : 'text-emerald-500';
           statusMap[dayISO] = { label, cls };
           return;
         }
@@ -1186,6 +1186,7 @@
     }
     function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
 
+    // ✅ PDF JOUR — retard basé sur diff>0 même sans hP
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
       const weekDates = getWeekDatesISO(dayISO);
@@ -1238,21 +1239,22 @@
       }).map(emp=>{
         const id = empIdOf(emp);
         const e = merged[id] || null;
-        let statut="CONGÉ", hp="", ha="", retard="";
+        let statut="ATTENTE", hp="", ha="", retard="";
         if(e){
           hp=e.hP||""; ha=e.hA||"";
           if(e.hA){
-            statut="OK";
-            if(e.hP){
-              const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,id);
-              retard = diff>0 ? `+${diff}m` : "0";
-              if(diff>0) statut="RETARD";
-            }
+            const diff = diffFromEntry(e, id);
+            if(diff > 0){ statut="RETARD"; retard = `+${diff}m`; }
+            else { statut="OK"; retard = hp ? "0" : ""; }
           } else if(e.off){
             const t = offTypeToday[id] || (isCashierNoRepos(id) ? "CONGÉ" : "REPOS");
             statut = (t==="REPOS") ? "REPOS" : "CONGÉ";
-          } else { statut="CONGÉ"; }
-        } else { statut="CONGÉ"; }
+          } else {
+            statut="CONGÉ";
+          }
+        } else {
+          statut="CONGÉ";
+        }
         return `<tr>
           <td>${emp.nom} ${emp.prenom}</td>
           <td style="text-align:center;">${statut}</td>
@@ -1285,6 +1287,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // ✅ PDF employé mois — retard basé sur diff>0
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
@@ -1302,10 +1305,10 @@
         if(!e){ conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`; }
         if(e.hA){
           present++;
-          const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,empId);
+          const diff = diffFromEntry(e, empId);
           lateMin += diff;
-          const st = (e.hP&&diff>0) ? "Retard" : "OK";
-          const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
+          const st = (diff > 0) ? "Retard" : "OK";
+          const r = (diff > 0) ? `+${diff}m` : (e.hP ? "0" : "");
           return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
         if(e.off){
@@ -1342,6 +1345,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // ✅ PDF employé année — retard basé sur diff>0
     async function downloadPDF_EmployeeYear(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
@@ -1362,10 +1366,10 @@
           if(!e){ conge++; rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`); return; }
           if(e.hA){
             present++;
-            const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,empId);
+            const diff = diffFromEntry(e, empId);
             lateMin += diff;
-            const st = (e.hP&&diff>0) ? "Retard" : "OK";
-            const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
+            const st = (diff > 0) ? "Retard" : "OK";
+            const r = (diff > 0) ? `+${diff}m` : (e.hP ? "0" : "");
             rowsParts.push(`<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`);
             return;
           }
@@ -1408,6 +1412,7 @@
       }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
     }
 
+    // ✅ Export CSV mensuel — retard basé sur diff>0
     async function exportCSV_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
@@ -1426,9 +1431,9 @@
           if(e){
             hp=e.hP||""; ha=e.hA||"";
             if(e.hA){
-              const diff = (typeof e.retardMin==="number") ? e.retardMin : getTimeDiff(e.hA,e.hP,id);
+              const diff = diffFromEntry(e, id);
               rmin = String(diff||0);
-              statut = (e.hP&&diff>0) ? "RETARD" : "OK";
+              statut = (diff > 0) ? "RETARD" : "OK";
             } else if(e.off){
               statut = classifyOffDay(id, dayISO, weekOffCount);
             }
@@ -1445,6 +1450,7 @@
       URL.revokeObjectURL(url);
     }
 
+    // Boot
     async function bootDashboard(){
       dateInput.value = todayISO();
       document.getElementById("congeMonth").value = monthKeyFromISO(dateInput.value);
