@@ -129,7 +129,6 @@
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <!-- ✅ CSV en haut supprimés -->
           <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
             Déconnexion
           </button>
@@ -144,22 +143,22 @@
           <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
         </div>
 
-        <!-- ✅ Choix du mois -->
+        <!-- Choix du mois -->
         <div class="glass-card rounded-2xl p-4">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Choix du mois</div>
           <input type="month" id="monthPicker" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-extrabold text-slate-800 outline-none">
-          <!-- hidden seed date pour logique existante -->
+          <!-- seed (mois) -->
           <input type="date" id="dashDate" class="hidden">
         </div>
 
-        <!-- ✅ Bloc exports (seul bloc CSV conservé) -->
+        <!-- Exports (seul bloc CSV) -->
         <div class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between gap-3">
             <div>
               <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Période</div>
               <div id="periodLabel" class="text-[12px] font-extrabold text-slate-900 mt-1">—</div>
               <div class="text-[10px] text-slate-500 font-semibold mt-1 leading-snug">
-                R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu
+                R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
               </div>
             </div>
             <div class="flex flex-col gap-2">
@@ -286,7 +285,7 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const dateInput    = document.getElementById('dashDate');   // hidden seed day
+    const dateInput    = document.getElementById('dashDate');   // hidden seed mois (YYYY-MM-01)
     const monthPicker  = document.getElementById('monthPicker');
 
     const loginWrap    = document.getElementById("loginWrap");
@@ -331,6 +330,9 @@
 
     // Pas de retard (HA seule) pour ces IDs
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
+
+    // ✅ Exception R/C : pas de Repos (R) pour eux → tout OFF = C
+    const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
     // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
@@ -389,6 +391,9 @@
 
     /* ── R / C ── */
     function classifyOffDay(empId,dayISO,weekRC){
+      // ✅ exception: jamais R
+      if(noReposIds.has(empId)) return "C";
+
       const wk=weekStartMondayISO(dayISO);
       weekRC[wk]||={};
       weekRC[wk][empId]||=0;
@@ -558,7 +563,6 @@
       presCache={}; punchCache={};
     }
 
-    // Merge: HP peut venir de presences + HA peut venir de punches
     function mergeDay(pres,punches){
       const merged=JSON.parse(JSON.stringify(pres||{}));
       const p=punches||{};
@@ -731,9 +735,13 @@
     async function updateDashboard(){
       if(role!=="gerant") return;
 
-      const dayISO=dateInput.value;
-      const mk = monthKeyFromISO(dayISO);
-      periodLabel.textContent = `Mois: ${mk} • Année: ${dayISO.slice(0,4)}`;
+      // ✅ Jour = toujours aujourd'hui (temps réel)
+      const dayISO = (currentMode === "day") ? todayISO() : dateInput.value;
+
+      // période affichée = mois choisi (dateInput = mk-01)
+      const seedISO = dateInput.value;
+      const mkSeed = monthKeyFromISO(seedISO);
+      periodLabel.textContent = `Mois: ${mkSeed} • Année: ${seedISO.slice(0,4)}`;
 
       if(currentMode==="day"){
         attachRealtimeForDate(dayISO);
@@ -828,7 +836,6 @@
       document.getElementById('dashBody').innerHTML=html;
     }
 
-    /* ── Monthly summary (utilisé pour Table + CSV mois + CSV année résumé) ── */
     async function buildMonthlySummary(mk){
       const {dates,presByDay,punchByDay}=await getMonthData(mk);
       const today=todayISO();
@@ -850,11 +857,11 @@
         Object.keys(out).forEach(id=>{
           const e = merged[id] || null;
 
-          if(!e){ out[id].C++; return; } // absence => C
+          if(!e){ out[id].C++; return; }
 
           if(e.off){
             const rc = classifyOffDay(id, dayISO, weekRC);
-            out[id][rc]++; // R ou C
+            out[id][rc]++;
             return;
           }
 
@@ -864,7 +871,7 @@
             return;
           }
 
-          out[id].C++; // ni off ni arrivé => C
+          out[id].C++;
         });
       });
 
@@ -896,8 +903,6 @@
                 <span class="chip">Retard: <b>${tL}m</b></span>
               </div>
             </div>
-
-            <!-- ✅ CSV en double supprimés ici -->
             <div class="hidden"></div>
           </div>
 
@@ -929,7 +934,7 @@
           </div>
 
           <div class="mt-3 text-[10px] text-slate-500 font-semibold">
-            R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Retard = HA - HP (HP vient de présence si présent)
+            R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
           </div>
         </div>
       `;
@@ -937,7 +942,6 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    /* ── Historique ── */
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
       const rcTxt=rc?` • ${rc}`:"";
       return `
@@ -1006,19 +1010,17 @@
       m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
-    /* ── CSV helpers ── */
     function escapeCSV(v){
       const s = String(v ?? "");
       if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
       return s;
     }
 
-    /* ── CSV R/C MOIS (1 ligne par employé) ── */
     async function exportCSV_RC_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const summary = await buildMonthlySummary(mk);
 
-      const header = ["Mois","Employe","Poste","Presents","ReposR","CongeC","RetardMin"];
+      const header = ["Mois","Employe","Poste","Presents","ReposTotal","CongeTotal","RetardMin"];
       const lines = [header.join(",")];
 
       Object.values(summary)
@@ -1046,23 +1048,15 @@
       URL.revokeObjectURL(url);
     }
 
-    /* ── CSV ANNÉE RÉSUMÉ (1 ligne par employé) ── */
     async function exportCSV_RC_Year(){
       const year = dateInput.value.slice(0,4);
 
-      // Init pour inclure tout le monde
       const totalsByEmp = {};
       equipe.forEach(emp=>{
         const id = empIdOf(emp);
         totalsByEmp[id] = {
-          empId: id,
-          nom: emp.nom,
-          prenom: emp.prenom,
-          poste: emp.poste,
-          present: 0,
-          R: 0,       // repos
-          C: 0,       // congé
-          lateMin: 0  // retard total
+          empId: id, nom: emp.nom, prenom: emp.prenom, poste: emp.poste,
+          present: 0, R: 0, C: 0, lateMin: 0
         };
       });
 
@@ -1073,32 +1067,18 @@
         Object.values(summary).forEach(s=>{
           if(!totalsByEmp[s.empId]){
             totalsByEmp[s.empId] = {
-              empId: s.empId,
-              nom: s.nom || s.empId,
-              prenom: s.prenom || "",
-              poste: s.poste || "",
-              present: 0,
-              R: 0,
-              C: 0,
-              lateMin: 0
+              empId: s.empId, nom: s.nom || s.empId, prenom: s.prenom || "", poste: s.poste || "",
+              present: 0, R: 0, C: 0, lateMin: 0
             };
           }
           totalsByEmp[s.empId].present += Number(s.present)||0;
-          totalsByEmp[s.empId].R       += Number(s.R)||0;
-          totalsByEmp[s.empId].C       += Number(s.C)||0;       // ✅ congé seulement
+          totalsByEmp[s.empId].R       += Number(s.R)||0;      // total repos
+          totalsByEmp[s.empId].C       += Number(s.C)||0;      // ✅ congé cumulé (C seulement)
           totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
         });
       }
 
-      const header = [
-        "Annee",
-        "Employe",
-        "Poste",
-        "PresentsTotal",
-        "ReposTotal",
-        "CongeCumuleAnnee",
-        "RetardTotalMin"
-      ];
+      const header = ["Annee","Employe","Poste","PresentsTotal","ReposTotal","CongeCumuleAnnee","RetardTotalMin"];
       const lines = [header.join(",")];
 
       Object.values(totalsByEmp)
@@ -1126,16 +1106,13 @@
       URL.revokeObjectURL(url);
     }
 
-    /* ── Boot ── */
     async function bootDashboard(){
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
-      // init month picker + seed day
       monthPicker.value = mkToday;
-      dateInput.value = isoFromMonthKey(mkToday);
+      dateInput.value = isoFromMonthKey(mkToday); // seed mois
 
-      // changement de mois
       monthPicker.addEventListener('change', async()=>{
         const mk = monthPicker.value || mkToday;
         dateInput.value = isoFromMonthKey(mk);
