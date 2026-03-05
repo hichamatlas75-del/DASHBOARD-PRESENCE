@@ -83,6 +83,15 @@
       animation:sp 0.9s linear infinite;
     }
     @keyframes sp{to{transform:rotate(360deg)}}
+
+    /* Table (R/C) */
+    .rc-table{width:100%;border-collapse:collapse}
+    .rc-table th,.rc-table td{border:1px solid #e5e7eb;padding:10px 10px;font-size:12px;white-space:nowrap}
+    .rc-table th{background:#f8fafc;font-weight:900;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:#64748b}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb;font-weight:900;font-size:11px}
+    .chip-r{background:#f1f5f9}
+    .chip-c{background:#fff7ed}
+    .chip-p{background:#ecfdf5}
   </style>
 </head>
 
@@ -120,15 +129,18 @@
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <button onclick="toggleRCTable()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-            TABLEAU R/C
-          </button>
           <button onclick="exportCSV_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
-            CSV DÉTAIL
+            EXPORT CSV (détails)
           </button>
-          <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
-            CSV RÉCAP R/C
+
+          <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+            CSV R/C MOIS
           </button>
+
+          <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+            CSV R/C ANNÉE
+          </button>
+
           <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
             Déconnexion
           </button>
@@ -139,14 +151,36 @@
       <div class="mb-4 space-y-4">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
           <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan Mensuel</button>
+          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
+          <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
         </div>
+
         <div class="relative">
           <input type="date" id="dashDate" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-bold text-slate-800 outline-none">
         </div>
+
+        <div class="glass-card rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Période</div>
+              <div id="periodLabel" class="text-[12px] font-extrabold text-slate-900 mt-1">—</div>
+              <div class="text-[10px] text-slate-500 font-semibold mt-1 leading-snug">
+                R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">
+                Export R/C Mois
+              </button>
+              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+                Export R/C Année
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- CHART -->
+      <!-- CHART (Bilan) -->
       <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
         <div class="h-[180px] w-full">
           <canvas id="trendsChart"></canvas>
@@ -154,42 +188,6 @@
       </div>
 
       <div id="dashBody" class="space-y-6"></div>
-
-      <!-- TABLEAU R/C (mois) -->
-      <div id="rcWrap" class="hidden mt-6">
-        <div class="glass-card rounded-3xl p-5">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">RÉCAP MENSUEL</div>
-              <div id="rcTitle" class="text-sm font-black text-slate-900 mt-1">R/C</div>
-            </div>
-            <button onclick="exportCSV_RC_Month()" class="px-3 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold border border-slate-200">
-              Export CSV
-            </button>
-          </div>
-
-          <input id="rcSearch" class="inpt mb-3" placeholder="Rechercher un nom..." />
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-[11px] font-semibold">
-              <thead>
-                <tr class="text-slate-400 uppercase text-[10px]">
-                  <th class="text-left py-2">Employé</th>
-                  <th class="text-left py-2">Poste</th>
-                  <th class="text-center py-2">Présents</th>
-                  <th class="text-center py-2">R</th>
-                  <th class="text-center py-2">C</th>
-                </tr>
-              </thead>
-              <tbody id="rcTbody"></tbody>
-            </table>
-          </div>
-
-          <div class="mt-3 text-[10px] text-slate-500 font-semibold leading-snug">
-            ✅ R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu.
-          </div>
-        </div>
-      </div>
 
       <!-- OUTILS -->
       <div class="mt-6 space-y-4">
@@ -204,6 +202,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -267,7 +266,7 @@
       </div>
 
       <div class="mt-4 text-[10px] text-slate-500 font-semibold leading-snug">
-        Si tu vois <b>PERMISSION_DENIED</b>, tes <b>rules Firebase</b> bloquent l'écriture de <b>settings/equipe</b>.
+        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
       </div>
     </div>
   </div>
@@ -293,11 +292,12 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const dateInput = document.getElementById('dashDate');
-    const loginWrap = document.getElementById("loginWrap");
-    const appWrap   = document.getElementById("appWrap");
-    const roleLabel = document.getElementById("roleLabel");
-    const syncLine  = document.getElementById("syncLine");
+    const dateInput   = document.getElementById('dashDate');
+    const loginWrap   = document.getElementById("loginWrap");
+    const appWrap     = document.getElementById("appWrap");
+    const roleLabel   = document.getElementById("roleLabel");
+    const syncLine    = document.getElementById("syncLine");
+    const periodLabel = document.getElementById("periodLabel");
 
     let currentMode = 'day', myChart = null;
     let role = null;
@@ -333,14 +333,13 @@
       {nom:'ZAIR',       prenom:'FATIMA',    poste:'CUISINE'}
     ];
 
+    // Pas de retard (HA seule) pour ces IDs
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
+
+    // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
-
-    /* ── HP / HA : robustes (hp/hP, ha/hA) ── */
-    function pickHP(e){ return (e?.hP ?? e?.hp ?? ""); }   // HP = presences (principal)
-    function pickHA(e){ return (e?.hA ?? e?.ha ?? ""); }   // HA = punches (principal)
 
     /* ── Dates UTC ── */
     function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
@@ -369,20 +368,16 @@
     }
     function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
 
-    /* ── Retard = HA - HP seulement ── */
-    function getTimeDiff(ha,hp,empId){
-      if(!ha) return 0;
-      if(empId && haOnlyIds.has(empId)) return 0;
-      if(!hp) return 0;
-      const [h1,m1]=String(ha).split(':').map(Number);
-      const [h2,m2]=String(hp).split(':').map(Number);
-      const d=(h1*60+m1)-(h2*60+m2);
+    /* ── Retard (HA-HP uniquement) ── */
+    function getTimeDiff(a,p,id){
+      if(!a) return 0;
+      if(id && haOnlyIds.has(id)) return 0;
+      if(!p) return 0;
+      const [ha,ma]=a.split(':').map(Number),[hp,mp]=p.split(':').map(Number);
+      const d=(ha*60+ma)-(hp*60+mp);
       return d>0?d:0;
     }
-    function diffFromEntry(entry,empId){
-      if(!entry) return 0;
-      return getTimeDiff(pickHA(entry), pickHP(entry), empId);
-    }
+    function diffFromEntry(entry,empId){ return entry ? getTimeDiff(entry.hA, entry.hP, empId) : 0; }
 
     function getStatusClass(diff,isOff,hasArrived){
       if(hasArrived){
@@ -566,26 +561,16 @@
       presCache={}; punchCache={};
     }
 
-    /* mergeDay :
-       - base = presences (contient HP + OFF manuel)
-       - punches = HA (et parfois hp, mais on privilégie presences)
-    */
+    // Merge: HP peut venir de presences (souvent) + HA peut venir de punches, on fusionne sans écraser l’existant.
     function mergeDay(pres,punches){
       const merged=JSON.parse(JSON.stringify(pres||{}));
       const p=punches||{};
       Object.keys(p).forEach(empId=>{
-        merged[empId] ||= {};
+        merged[empId]||={};
         const pe=p[empId]||{};
-        // HA depuis punches
-        const ha = (pe.hA ?? pe.ha ?? "");
-        if(ha && !pickHA(merged[empId])) merged[empId].hA = ha;
-
-        // HP : seulement si absent dans presences (fallback)
-        const hp = (pe.hP ?? pe.hp ?? "");
-        if(hp && !pickHP(merged[empId])) merged[empId].hP = hp;
-
-        // si HA existe, OFF doit être faux
-        if(pickHA(merged[empId]) && merged[empId].off === true) merged[empId].off = false;
+        if(pe.hP && !merged[empId].hP) merged[empId].hP=pe.hP;
+        if(pe.hA && !merged[empId].hA) merged[empId].hA=pe.hA;
+        if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
     }
@@ -686,23 +671,16 @@
         }).forEach(emp=>{
           const id=empIdOf(emp);
           const d=data[id]||{};
-          const ha = pickHA(d);
-          const hp = pickHP(d);
           const diff=diffFromEntry(d,id);
-          const sClass=getStatusClass(diff,!!d.off,!!ha);
+          const sClass=getStatusClass(diff,!!d.off,!!d.hA);
 
           let statusText='ATTENTE',statusColor='text-slate-400';
-          if(ha){
-            if(hp){
+          if(d.hA){
+            if(d.hP){
               if(diff>0){ statusText=`${diff}m retard`; statusColor='text-rose-600'; }
               else { statusText="À L'HEURE"; statusColor='text-emerald-600'; }
-            }else{
-              statusText="OK"; statusColor='text-emerald-600';
-            }
-          }else if(d.off){
-            statusText="OFF";
-            statusColor="text-slate-400";
-          }
+            }else{ statusText="OK"; statusColor='text-emerald-600'; }
+          }else if(d.off){ statusText="OFF"; statusColor="text-slate-400"; }
 
           html+=`
             <button data-empid="${id}" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
@@ -713,12 +691,10 @@
               <p class="text-[10px] font-black ${statusColor}">${statusText}</p>
             </button>`;
         });
-
         html+=`</div></div>`;
       });
 
       container.innerHTML=html;
-
       container.querySelectorAll('[data-empid]').forEach(btn=>{
         btn.addEventListener('click',()=>{
           const emp=getEmpById(btn.dataset.empid);
@@ -727,7 +703,7 @@
       });
     }
 
-    /* ── Chart ── */
+    /* ── Chart (Bilan) ── */
     function renderChart(labels,lates,presences){
       const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
@@ -757,12 +733,10 @@
 
     async function updateDashboard(){
       if(role!=="gerant") return;
-      const dayISO=dateInput.value;
 
-      // si tableau R/C ouvert, on le rafraîchit sur changement date
-      if(!document.getElementById("rcWrap").classList.contains("hidden")){
-        await renderMonthlyRCTable();
-      }
+      const dayISO=dateInput.value;
+      const mk = monthKeyFromISO(dayISO);
+      periodLabel.textContent = `Mois: ${mk} • Année: ${dayISO.slice(0,4)}`;
 
       if(currentMode==="day"){
         attachRealtimeForDate(dayISO);
@@ -771,8 +745,12 @@
       }
 
       detachRealtime();
-      document.getElementById('dashBody').innerHTML=loadingCard("Chargement du bilan mensuel…");
-      await renderReportView();
+      document.getElementById('dashBody').innerHTML=loadingCard(
+        currentMode==="report" ? "Chargement du bilan…" : "Chargement du tableau R/C…"
+      );
+
+      if(currentMode==="report") await renderReportView();
+      else await renderRCView();
     }
 
     async function renderReportView(){
@@ -781,10 +759,7 @@
       const today=todayISO();
 
       const stats={};
-      equipe.forEach(e=>{
-        const id=empIdOf(e);
-        stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0};
-      });
+      equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
 
       const weekRC={};
       const dailyLates=[],dailyPresence=[],labels=[];
@@ -792,7 +767,6 @@
       dates.forEach(dayISO=>{
         labels.push(dayISO.split('-')[2]);
         if(dayISO>today){ dailyLates.push(0); dailyPresence.push(0); return; }
-
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
           Object.keys(stats).forEach(id=>stats[id].excluded++);
@@ -805,16 +779,10 @@
         Object.keys(stats).forEach(id=>{
           const e=merged[id]||null;
 
-          if(!e){ stats[id].C++; return; }
+          if(!e){ stats[id].C++; return; } // absence => C
+          if(e.off){ const rc=classifyOffDay(id,dayISO,weekRC); stats[id][rc]++; return; }
 
-          if(e.off){
-            const rc=classifyOffDay(id,dayISO,weekRC);
-            stats[id][rc]++; // R ou C
-            return;
-          }
-
-          const ha = pickHA(e);
-          if(ha){
+          if(e.hA){
             const diff=diffFromEntry(e,id);
             stats[id].present++;
             stats[id].lateMin+=diff;
@@ -822,7 +790,7 @@
             return;
           }
 
-          stats[id].C++;
+          stats[id].C++; // pas OFF, pas arrivé => C
         });
 
         dailyLates.push(tL);
@@ -860,8 +828,123 @@
         });
       }
       html+='</div></div>';
-
       document.getElementById('dashBody').innerHTML=html;
+    }
+
+    /* ── R/C Monthly summary (re-used by Table + CSV month/year) ── */
+    async function buildMonthlySummary(mk){
+      const {dates,presByDay,punchByDay}=await getMonthData(mk);
+      const today=todayISO();
+
+      const out = {};
+      equipe.forEach(emp=>{
+        const id = empIdOf(emp);
+        out[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
+      });
+
+      const weekRC = {};
+
+      dates.forEach(dayISO=>{
+        if(dayISO>today) return;
+        if(isExcluded(dayISO)) return;
+
+        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+
+        Object.keys(out).forEach(id=>{
+          const e = merged[id] || null;
+
+          // aucune donnée => absence => C
+          if(!e){ out[id].C++; return; }
+
+          // off => R ou C
+          if(e.off){
+            const rc = classifyOffDay(id, dayISO, weekRC);
+            out[id][rc]++; // R ou C
+            return;
+          }
+
+          // arrivé => présent + retard HA-HP
+          if(e.hA){
+            out[id].present++;
+            out[id].lateMin += diffFromEntry(e, id);
+            return;
+          }
+
+          // ni off ni arrivé => C
+          out[id].C++;
+        });
+      });
+
+      return out;
+    }
+
+    async function renderRCView(){
+      const mk = monthKeyFromISO(dateInput.value);
+      const summary = await buildMonthlySummary(mk);
+
+      // Tri: poste puis nom
+      const rows = Object.values(summary).sort((a,b)=>{
+        if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
+        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+      });
+
+      // Totaux
+      let tP=0,tR=0,tC=0,tL=0;
+      rows.forEach(r=>{ tP+=r.present; tR+=r.R; tC+=r.C; tL+=r.lateMin; });
+
+      const html = `
+        <div class="glass-card rounded-3xl p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tableau R/C</div>
+              <div class="text-[12px] font-extrabold text-slate-900 mt-1">Mois: ${mk}</div>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <span class="chip chip-p">Présents: <b>${tP}</b></span>
+                <span class="chip chip-r">R: <b>${tR}</b></span>
+                <span class="chip chip-c">C: <b>${tC}</b></span>
+                <span class="chip">Retard: <b>${tL}m</b></span>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">CSV R/C Mois</button>
+              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">CSV R/C Année</button>
+            </div>
+          </div>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="rc-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Employé</th>
+                  <th style="text-align:left;">Poste</th>
+                  <th style="text-align:center;">Présents</th>
+                  <th style="text-align:center;">R</th>
+                  <th style="text-align:center;">C</th>
+                  <th style="text-align:center;">Retard (min)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r=>`
+                  <tr>
+                    <td style="font-weight:900;text-transform:uppercase;">${r.nom} ${r.prenom}</td>
+                    <td style="font-weight:800;color:#475569;">${r.poste}</td>
+                    <td style="text-align:center;font-weight:900;color:#065f46;">${r.present}</td>
+                    <td style="text-align:center;font-weight:900;color:#0f172a;">${r.R}</td>
+                    <td style="text-align:center;font-weight:900;color:#9a3412;">${r.C}</td>
+                    <td style="text-align:center;font-weight:900;color:#7c2d12;">${r.lateMin}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3 text-[10px] text-slate-500 font-semibold">
+            R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Retard = HA - HP (HP vient de présence si présent)
+          </div>
+        </div>
+      `;
+
+      document.getElementById('dashBody').innerHTML = html;
     }
 
     /* ── Historique ── */
@@ -884,7 +967,6 @@
     async function openHistory(nom,prenom){
       const modal=document.getElementById('historyModal');
       modal.classList.remove("hidden"); modal.classList.add('modal-active');
-
       document.getElementById('modalTitle').innerText=nom+" "+prenom;
       document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
@@ -900,33 +982,20 @@
       const weekRC={};
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){
-          html+=rowHistory(dayISO,"À venir","","","","text-slate-300");
-          return;
-        }
-        if(isExcluded(dayISO)){
-          html+=rowHistory(dayISO,"Exclu","","","","text-slate-400");
-          return;
-        }
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-slate-300"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-slate-400"); return; }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
 
-        if(!e){
-          html+=rowHistory(dayISO,"Congé","","","","text-slate-500","C");
-          return;
-        }
-
+        if(!e){ html+=rowHistory(dayISO,"Congé","","","","text-slate-500","C"); return; }
         if(e.off){
           const rc=classifyOffDay(empId,dayISO,weekRC);
-          html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",pickHP(e),pickHA(e),"","text-slate-500",rc);
+          html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",e.hP||"",e.hA||"","","text-slate-500",rc);
           return;
         }
-
-        const ha = pickHA(e);
-        const hp = pickHP(e);
-
-        if(ha){
+        if(e.hA){
+          const hp=e.hP||"",ha=e.hA||"";
           if(hp){
             const diff=diffFromEntry(e,empId);
             if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-600");
@@ -936,8 +1005,7 @@
           }
           return;
         }
-
-        html+=rowHistory(dayISO,"Congé",hp,ha,"","text-slate-500","C");
+        html+=rowHistory(dayISO,"Congé",e.hP||"",e.hA||"","","text-slate-500","C");
       });
 
       document.getElementById('modalList').innerHTML=html||'<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
@@ -948,9 +1016,14 @@
       m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
-    /* ───────────────────────────────
-       CSV DÉTAIL (mensuel) — comme avant
-       ─────────────────────────────── */
+    /* ── CSV helpers ── */
+    function escapeCSV(v){
+      const s = String(v ?? "");
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    /* ── CSV DÉTAILS (comme avant) ── */
     async function exportCSV_Month(){
       const mk=monthKeyFromISO(dateInput.value);
       const {dates,presByDay,punchByDay}=await getMonthData(mk);
@@ -960,147 +1033,55 @@
 
       dates.forEach(dayISO=>{
         if(dayISO>today||isExcluded(dayISO)) return;
-
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
 
         equipe.forEach(emp=>{
-          const id=empIdOf(emp);
-          const e=merged[id]||null;
+          const id=empIdOf(emp); const e=merged[id]||null;
 
-          let statut="CONGE", hp="", ha="", rmin="", rc="";
+          let statut="CONGE",hp="",ha="",rmin="",rc="";
           if(!e){
             statut="CONGE"; rc="C";
           }else{
-            hp=pickHP(e); ha=pickHA(e);
-
+            hp=e.hP||""; ha=e.hA||"";
             if(e.off){
               rc=classifyOffDay(id,dayISO,weekRC);
               statut=(rc==="R")?"REPOS":"CONGE";
-            }else if(ha){
+            }else if(e.hA){
               const diff=diffFromEntry(e,id);
               rmin=String(diff||0);
-              statut=(hp && diff>0)?"RETARD":(hp?"A_L_HEURE":"OK");
+              statut=(e.hP && diff>0) ? "RETARD" : (e.hP ? "A_L_HEURE" : "OK");
             }else{
               statut="CONGE"; rc="C";
             }
           }
 
-          lines.push([fmtFR(dayISO),`"${emp.nom} ${emp.prenom}"`,emp.poste,statut,hp,ha,rmin,rc].join(","));
+          lines.push([
+            fmtFR(dayISO),
+            escapeCSV(`${emp.nom} ${emp.prenom}`),
+            escapeCSV(emp.poste),
+            statut,
+            hp,
+            ha,
+            rmin,
+            rc
+          ].join(","));
         });
       });
 
       const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a");
-      a.href=url; a.download=`GC_DETAIL_${mk}.csv`;
+      a.href=url; a.download=`GC_DETAILS_${mk}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
-    /* ───────────────────────────────
-       TABLEAU R/C + CSV récap
-       ─────────────────────────────── */
-    function escapeCSV(v){
-      const s = String(v ?? "");
-      if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-      return s;
-    }
-
-    async function buildMonthlySummary(mk){
-      const {dates, presByDay, punchByDay} = await getMonthData(mk);
-      const today = todayISO();
-
-      const summary = {};
-      equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        summary[id] = { nom: emp.nom, prenom: emp.prenom, poste: emp.poste, present:0, R:0, C:0 };
-      });
-
-      const weekRC = {};
-
-      dates.forEach(dayISO=>{
-        if(dayISO > today) return;
-        if(isExcluded(dayISO)) return;
-
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
-        Object.keys(summary).forEach(empId=>{
-          const e = merged[empId] || null;
-
-          // absent => C
-          if(!e){
-            summary[empId].C++;
-            return;
-          }
-
-          // OFF => R/C
-          if(e.off){
-            const rc = classifyOffDay(empId, dayISO, weekRC);
-            if(rc === "R") summary[empId].R++;
-            else summary[empId].C++;
-            return;
-          }
-
-          // Présent si HA existe
-          if(pickHA(e)){
-            summary[empId].present++;
-            return;
-          }
-
-          // Ni OFF ni HA => C
-          summary[empId].C++;
-        });
-      });
-
-      return summary;
-    }
-
-    async function renderMonthlyRCTable(){
-      const mk = monthKeyFromISO(dateInput.value);
-      document.getElementById("rcTitle").textContent = `R/C — Mois: ${mk}`;
-      const tbody = document.getElementById("rcTbody");
-      tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-slate-500">Chargement…</td></tr>`;
-
-      const summary = await buildMonthlySummary(mk);
-
-      const rows = Object.entries(summary)
-        .map(([id,s])=>({id,...s}))
-        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
-
-      const render = (q="")=>{
-        const qq = q.trim().toUpperCase();
-        const filtered = !qq ? rows : rows.filter(r => (`${r.nom} ${r.prenom}`.toUpperCase().includes(qq)));
-        tbody.innerHTML = filtered.map(r=>`
-          <tr class="border-t border-slate-100">
-            <td class="py-2 font-extrabold uppercase text-slate-900">${r.nom} <span class="font-bold text-slate-400 normal-case">${r.prenom}</span></td>
-            <td class="py-2 text-slate-600 font-extrabold">${r.poste}</td>
-            <td class="py-2 text-center font-black text-slate-900">${r.present}</td>
-            <td class="py-2 text-center font-black text-slate-900">${r.R}</td>
-            <td class="py-2 text-center font-black text-slate-900">${r.C}</td>
-          </tr>
-        `).join("") || `<tr><td colspan="5" class="py-3 text-slate-500">Aucun résultat</td></tr>`;
-      };
-
-      const inp = document.getElementById("rcSearch");
-      inp.oninput = ()=> render(inp.value);
-      render(inp.value);
-    }
-
-    async function toggleRCTable(){
-      const wrap = document.getElementById("rcWrap");
-      const show = wrap.classList.contains("hidden");
-      wrap.classList.toggle("hidden", !show);
-      if(show){
-        await renderMonthlyRCTable();
-        setTimeout(()=>wrap.scrollIntoView({behavior:"smooth", block:"start"}), 50);
-      }
-    }
-
+    /* ── CSV R/C MOIS (1 ligne par employé) ── */
     async function exportCSV_RC_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const summary = await buildMonthlySummary(mk);
 
-      const header = ["Mois","Employe","Poste","Presents","R","C"];
+      const header = ["Mois","Employe","Poste","Presents","R","C","RetardMin"];
       const lines = [header.join(",")];
 
       Object.values(summary)
@@ -1112,7 +1093,8 @@
             escapeCSV(s.poste),
             s.present,
             s.R,
-            s.C
+            s.C,
+            s.lateMin
           ].join(","));
         });
 
@@ -1120,7 +1102,46 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `GC_RC_${mk}.csv`;
+      a.download = `GC_RC_MOIS_${mk}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ── CSV R/C ANNÉE (12 mois, format long) ── */
+    async function exportCSV_RC_Year(){
+      const year = dateInput.value.slice(0,4);
+
+      // 1 ligne = 1 employé + 1 mois (Excel Pivot-friendly)
+      const header = ["Annee","Mois","Employe","Poste","Presents","R","C","RetardMin"];
+      const lines = [header.join(",")];
+
+      for(let i=1;i<=12;i++){
+        const mk = `${year}-${String(i).padStart(2,"0")}`;
+        const summary = await buildMonthlySummary(mk);
+
+        Object.values(summary)
+          .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+          .forEach(s=>{
+            lines.push([
+              year,
+              mk,
+              escapeCSV(`${s.nom} ${s.prenom}`),
+              escapeCSV(s.poste),
+              s.present,
+              s.R,
+              s.C,
+              s.lateMin
+            ].join(","));
+          });
+      }
+
+      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `GC_RC_ANNEE_${year}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1131,7 +1152,7 @@
     async function bootDashboard(){
       dateInput.value=todayISO();
 
-      dateInput.addEventListener('change',async()=>{
+      dateInput.addEventListener('change', async()=>{
         clearMonthCache();
         await updateDashboard();
       });
