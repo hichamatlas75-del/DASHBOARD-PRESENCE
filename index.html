@@ -21,7 +21,7 @@
       --status-crit:#ef4444;
     }
     body{
-      font-family:'Plus Jakarta Sans',sans-serif;
+      font-family:'Plus+Jakarta+Sans',sans-serif;
       background:var(--grey-light);
       color:var(--grey-dark);
       -webkit-tap-highlight-color:transparent;
@@ -52,7 +52,18 @@
     .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-    #pdfArea{display:none;background:#fff;color:#111827}
+    /* ✅ FIX PDF vide: jamais display:none
+       -> on rend le container "invisible" mais rendu (html2canvas capture OK)
+    */
+    #pdfArea{
+      position:fixed;
+      left:-99999px;
+      top:0;
+      width:794px;            /* ~ A4 @ 96dpi */
+      background:#fff;
+      color:#111827;
+      visibility:hidden;
+    }
     .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
     .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
     .pdfKpi .t{font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;font-size:10px}
@@ -159,15 +170,28 @@
       <!-- OUTILS -->
       <div class="mt-6 space-y-4">
 
+        <!-- ✅ Choix du mois pour PDF -->
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
-          <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none"></select>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Employé</div>
+              <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none"></select>
+            </div>
+            <div>
+              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Mois PDF</div>
+              <input id="pdfMonth" type="month" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+            </div>
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">PDF MOIS</button>
             <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">PDF ANNÉE</button>
           </div>
+
           <div class="text-[10px] text-slate-500 font-semibold leading-snug">
-            ✅ Les dates <b>exclues</b> (01/01/2026 → 31/01/2026) ne sont <b>jamais comptabilisées</b>.
+            ✅ R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu.
           </div>
         </div>
 
@@ -251,7 +275,7 @@
     </div>
   </div>
 
-  <!-- Hidden PDF container -->
+  <!-- Hidden PDF container (OFFSCREEN) -->
   <div id="pdfArea" class="p-6">
     <div id="pdfHeader" class="mb-4"></div>
     <div id="pdfKpis" class="mb-4"></div>
@@ -357,9 +381,10 @@
     }
     function monthKeyFromISO(iso){ return (iso || "").slice(0,7); }
 
+    // ✅ retard HA-HP uniquement
     function getTimeDiff(a, p, id) {
       if(!a) return 0;
-      if(id && haOnlyIds.has(id)) return 0; // HA-only: jamais de retard
+      if(id && haOnlyIds.has(id)) return 0;
       if(!p) return 0;
       const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number);
       const d=(ha*60+ma)-(hp*60+mp);
@@ -367,7 +392,7 @@
     }
     function diffFromEntry(entry, empId){
       if(!entry) return 0;
-      return getTimeDiff(entry.hA, entry.hP, empId); // ✅ HA-HP ONLY
+      return getTimeDiff(entry.hA, entry.hP, empId);
     }
 
     function getStatusClass(diff, isOff, hasArrived) {
@@ -379,6 +404,18 @@
       }
       if (isOff) return 'status-off';
       return '';
+    }
+
+    // ✅ R/C : 1er OFF de la semaine = REPOS (R), OFF suivant = CONGÉ (C)
+    function classifyOffDay(empId, dayISO, weekRC){
+      const wk = weekStartMondayISO(dayISO);
+      weekRC[wk] ||= {};
+      weekRC[wk][empId] ||= 0;
+      if(weekRC[wk][empId] === 0){
+        weekRC[wk][empId] = 1;
+        return "R";
+      }
+      return "C";
     }
 
     // equipe helpers
@@ -576,7 +613,6 @@
       punchCache = {};
     }
 
-    // ✅ mergeDay: on ignore retard/retardMin DB, on calcule HA-HP
     function mergeDay(pres, punches){
       const merged = JSON.parse(JSON.stringify(pres || {}));
       const p = punches || {};
@@ -626,7 +662,10 @@
       updateDashboard();
     }
 
-    // getDatesInMonth/Year — UTC pur
+    // Month cache
+    const monthDataCache = new Map();
+    function clearMonthCache(){ monthDataCache.clear(); }
+
     function getDatesInMonth(seedISO){
       const {y,m} = parseISO(seedISO);
       const dates = [];
@@ -640,10 +679,6 @@
       return dates;
     }
     function getDatesInMonthKey(monthKey){ return getDatesInMonth(monthKey + "-01"); }
-
-    // Month cache
-    const monthDataCache = new Map();
-    function clearMonthCache(){ monthDataCache.clear(); }
 
     async function batchFetchPresPunch(dates){
       const [presSnaps, punchSnaps] = await Promise.all([
@@ -666,7 +701,6 @@
       return pack;
     }
 
-    // ✅ Ordre postes fixe
     const POSTES_ORDER = ['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
 
     function renderDayView(data){
@@ -692,21 +726,14 @@
           const sClass = getStatusClass(diff, !!d.off, !!d.hA);
 
           let statusText = 'ATTENTE', statusColor = 'text-slate-400';
-
           if(d.hA){
             if(d.hP){
-              if(diff > 0){
-                statusText = `${diff}m retard`;
-                statusColor = 'text-rose-600';
-              }else{
-                statusText = `À L'HEURE`;
-                statusColor = 'text-emerald-600';
-              }
+              if(diff > 0){ statusText = `${diff}m retard`; statusColor = 'text-rose-600'; }
+              else { statusText = `À L'HEURE`; statusColor = 'text-emerald-600'; }
             }else{
-              statusText = `OK`;
-              statusColor = 'text-emerald-600';
+              statusText = `OK`; statusColor = 'text-emerald-600';
             }
-          } else if(d.off){
+          }else if(d.off){
             statusText = "OFF";
             statusColor = "text-slate-400";
           }
@@ -786,14 +813,14 @@
       const stats = {};
       equipe.forEach(e => {
         const id = empIdOf(e);
-        stats[id] = { info:e, present:0, lateMin:0, conge:0, off:0, excluded:0 };
+        stats[id] = { info:e, present:0, lateMin:0, R:0, C:0, excluded:0 };
       });
 
+      const weekRC = {};
       const dailyLates = [], dailyPresence = [], labels = [];
 
       dates.forEach((dayISO) => {
         labels.push(dayISO.split('-')[2]);
-
         if(dayISO > today){ dailyLates.push(0); dailyPresence.push(0); return; }
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
@@ -806,8 +833,15 @@
 
         Object.keys(stats).forEach(id => {
           const e = merged[id] || null;
-          if(!e){ stats[id].conge++; return; }
-          if(e.off){ stats[id].off++; return; }
+
+          if(!e){ stats[id].C++; return; } // absence => C
+
+          if(e.off){
+            const rc = classifyOffDay(id, dayISO, weekRC);
+            stats[id][rc]++; // R ou C
+            return;
+          }
+
           if(e.hA){
             const diff = diffFromEntry(e, id);
             stats[id].present++;
@@ -815,7 +849,8 @@
             tL += diff; tP++;
             return;
           }
-          stats[id].conge++;
+
+          stats[id].C++; // pas OFF, pas arrivé => C
         });
 
         dailyLates.push(tL);
@@ -857,13 +892,14 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    // Historique (vignette)
-    function rowHistory(dayISO, statut, hp, ha, retard, cls){
+    // Historique
+    function rowHistory(dayISO, statut, hp, ha, retard, cls, rc){
+      const rcTxt = rc ? ` • ${rc}` : "";
       return `
         <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
           <div class="flex justify-between items-center">
             <span class="text-[10px] font-black text-slate-400 uppercase">${fmtFR(dayISO)}</span>
-            <span class="text-[10px] font-black ${cls} uppercase">${statut}</span>
+            <span class="text-[10px] font-black ${cls} uppercase">${statut}${rcTxt}</span>
           </div>
           <div class="mt-2 grid grid-cols-3 gap-2">
             <div class="text-[10px] font-extrabold text-slate-500">HP: <span class="text-slate-900">${hp||"—"}</span></div>
@@ -890,6 +926,7 @@
       const today = todayISO();
       const empId = nom + '_' + prenom;
 
+      const weekRC = {};
       let html = "";
       dates.slice().reverse().forEach((dayISO) => {
         if(dayISO > today){
@@ -905,11 +942,12 @@
         const e = merged[empId] || null;
 
         if(!e){
-          html += rowHistory(dayISO, "Congé", "", "", "", "text-slate-500");
+          html += rowHistory(dayISO, "Congé", "", "", "", "text-slate-500", "C");
           return;
         }
         if(e.off){
-          html += rowHistory(dayISO, "OFF", e.hP||"", e.hA||"", "", "text-slate-400");
+          const rc = classifyOffDay(empId, dayISO, weekRC);
+          html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", e.hP||"", e.hA||"", "", "text-slate-500", rc);
           return;
         }
         if(e.hA){
@@ -918,16 +956,16 @@
           if(hp){
             const diff = diffFromEntry(e, empId);
             if(diff > 0){
-              html += rowHistory(dayISO, "RETARD", hp, ha, `+${diff}m`, "text-rose-600");
+              html += rowHistory(dayISO, "Retard", hp, ha, `+${diff}m`, "text-rose-600");
             }else{
-              html += rowHistory(dayISO, "À L'HEURE", hp, ha, "0", "text-emerald-600");
+              html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "text-emerald-600");
             }
           }else{
             html += rowHistory(dayISO, "OK", "", ha, "", "text-emerald-600");
           }
           return;
         }
-        html += rowHistory(dayISO, "Congé", e.hP||"", e.hA||"", "", "text-slate-500");
+        html += rowHistory(dayISO, "Congé", e.hP||"", e.hA||"", "", "text-slate-500", "C");
       });
 
       document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
@@ -940,8 +978,8 @@
     }
 
     // PDF helpers
-    function showPDF(el){ el.style.display="block"; }
-    function hidePDF(el){ el.style.display="none"; }
+    function showPDF(el){ el.style.visibility="visible"; }
+    function hidePDF(el){ el.style.visibility="hidden"; }
 
     function pdfHeader(title, sub){
       const date = dateInput.value;
@@ -961,6 +999,23 @@
         <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />`;
     }
     function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
+
+    async function exportPDF(filename){
+      const el = document.getElementById("pdfArea");
+      showPDF(el);
+
+      // ✅ FIX: attendre le "reflow" avant capture (sinon page blanche sur Android)
+      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 60)));
+
+      return html2pdf().set({
+        margin:8,
+        filename,
+        image:{type:'jpeg',quality:1},
+        html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['css','legacy']}
+      }).from(el).save().finally(()=>hidePDF(el));
+    }
 
     async function downloadPDF_Day(){
       const dayISO = dateInput.value;
@@ -1028,27 +1083,20 @@
           <tbody>${rows}</tbody>
         </table>`;
 
-      const el = document.getElementById("pdfArea");
-      showPDF(el);
-      html2pdf().set({
-        margin:8,
-        filename:`GC_RH_JOUR_${dayISO}.pdf`,
-        image:{type:'jpeg',quality:1},
-        html2canvas:{scale:2,useCORS:true},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['css','legacy']}
-      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
+      await exportPDF(`GC_RH_JOUR_${dayISO}.pdf`);
     }
 
-    // ✅ PDF employé MOIS (table unique)
+    // ✅ PDF employé MOIS : ajoute R / C
     async function downloadPDF_EmployeeMonth(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
-      const mk = monthKeyFromISO(dateInput.value);
+
+      const mk = (document.getElementById("pdfMonth").value || monthKeyFromISO(dateInput.value));
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
 
       const today = todayISO();
-      let present=0, off=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
+      let present=0, R=0, C=0, lateMin=0, excluded=0, ignoredFuture=0;
+      const weekRC = {};
 
       const rows = dates.map((dayISO)=>{
         if(dayISO > today){ ignoredFuture++; return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`; }
@@ -1057,8 +1105,13 @@
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
         const e = merged[empId] || null;
 
-        if(!e){ conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`; }
-        if(e.off){ off++; return `<tr><td>${fmtFR(dayISO)}</td><td>OFF</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`; }
+        if(!e){ C++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
+
+        if(e.off){
+          const rc = classifyOffDay(empId, dayISO, weekRC);
+          if(rc === "R") R++; else C++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R" ? "Repos (R)" : "Congé (C)"}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        }
 
         if(e.hA){
           present++;
@@ -1069,14 +1122,17 @@
           return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
         }
 
-        conge++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        C++;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
       }).join("");
 
       document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`, `Mois: ${mk}`);
       document.getElementById("pdfKpis").innerHTML = `
         <div class="pdfKpi">
-          ${kpiBox("Présents",present)}${kpiBox("OFF",off)}${kpiBox("Congés",conge)}${kpiBox("Retard (min)",lateMin)}
+          ${kpiBox("Présents",present)}
+          ${kpiBox("Repos (R)",R)}
+          ${kpiBox("Congés (C)",C)}
+          ${kpiBox("Retard (min)",lateMin)}
         </div>
         <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">Exclu: ${excluded} • Futurs ignorés: ${ignoredFuture}</div>`;
       document.getElementById("pdfContent").innerHTML = `
@@ -1088,26 +1144,18 @@
           <tbody>${rows}</tbody>
         </table>`;
 
-      const el = document.getElementById("pdfArea");
-      showPDF(el);
-      html2pdf().set({
-        margin:8,
-        filename:`GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`,
-        image:{type:'jpeg',quality:1},
-        html2canvas:{scale:2,useCORS:true},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['css','legacy']}
-      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
+      await exportPDF(`GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`);
     }
 
-    // ✅ PDF employé ANNÉE (1 table par mois + pagebreak => évite PDF vide)
+    // ✅ PDF employé ANNÉE : R / C + sections par mois (pagebreak)
     async function downloadPDF_EmployeeYear(){
       const empId = document.getElementById("empSelect").value;
       const emp = getEmpById(empId);
+
       const year = dateInput.value.slice(0,4);
       const today = todayISO();
 
-      let present=0, off=0, conge=0, lateMin=0, excluded=0, ignoredFuture=0;
+      let present=0, R=0, C=0, lateMin=0, excluded=0, ignoredFuture=0;
 
       const months = Array.from({length:12}, (_,i)=> `${year}-${String(i+1).padStart(2,"0")}`);
       let content = "";
@@ -1116,6 +1164,9 @@
         const mk = months[mi];
         const { dates, presByDay, punchByDay } = await getMonthData(mk);
 
+        const weekRC = {};
+        let mPresent=0, mR=0, mC=0, mLate=0;
+
         const rows = dates.map((dayISO)=>{
           if(dayISO > today){ ignoredFuture++; return ""; }
           if(isExcluded(dayISO)){ excluded++; return ""; }
@@ -1123,26 +1174,39 @@
           const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
           const e = merged[empId] || null;
 
-          if(!e){ conge++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td></td><td></td><td></td></tr>`; }
-          if(e.off){ off++; return `<tr><td>${fmtFR(dayISO)}</td><td>OFF</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`; }
+          if(!e){ mC++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
+
+          if(e.off){
+            const rc = classifyOffDay(empId, dayISO, weekRC);
+            if(rc==="R") mR++; else mC++;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R" ? "Repos (R)" : "Congé (C)"}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          }
 
           if(e.hA){
-            present++;
+            mPresent++;
             const diff = diffFromEntry(e, empId);
-            lateMin += diff;
+            mLate += diff;
             const st = (e.hP && diff>0) ? "Retard" : (e.hP ? "À l'heure" : "OK");
             const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
             return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
           }
 
-          conge++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          mC++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
         }).filter(Boolean).join("");
 
-        // même si mois vide, on affiche un petit bloc
+        // totals année
+        present += mPresent; R += mR; C += mC; lateMin += mLate;
+
         content += `
           ${mi===0 ? "" : `<div class="pagebreak"></div>`}
           <div style="font-weight:900;font-size:14px;color:#111827;margin:4px 0 8px;">Mois : ${mk}</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
+            <div class="pdfBox"><div class="t">Présents</div><div class="v">${mPresent}</div></div>
+            <div class="pdfBox"><div class="t">Repos (R)</div><div class="v">${mR}</div></div>
+            <div class="pdfBox"><div class="t">Congés (C)</div><div class="v">${mC}</div></div>
+            <div class="pdfBox"><div class="t">Retard (min)</div><div class="v">${mLate}</div></div>
+          </div>
           <table class="pdfTable">
             <thead><tr>
               <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
@@ -1158,23 +1222,17 @@
       document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`, `Année: ${year}`);
       document.getElementById("pdfKpis").innerHTML = `
         <div class="pdfKpi">
-          ${kpiBox("Présents",present)}${kpiBox("OFF",off)}${kpiBox("Congés",conge)}${kpiBox("Retard (min)",lateMin)}
+          ${kpiBox("Présents",present)}
+          ${kpiBox("Repos (R)",R)}
+          ${kpiBox("Congés (C)",C)}
+          ${kpiBox("Retard (min)",lateMin)}
         </div>
         <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
           Exclu (01/01/2026 → 31/01/2026): ${excluded} ignorés • Futurs ignorés: ${ignoredFuture}
         </div>`;
       document.getElementById("pdfContent").innerHTML = content;
 
-      const el = document.getElementById("pdfArea");
-      showPDF(el);
-      html2pdf().set({
-        margin:8,
-        filename:`GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`,
-        image:{type:'jpeg',quality:1},
-        html2canvas:{scale:2,useCORS:true},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['css','legacy']}
-      }).from(el).save().then(()=>hidePDF(el)).catch(()=>hidePDF(el));
+      await exportPDF(`GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`);
     }
 
     // Export CSV mensuel
@@ -1182,7 +1240,9 @@
       const mk = monthKeyFromISO(dateInput.value);
       const { dates, presByDay, punchByDay } = await getMonthData(mk);
       const today = todayISO();
-      const lines = [["Date","Employe","Poste","Statut","HP","HA","RetardMin"].join(",")];
+      const lines = [["Date","Employe","Poste","Statut","HP","HA","RetardMin","RC"].join(",")];
+
+      const weekRC = {};
 
       dates.forEach(dayISO => {
         if(dayISO > today) return;
@@ -1194,17 +1254,24 @@
           const id = empIdOf(emp);
           const e = merged[id] || null;
 
-          let statut="CONGÉ", hp="", ha="", rmin="";
-          if(e){
+          let statut="CONGE", hp="", ha="", rmin="", rc="";
+          if(!e){
+            statut="CONGE"; rc="C";
+          }else{
             hp=e.hP||""; ha=e.hA||"";
-            if(e.off) statut="OFF";
-            if(e.hA){
+            if(e.off){
+              rc = classifyOffDay(id, dayISO, weekRC);
+              statut = (rc==="R") ? "REPOS" : "CONGE";
+            }else if(e.hA){
               const diff = diffFromEntry(e, id);
               rmin = String(diff||0);
               statut = (e.hP && diff>0) ? "RETARD" : (e.hP ? "A_L_HEURE" : "OK");
+            }else{
+              statut="CONGE"; rc="C";
             }
           }
-          lines.push([fmtFR(dayISO), `"${emp.nom} ${emp.prenom}"`, emp.poste, statut, hp, ha, rmin].join(","));
+
+          lines.push([fmtFR(dayISO), `"${emp.nom} ${emp.prenom}"`, emp.poste, statut, hp, ha, rmin, rc].join(","));
         });
       });
 
@@ -1220,8 +1287,12 @@
     async function bootDashboard(){
       dateInput.value = todayISO();
 
+      // ✅ init pdfMonth par défaut = mois du dashDate
+      document.getElementById("pdfMonth").value = monthKeyFromISO(dateInput.value);
+
       dateInput.addEventListener('change', async () => {
         clearMonthCache();
+        document.getElementById("pdfMonth").value = monthKeyFromISO(dateInput.value);
         await updateDashboard();
       });
 
