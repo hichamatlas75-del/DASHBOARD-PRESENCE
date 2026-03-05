@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Direction Hub • Grey Corner Fès</title>
+  <title>Direction Hub • Grey Corner</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,7 +104,7 @@
         <div>
           <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Accès sécurisé</div>
           <div class="text-xl font-black text-slate-900 mt-1">Connexion Gérant</div>
-          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</div>
+          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</div>
         </div>
         <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">RH</div>
       </div>
@@ -121,7 +121,7 @@
       <header class="flex justify-between items-start mb-6">
         <div>
           <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
-          <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</p>
+          <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</p>
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
             Connecté : <span id="roleLabel" class="text-slate-900">—</span>
           </p>
@@ -129,7 +129,7 @@
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <!-- ✅ SUPPRIMÉ: boutons CSV en haut -->
+          <!-- ✅ CSV en haut supprimés -->
           <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
             Déconnexion
           </button>
@@ -144,15 +144,15 @@
           <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
         </div>
 
-        <!-- ✅ Choix du mois (remplace le date picker jour) -->
+        <!-- ✅ Choix du mois -->
         <div class="glass-card rounded-2xl p-4">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Choix du mois</div>
           <input type="month" id="monthPicker" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-extrabold text-slate-800 outline-none">
-          <!-- gardé en hidden pour la logique existante -->
+          <!-- hidden seed date pour logique existante -->
           <input type="date" id="dashDate" class="hidden">
         </div>
 
-        <!-- ✅ Bloc CSV (seul bloc conservé) -->
+        <!-- ✅ Bloc exports (seul bloc CSV conservé) -->
         <div class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -167,7 +167,7 @@
                 Export R/C Mois
               </button>
               <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
-                Export R/C Année
+                Export Année (résumé)
               </button>
             </div>
           </div>
@@ -218,7 +218,7 @@
         <div>
           <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Admin</div>
           <div class="text-xl font-black text-slate-900 mt-1">Gérer l'équipe</div>
-          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner Fès</div>
+          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</div>
         </div>
         <button class="px-3 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold" onclick="closeStaffAdmin()">Fermer</button>
       </div>
@@ -286,8 +286,9 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const dateInput    = document.getElementById('dashDate');   // hidden, sert de "seed day"
+    const dateInput    = document.getElementById('dashDate');   // hidden seed day
     const monthPicker  = document.getElementById('monthPicker');
+
     const loginWrap    = document.getElementById("loginWrap");
     const appWrap      = document.getElementById("appWrap");
     const roleLabel    = document.getElementById("roleLabel");
@@ -362,8 +363,6 @@
       return `${d}/${m}/${y}`;
     }
     function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
-
-    // ✅ Seed day ISO depuis un monthKey (YYYY-MM) => YYYY-MM-01
     function isoFromMonthKey(mk){ return mk + "-01"; }
 
     /* ── Retard (HA-HP uniquement) ── */
@@ -829,7 +828,7 @@
       document.getElementById('dashBody').innerHTML=html;
     }
 
-    /* ── R/C Monthly summary ── */
+    /* ── Monthly summary (utilisé pour Table + CSV mois + CSV année résumé) ── */
     async function buildMonthlySummary(mk){
       const {dates,presByDay,punchByDay}=await getMonthData(mk);
       const today=todayISO();
@@ -852,17 +851,20 @@
           const e = merged[id] || null;
 
           if(!e){ out[id].C++; return; } // absence => C
+
           if(e.off){
             const rc = classifyOffDay(id, dayISO, weekRC);
             out[id][rc]++; // R ou C
             return;
           }
+
           if(e.hA){
             out[id].present++;
             out[id].lateMin += diffFromEntry(e, id);
             return;
           }
-          out[id].C++;
+
+          out[id].C++; // ni off ni arrivé => C
         });
       });
 
@@ -894,10 +896,9 @@
                 <span class="chip">Retard: <b>${tL}m</b></span>
               </div>
             </div>
-            <div class="flex flex-col gap-2">
-              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">CSV R/C Mois</button>
-              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">CSV R/C Année</button>
-            </div>
+
+            <!-- ✅ CSV en double supprimés ici -->
+            <div class="hidden"></div>
           </div>
 
           <div class="mt-4 overflow-x-auto">
@@ -1012,65 +1013,12 @@
       return s;
     }
 
-    /* ── CSV DÉTAILS (gardé mais pas de bouton en haut) ── */
-    async function exportCSV_Month(){
-      const mk=monthKeyFromISO(dateInput.value);
-      const {dates,presByDay,punchByDay}=await getMonthData(mk);
-      const today=todayISO();
-      const lines=[["Date","Employe","Poste","Statut","HP","HA","RetardMin","RC"].join(",")];
-      const weekRC={};
-
-      dates.forEach(dayISO=>{
-        if(dayISO>today||isExcluded(dayISO)) return;
-        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-
-        equipe.forEach(emp=>{
-          const id=empIdOf(emp); const e=merged[id]||null;
-
-          let statut="CONGE",hp="",ha="",rmin="",rc="";
-          if(!e){
-            statut="CONGE"; rc="C";
-          }else{
-            hp=e.hP||""; ha=e.hA||"";
-            if(e.off){
-              rc=classifyOffDay(id,dayISO,weekRC);
-              statut=(rc==="R")?"REPOS":"CONGE";
-            }else if(e.hA){
-              const diff=diffFromEntry(e,id);
-              rmin=String(diff||0);
-              statut=(e.hP && diff>0) ? "RETARD" : (e.hP ? "A_L_HEURE" : "OK");
-            }else{
-              statut="CONGE"; rc="C";
-            }
-          }
-
-          lines.push([
-            fmtFR(dayISO),
-            escapeCSV(`${emp.nom} ${emp.prenom}`),
-            escapeCSV(emp.poste),
-            statut,
-            hp,
-            ha,
-            rmin,
-            rc
-          ].join(","));
-        });
-      });
-
-      const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url; a.download=`GC_DETAILS_${mk}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    /* ── CSV R/C MOIS ── */
+    /* ── CSV R/C MOIS (1 ligne par employé) ── */
     async function exportCSV_RC_Month(){
       const mk = monthKeyFromISO(dateInput.value);
       const summary = await buildMonthlySummary(mk);
 
-      const header = ["Mois","Employe","Poste","Presents","R","C","RetardMin"];
+      const header = ["Mois","Employe","Poste","Presents","ReposR","CongeC","RetardMin"];
       const lines = [header.join(",")];
 
       Object.values(summary)
@@ -1098,38 +1046,80 @@
       URL.revokeObjectURL(url);
     }
 
-    /* ── CSV R/C ANNÉE (12 mois) ── */
+    /* ── CSV ANNÉE RÉSUMÉ (1 ligne par employé) ── */
     async function exportCSV_RC_Year(){
       const year = dateInput.value.slice(0,4);
 
-      const header = ["Annee","Mois","Employe","Poste","Presents","R","C","RetardMin"];
-      const lines = [header.join(",")];
+      // Init pour inclure tout le monde
+      const totalsByEmp = {};
+      equipe.forEach(emp=>{
+        const id = empIdOf(emp);
+        totalsByEmp[id] = {
+          empId: id,
+          nom: emp.nom,
+          prenom: emp.prenom,
+          poste: emp.poste,
+          present: 0,
+          R: 0,       // repos
+          C: 0,       // congé
+          lateMin: 0  // retard total
+        };
+      });
 
       for(let i=1;i<=12;i++){
         const mk = `${year}-${String(i).padStart(2,"0")}`;
         const summary = await buildMonthlySummary(mk);
 
-        Object.values(summary)
-          .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-          .forEach(s=>{
-            lines.push([
-              year,
-              mk,
-              escapeCSV(`${s.nom} ${s.prenom}`),
-              escapeCSV(s.poste),
-              s.present,
-              s.R,
-              s.C,
-              s.lateMin
-            ].join(","));
-          });
+        Object.values(summary).forEach(s=>{
+          if(!totalsByEmp[s.empId]){
+            totalsByEmp[s.empId] = {
+              empId: s.empId,
+              nom: s.nom || s.empId,
+              prenom: s.prenom || "",
+              poste: s.poste || "",
+              present: 0,
+              R: 0,
+              C: 0,
+              lateMin: 0
+            };
+          }
+          totalsByEmp[s.empId].present += Number(s.present)||0;
+          totalsByEmp[s.empId].R       += Number(s.R)||0;
+          totalsByEmp[s.empId].C       += Number(s.C)||0;       // ✅ congé seulement
+          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
+        });
       }
+
+      const header = [
+        "Annee",
+        "Employe",
+        "Poste",
+        "PresentsTotal",
+        "ReposTotal",
+        "CongeCumuleAnnee",
+        "RetardTotalMin"
+      ];
+      const lines = [header.join(",")];
+
+      Object.values(totalsByEmp)
+        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+        .forEach(t=>{
+          lines.push([
+            year,
+            escapeCSV(`${t.nom} ${t.prenom}`.trim()),
+            escapeCSV(t.poste),
+            t.present,
+            t.R,
+            t.C,
+            t.lateMin
+          ].join(","));
+        });
 
       const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `GC_RC_ANNEE_${year}.csv`;
+      a.download = `GC_RC_ANNEE_RESUME_${year}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1141,11 +1131,11 @@
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
-      // ✅ init month picker + seed day
+      // init month picker + seed day
       monthPicker.value = mkToday;
       dateInput.value = isoFromMonthKey(mkToday);
 
-      // ✅ quand on change le mois
+      // changement de mois
       monthPicker.addEventListener('change', async()=>{
         const mk = monthPicker.value || mkToday;
         dateInput.value = isoFromMonthKey(mk);
