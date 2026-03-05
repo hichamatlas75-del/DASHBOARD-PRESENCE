@@ -21,7 +21,7 @@
       --status-crit:#ef4444;
     }
     body{
-      font-family:'Plus Jakarta Sans',sans-serif; /* ✅ FIX */
+      font-family:'Plus Jakarta Sans',sans-serif;
       background:var(--grey-light);
       color:var(--grey-dark);
       -webkit-tap-highlight-color:transparent;
@@ -52,21 +52,21 @@
     .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-    /* ✅ FIX PDF vide (Android/html2canvas) :
-       - jamais position:fixed
-       - jamais display:none
-       - hors viewport via left négatif, mais rendu/capturable
+    /*
+      ✅ FIX PDF VIDE (Android/Safari) :
+      - zone rendue (opacity:0) jamais display:none/visibility:hidden
+      - scrollX/scrollY = 0 dans html2canvas
     */
     #pdfArea{
-      position:absolute;
-      left:-100000px;
-      top:0;
-      width:794px;              /* ~ A4 @ 96dpi */
-      background:#fff;
-      color:#111827;
-      visibility:hidden;
-      display:block;
-      pointer-events:none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 794px;         /* ~ A4 @ 96dpi */
+      background: #fff;
+      color: #111827;
+      opacity: 0;           /* invisible MAIS rendu */
+      pointer-events: none;
+      z-index: -1;
     }
     .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
     .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -174,7 +174,6 @@
       <!-- OUTILS -->
       <div class="mt-6 space-y-4">
 
-        <!-- ✅ Choix du mois pour PDF -->
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
 
@@ -279,7 +278,7 @@
     </div>
   </div>
 
-  <!-- Hidden PDF container (OFFSCREEN) -->
+  <!-- Zone PDF hors-écran (opacity:0, rendu) -->
   <div id="pdfArea" class="p-6">
     <div id="pdfHeader" class="mb-4"></div>
     <div id="pdfKpis" class="mb-4"></div>
@@ -309,9 +308,9 @@
 
     const dateInput = document.getElementById('dashDate');
     const loginWrap = document.getElementById("loginWrap");
-    const appWrap = document.getElementById("appWrap");
+    const appWrap   = document.getElementById("appWrap");
     const roleLabel = document.getElementById("roleLabel");
-    const syncLine = document.getElementById("syncLine");
+    const syncLine  = document.getElementById("syncLine");
 
     let currentMode = 'day', myChart = null;
     let role = null;
@@ -321,56 +320,63 @@
     const EQUIPE_PATH = "settings/equipe";
 
     const equipe = [
-      {nom:'BOUCHNAK', prenom:'NAOUAL', poste:'CUISINE'},
-      {nom:'ALAOUI', prenom:'LAZIZ', poste:'SERVICE'},
-      {nom:'BELQASSE', prenom:'KHAOULA', poste:'CUISINE'},
-      {nom:'BENKHADA', prenom:'ABDESLAM', poste:'CAISSE'},
-      {nom:'BOURAHMA', prenom:'ANAS', poste:'CUISINE'},
-      {nom:'CHKAIRI', prenom:'YOUSSEF', poste:'BAR'},
-      {nom:'ELKOBBI', prenom:'MOSTAFA', poste:'BAR'},
-      {nom:'ELGORRAMY', prenom:'ANISSA', poste:'MENAGE'},
-      {nom:'ELGORRAMY', prenom:'SOUAD', poste:'MENAGE'},
-      {nom:'ELMCHAOURI', prenom:'SOUAD', poste:'MENAGE'},
-      {nom:'ENNHAILI', prenom:'SOUMIA', poste:'ECONOMAT'},
-      {nom:'FILALI', prenom:'ABDERAFI', poste:'BAR'},
-      {nom:'HATTAF', prenom:'MOHAMED', poste:'SERVICE'},
-      {nom:'HIDARA', prenom:'YOUSSEF', poste:'SERVICE'},
-      {nom:'IDRISSI', prenom:'SAAD', poste:'CUISINE'},
-      {nom:'KAFOUNI', prenom:'ZAKARIAE', poste:'SERVICE'},
-      {nom:'KHALOUQ', prenom:'RACHID', poste:'BAR'},
-      {nom:'LEMSSIEH', prenom:'JAWAD', poste:'CUISINE'},
-      {nom:'MAJDOUB', prenom:'JIHANE', poste:'CUISINE'},
-      {nom:'MOHSINE', prenom:'YOUNESS', poste:'SERVICE'},
-      {nom:'MOUJAHID', prenom:'IMANE', poste:'CUISINE'},
-      {nom:'SALIL', prenom:'HOUDA', poste:'CAISSE'},
-      {nom:'SBAI', prenom:'HAKIMA', poste:'MENAGE'},
-      {nom:'ZAIR', prenom:'FATIMA', poste:'CUISINE'}
+      {nom:'BOUCHNAK',   prenom:'NAOUAL',    poste:'CUISINE'},
+      {nom:'ALAOUI',     prenom:'LAZIZ',     poste:'SERVICE'},
+      {nom:'BELQASSE',   prenom:'KHAOULA',   poste:'CUISINE'},
+      {nom:'BENKHADA',   prenom:'ABDESLAM',  poste:'CAISSE'},
+      {nom:'BOURAHMA',   prenom:'ANAS',      poste:'CUISINE'},
+      {nom:'CHKAIRI',    prenom:'YOUSSEF',   poste:'BAR'},
+      {nom:'ELKOBBI',    prenom:'MOSTAFA',   poste:'BAR'},
+      {nom:'ELGORRAMY',  prenom:'ANISSA',    poste:'MENAGE'},
+      {nom:'ELGORRAMY',  prenom:'SOUAD',     poste:'MENAGE'},
+      {nom:'ELMCHAOURI', prenom:'SOUAD',     poste:'MENAGE'},
+      {nom:'ENNHAILI',   prenom:'SOUMIA',    poste:'ECONOMAT'},
+      {nom:'FILALI',     prenom:'ABDERAFI',  poste:'BAR'},
+      {nom:'HATTAF',     prenom:'MOHAMED',   poste:'SERVICE'},
+      {nom:'HIDARA',     prenom:'YOUSSEF',   poste:'SERVICE'},
+      {nom:'IDRISSI',    prenom:'SAAD',      poste:'CUISINE'},
+      {nom:'KAFOUNI',    prenom:'ZAKARIAE',  poste:'SERVICE'},
+      {nom:'KHALOUQ',    prenom:'RACHID',    poste:'BAR'},
+      {nom:'LEMSSIEH',   prenom:'JAWAD',     poste:'CUISINE'},
+      {nom:'MAJDOUB',    prenom:'JIHANE',    poste:'CUISINE'},
+      {nom:'MOHSINE',    prenom:'YOUNESS',   poste:'SERVICE'},
+      {nom:'MOUJAHID',   prenom:'IMANE',     poste:'CUISINE'},
+      {nom:'SALIL',      prenom:'HOUDA',     poste:'CAISSE'},
+      {nom:'SBAI',       prenom:'HAKIMA',    poste:'MENAGE'},
+      {nom:'ZAIR',       prenom:'FATIMA',    poste:'CUISINE'}
     ];
 
-    const haOnlyIds = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
+    // employés HA-only (pas de HP => pas de retard)
+    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
+
+    // exclure janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
 
-    // Dates sûres UTC
-    function parseISO(iso){ const [y,m,d] = iso.split("-").map(Number); return {y,m,d}; }
+    /* ─────────────
+       Normalisation clés (HP/HA)
+       - HP est sur presences
+       - HA est sur punches
+       On accepte aussi hp/ha au cas où une ancienne version a écrit en minuscules.
+    ───────────── */
+    function pickHP(e){ return (e?.hP ?? e?.hp ?? ""); }
+    function pickHA(e){ return (e?.hA ?? e?.ha ?? ""); }
+
+    /* ── Dates UTC ── */
+    function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
     function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
     function addDaysISO(iso, delta){
-      const {y,m,d} = parseISO(iso);
-      const t = Date.UTC(y, m-1, d) + delta*86400000;
-      const dt = new Date(t);
-      return toISO(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate());
+      const {y,m,d}=parseISO(iso);
+      const t=Date.UTC(y,m-1,d)+delta*86400000;
+      const dt=new Date(t);
+      return toISO(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());
     }
     function weekStartMondayISO(iso){
-      const {y,m,d} = parseISO(iso);
-      const dt = new Date(Date.UTC(y, m-1, d));
-      const dow = dt.getUTCDay();
-      const shift = (dow === 0) ? 6 : (dow - 1);
-      return addDaysISO(iso, -shift);
-    }
-    function getWeekDatesISO(iso){
-      const start = weekStartMondayISO(iso);
-      return Array.from({length:7}, (_,i)=> addDaysISO(start, i));
+      const {y,m,d}=parseISO(iso);
+      const dt=new Date(Date.UTC(y,m-1,d));
+      const dow=dt.getUTCDay();
+      return addDaysISO(iso, -(dow===0?6:dow-1));
     }
 
     function todayISO(){
@@ -379,76 +385,69 @@
       }).format(new Date());
     }
     function fmtFR(iso){
-      if(!iso || !iso.includes("-")) return iso || "";
-      const [y,m,d] = iso.split("-");
+      if(!iso||!iso.includes("-")) return iso||"";
+      const [y,m,d]=iso.split("-");
       return `${d}/${m}/${y}`;
     }
-    function monthKeyFromISO(iso){ return (iso || "").slice(0,7); }
+    function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
 
-    // ✅ retard = HA-HP uniquement
-    function getTimeDiff(a, p, id) {
-      if(!a) return 0;
+    /* ── Retard = HA - HP uniquement ── */
+    function getTimeDiff(ha, hp, id){
+      if(!ha) return 0;
       if(id && haOnlyIds.has(id)) return 0;
-      if(!p) return 0;
-      const [ha,ma]=a.split(':').map(Number), [hp,mp]=p.split(':').map(Number);
-      const d=(ha*60+ma)-(hp*60+mp);
+      if(!hp) return 0;
+      const [h1,m1]=String(ha).split(':').map(Number);
+      const [h2,m2]=String(hp).split(':').map(Number);
+      const d=(h1*60+m1)-(h2*60+m2);
       return d>0?d:0;
     }
     function diffFromEntry(entry, empId){
       if(!entry) return 0;
-      return getTimeDiff(entry.hA, entry.hP, empId);
+      return getTimeDiff(pickHA(entry), pickHP(entry), empId);
     }
 
-    function getStatusClass(diff, isOff, hasArrived) {
-      if (hasArrived) {
-        if (diff <= 0) return 'status-green';
-        if (diff > 0 && diff < 30) return 'status-orange';
-        if (diff >= 30 && diff < 60) return 'status-red';
-        if (diff >= 60) return 'status-flash';
+    function getStatusClass(diff,isOff,hasArrived){
+      if(hasArrived){
+        if(diff<=0) return 'status-green';
+        if(diff<30)  return 'status-orange';
+        if(diff<60)  return 'status-red';
+        return 'status-flash';
       }
-      if (isOff) return 'status-off';
+      if(isOff) return 'status-off';
       return '';
     }
 
-    // ✅ R/C : 1er OFF de la semaine = REPOS (R), OFF suivant = CONGÉ (C)
-    function classifyOffDay(empId, dayISO, weekRC){
-      const wk = weekStartMondayISO(dayISO);
-      weekRC[wk] ||= {};
-      weekRC[wk][empId] ||= 0;
-      if(weekRC[wk][empId] === 0){
-        weekRC[wk][empId] = 1;
-        return "R";
-      }
+    /* ── R / C ── */
+    function classifyOffDay(empId,dayISO,weekRC){
+      const wk=weekStartMondayISO(dayISO);
+      weekRC[wk]||={};
+      weekRC[wk][empId]||=0;
+      if(weekRC[wk][empId]===0){ weekRC[wk][empId]=1; return "R"; }
       return "C";
     }
 
-    // equipe helpers
-    function empIdOf(emp){ return (emp.nom+"_"+emp.prenom); }
+    /* ── Equipe helpers ── */
+    function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
     function getEmpById(empId){
-      const emp = equipe.find(e => empIdOf(e) === empId);
-      if(emp) return emp;
-      return { nom: empId, prenom: "", poste: "" };
+      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:""};
     }
 
-    // Admin helpers
-    function normName(s){
-      return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'");
-    }
-    function makeEmpId(nom, prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
+    /* ── Admin ── */
+    function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
+    function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
 
     async function loadEquipeFromDB(){
-      const snap = await database.ref(EQUIPE_PATH).once("value");
-      const arr = snap.val();
-      if(Array.isArray(arr) && arr.length) return arr;
-      return equipe;
+      const snap=await database.ref(EQUIPE_PATH).once("value");
+      const arr=snap.val();
+      return (Array.isArray(arr)&&arr.length)?arr:equipe;
     }
     async function saveEquipeToDB(list){
       try{
         await database.ref(EQUIPE_PATH).set(list);
-        document.getElementById("teamPermHint").innerHTML = `Stocké dans Firebase: <b>settings/equipe</b> ✅`;
+        document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b>settings/equipe</b> ✅`;
         return true;
       }catch(e){
-        document.getElementById("teamPermHint").innerHTML =
+        document.getElementById("teamPermHint").innerHTML=
           `<span class="text-rose-600 font-extrabold">⚠️ PERMISSION_DENIED</span> :
            Ajoute la règle Firebase pour autoriser le gérant à écrire <b>settings/equipe</b>.`;
         throw e;
@@ -456,144 +455,127 @@
     }
 
     function openStaffAdmin(){
-      const m = document.getElementById("staffAdminModal");
-      m.classList.remove("hidden");
-      m.classList.add("modal-active");
+      const m=document.getElementById("staffAdminModal");
+      m.classList.remove("hidden"); m.classList.add("modal-active");
     }
     function closeStaffAdmin(){
-      const m = document.getElementById("staffAdminModal");
-      m.classList.remove("modal-active");
-      m.classList.add("hidden");
+      const m=document.getElementById("staffAdminModal");
+      m.classList.remove("modal-active"); m.classList.add("hidden");
     }
 
     function exportEquipeJSON(){
-      const blob = new Blob([JSON.stringify(equipe, null, 2)], {type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `GC_EQUIPE_${todayISO()}.json`;
+      const blob=new Blob([JSON.stringify(equipe,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download=`GC_EQUIPE_${todayISO()}.json`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
     function fillEmpSelect(){
-      const sel = document.getElementById("empSelect");
-      const list = equipe.slice().sort((a,b)=>{
-        const A=empIdOf(a), B=empIdOf(b);
+      const sel=document.getElementById("empSelect");
+      const list=equipe.slice().sort((a,b)=>{
+        const A=empIdOf(a),B=empIdOf(b);
         if(A==="BOUCHNAK_NAOUAL") return -1;
         if(B==="BOUCHNAK_NAOUAL") return 1;
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       });
-      sel.innerHTML = list.map(e=>{
-        const id = empIdOf(e);
-        return `<option value="${id}">${e.nom} ${e.prenom} — ${e.poste}</option>`;
-      }).join("");
+      sel.innerHTML=list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom} — ${e.poste}</option>`).join("");
     }
 
     function fillDelEmpSelectByPoste(poste){
-      const sel = document.getElementById("delEmpSelect");
+      const sel=document.getElementById("delEmpSelect");
       if(!sel) return;
-      if(!poste){ sel.innerHTML = `<option value="">Choisir poste d'abord</option>`; return; }
-      const list = equipe.filter(e => e.poste === poste).sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
-      if(!list.length){ sel.innerHTML = `<option value="">Aucun collaborateur</option>`; return; }
-      sel.innerHTML = list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom}</option>`).join("");
+      if(!poste){ sel.innerHTML=`<option value="">Choisir poste d'abord</option>`; return; }
+      const list=equipe.filter(e=>e.poste===poste).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+      sel.innerHTML=list.length
+        ?list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom}</option>`).join("")
+        :`<option value="">Aucun collaborateur</option>`;
     }
 
     async function initStaffAdminUI(){
-      document.getElementById("btnOpenStaffAdmin").onclick = () => openStaffAdmin();
-      document.getElementById("btnExportEquipe").onclick = () => exportEquipeJSON();
+      document.getElementById("btnOpenStaffAdmin").onclick=()=>openStaffAdmin();
+      document.getElementById("btnExportEquipe").onclick=()=>exportEquipeJSON();
 
-      const posteSelect = document.getElementById("delPosteSelect");
-      posteSelect.onchange = () => fillDelEmpSelectByPoste(posteSelect.value);
+      const posteSelect=document.getElementById("delPosteSelect");
+      posteSelect.onchange=()=>fillDelEmpSelectByPoste(posteSelect.value);
       fillDelEmpSelectByPoste("");
 
-      document.getElementById("btnAddStaff").onclick = async () => {
-        const addMsg = document.getElementById("addMsg");
-        addMsg.textContent = "";
-        const nom = normName(document.getElementById("addNom").value);
-        const prenom = normName(document.getElementById("addPrenom").value);
-        const poste = (document.getElementById("addPoste").value || "").trim().toUpperCase();
-        if(!nom || !prenom || !poste){ addMsg.textContent = "⚠️ Remplis NOM, Prénom et Poste."; return; }
-        const id = makeEmpId(nom, prenom);
-        if(equipe.some(e => empIdOf(e) === id)){ addMsg.textContent = "⚠️ Déjà existant."; return; }
-        addMsg.textContent = "Ajout…";
+      document.getElementById("btnAddStaff").onclick=async()=>{
+        const addMsg=document.getElementById("addMsg");
+        addMsg.textContent="";
+        const nom=normName(document.getElementById("addNom").value);
+        const prenom=normName(document.getElementById("addPrenom").value);
+        const poste=(document.getElementById("addPoste").value||"").trim().toUpperCase();
+        if(!nom||!prenom||!poste){ addMsg.textContent="⚠️ Remplis NOM, Prénom et Poste."; return; }
+        const id=makeEmpId(nom,prenom);
+        if(equipe.some(e=>empIdOf(e)===id)){ addMsg.textContent="⚠️ Déjà existant."; return; }
+        addMsg.textContent="Ajout…";
         try{
-          equipe.push({ nom, prenom, poste });
+          equipe.push({nom,prenom,poste});
           await saveEquipeToDB(equipe);
-          addMsg.textContent = "✅ Ajouté.";
-          document.getElementById("addNom").value = "";
-          document.getElementById("addPrenom").value = "";
-          fillEmpSelect();
-          closeStaffAdmin();
-          updateDashboard();
+          addMsg.textContent="✅ Ajouté.";
+          document.getElementById("addNom").value="";
+          document.getElementById("addPrenom").value="";
+          fillEmpSelect(); closeStaffAdmin(); updateDashboard();
         }catch(e){
-          const idx = equipe.findIndex(x => empIdOf(x) === id);
-          if(idx >= 0) equipe.splice(idx,1);
-          addMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
+          const idx=equipe.findIndex(x=>empIdOf(x)===id);
+          if(idx>=0) equipe.splice(idx,1);
+          addMsg.textContent="⚠️ Erreur : "+(e?.message||"Permission denied");
         }
       };
 
-      document.getElementById("btnDeleteStaff").onclick = async () => {
-        const delMsg = document.getElementById("delAnyMsg");
-        delMsg.textContent = "";
-        const empId = document.getElementById("delEmpSelect").value;
-        if(!empId){ delMsg.textContent = "⚠️ Choisis un collaborateur."; return; }
-        const ok = confirm(`Confirmer suppression de ${empId} de l'équipe ?`);
-        if(!ok) return;
-        delMsg.textContent = "Suppression…";
+      document.getElementById("btnDeleteStaff").onclick=async()=>{
+        const delMsg=document.getElementById("delAnyMsg");
+        delMsg.textContent="";
+        const empId=document.getElementById("delEmpSelect").value;
+        if(!empId){ delMsg.textContent="⚠️ Choisis un collaborateur."; return; }
+        if(!confirm(`Confirmer suppression de ${empId} ?`)) return;
+        delMsg.textContent="Suppression…";
         try{
-          const idx = equipe.findIndex(e => empIdOf(e) === empId);
-          if(idx >= 0){ equipe.splice(idx, 1); await saveEquipeToDB(equipe); }
-          delMsg.textContent = "✅ Supprimé.";
+          const idx=equipe.findIndex(e=>empIdOf(e)===empId);
+          if(idx>=0){ equipe.splice(idx,1); await saveEquipeToDB(equipe); }
+          delMsg.textContent="✅ Supprimé.";
           fillEmpSelect();
-          fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value || "");
-          closeStaffAdmin();
-          updateDashboard();
-        }catch(e){
-          delMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
-        }
+          fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value||"");
+          closeStaffAdmin(); updateDashboard();
+        }catch(e){ delMsg.textContent="⚠️ Erreur : "+(e?.message||"Permission denied"); }
       };
     }
 
-    // Auth
+    /* ── Auth ── */
     async function fetchRole(uid){
-      const s = await database.ref("users/"+uid).once("value");
-      return s.val() || null;
+      const s=await database.ref("users/"+uid).once("value");
+      return s.val()||null;
     }
-
     function showLoginUI(msg){
-      detachRealtime();
-      role = null;
-      appWrap.classList.add("hidden");
-      loginWrap.classList.remove("hidden");
-      document.getElementById("loginMsg").textContent = msg || "";
+      detachRealtime(); role=null;
+      appWrap.classList.add("hidden"); loginWrap.classList.remove("hidden");
+      document.getElementById("loginMsg").textContent=msg||"";
     }
-
     function showAppUI(){
-      loginWrap.classList.add("hidden");
-      appWrap.classList.remove("hidden");
-      roleLabel.textContent = role || "—";
-      syncLine.textContent = "Sync : en attente…";
+      loginWrap.classList.add("hidden"); appWrap.classList.remove("hidden");
+      roleLabel.textContent=role||"—";
+      syncLine.textContent="Sync : en attente…";
     }
 
-    document.getElementById("btnLogin").onclick = async () => {
-      const email = (document.getElementById("loginEmail").value || "").trim();
-      const pass  = (document.getElementById("loginPass").value || "").trim();
-      document.getElementById("loginMsg").textContent = "";
-      try{ await auth.signInWithEmailAndPassword(email, pass); }
+    document.getElementById("btnLogin").onclick=async()=>{
+      const email=(document.getElementById("loginEmail").value||"").trim();
+      const pass=(document.getElementById("loginPass").value||"").trim();
+      document.getElementById("loginMsg").textContent="";
+      try{ await auth.signInWithEmailAndPassword(email,pass); }
       catch(e){ showLoginUI("Identifiants invalides."); }
     };
-
-    document.getElementById("btnLogout").onclick = async () => {
+    document.getElementById("btnLogout").onclick=async()=>{
       try{ await auth.signOut(); }catch(e){}
       location.reload();
     };
 
-    auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged(async(user)=>{
       if(!user){ showLoginUI(""); return; }
       try{
-        role = await fetchRole(user.uid);
-        if(role !== "gerant"){
+        role=await fetchRole(user.uid);
+        if(role!=="gerant"){
           await auth.signOut();
           showLoginUI("Accès refusé : compte non gérant.");
           return;
@@ -607,142 +589,154 @@
       bootDashboard();
     });
 
-    // Temps réel
+    /* ── Temps réel ── */
     function detachRealtime(){
       try{
-        if(activePresRef){ activePresRef.off(); activePresRef = null; }
-        if(activePunchRef){ activePunchRef.off(); activePunchRef = null; }
+        if(activePresRef){ activePresRef.off(); activePresRef=null; }
+        if(activePunchRef){ activePunchRef.off(); activePunchRef=null; }
       }catch(e){}
-      presCache = {};
-      punchCache = {};
+      presCache={}; punchCache={};
     }
 
+    // ✅ merge : HP depuis presences, HA depuis punches (et normalise hp/ha)
     function mergeDay(pres, punches){
       const merged = JSON.parse(JSON.stringify(pres || {}));
+
+      // normaliser presences (hp->hP, ha->hA si jamais)
+      Object.keys(merged).forEach(empId=>{
+        const e = merged[empId] || {};
+        if(e.hp && !e.hP) e.hP = e.hp;
+        if(e.ha && !e.hA) e.hA = e.ha;
+      });
+
       const p = punches || {};
-      Object.keys(p).forEach(empId => {
+      Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
         const pe = p[empId] || {};
-        if(pe.hP && !merged[empId].hP) merged[empId].hP = pe.hP;
-        if(pe.hA && !merged[empId].hA) merged[empId].hA = pe.hA;
+
+        // HA vient de punches
+        const ha = pe.hA || pe.ha;
+        if(ha && !merged[empId].hA) merged[empId].hA = ha;
+
+        // HP ne vient PAS de punches (chez toi)
+        // const hp = pe.hP || pe.hp;
+        // if(hp && !merged[empId].hP) merged[empId].hP = hp;
+
         if(merged[empId].hA && merged[empId].off === true) merged[empId].off = false;
       });
+
       return merged;
     }
-    function mergedDayData(){ return mergeDay(presCache || {}, punchCache || {}); }
+
+    function mergedDayData(){ return mergeDay(presCache||{},punchCache||{}); }
 
     function setSyncOK(){
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2,'0');
-      const mm = String(now.getMinutes()).padStart(2,'0');
-      const ss = String(now.getSeconds()).padStart(2,'0');
-      syncLine.textContent = `Sync : temps réel ✅ (${hh}:${mm}:${ss})`;
+      const now=new Date();
+      const hh=String(now.getHours()).padStart(2,'0');
+      const mm=String(now.getMinutes()).padStart(2,'0');
+      const ss=String(now.getSeconds()).padStart(2,'0');
+      syncLine.textContent=`Sync : temps réel ✅ (${hh}:${mm}:${ss})`;
     }
-    function setSyncWaiting(){ syncLine.textContent = "Sync : connexion…"; }
-    function setSyncError(){ syncLine.textContent = "Sync : erreur (réseau ?) ⚠️"; }
+    function setSyncWaiting(){ syncLine.textContent="Sync : connexion…"; }
+    function setSyncError(){ syncLine.textContent="Sync : erreur (réseau ?) ⚠️"; }
 
     function attachRealtimeForDate(dayISO){
-      detachRealtime();
-      setSyncWaiting();
-      activePresRef = database.ref('presences/' + dayISO);
-      activePresRef.on('value', (snap) => {
-        presCache = snap.val() || {};
-        if(currentMode === "day") renderDayView(mergedDayData());
+      detachRealtime(); setSyncWaiting();
+      activePresRef=database.ref('presences/'+dayISO);
+      activePresRef.on('value',(snap)=>{
+        presCache=snap.val()||{};
+        if(currentMode==="day") renderDayView(mergedDayData());
         setSyncOK();
-      }, () => setSyncError());
-      activePunchRef = database.ref('punches/' + dayISO);
-      activePunchRef.on('value', (snap) => {
-        punchCache = snap.val() || {};
-        if(currentMode === "day") renderDayView(mergedDayData());
+      },()=>setSyncError());
+      activePunchRef=database.ref('punches/'+dayISO);
+      activePunchRef.on('value',(snap)=>{
+        punchCache=snap.val()||{};
+        if(currentMode==="day") renderDayView(mergedDayData());
         setSyncOK();
-      }, () => setSyncError());
+      },()=>setSyncError());
     }
 
-    function switchMode(mode, btn){
-      currentMode = mode;
-      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    function switchMode(mode,btn){
+      currentMode=mode;
+      document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
+      document.getElementById('chartContainer').classList.toggle('hidden',mode!=='report');
       updateDashboard();
     }
 
-    // Month cache
-    const monthDataCache = new Map();
+    /* ── Month cache ── */
+    const monthDataCache=new Map();
     function clearMonthCache(){ monthDataCache.clear(); }
 
     function getDatesInMonth(seedISO){
-      const {y,m} = parseISO(seedISO);
-      const dates = [];
-      let t = Date.UTC(y, m-1, 1);
+      const {y,m}=parseISO(seedISO);
+      const dates=[];
+      let t=Date.UTC(y,m-1,1);
       while(true){
-        const dt = new Date(t);
-        if(dt.getUTCMonth() !== (m-1)) break;
-        dates.push(toISO(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate()));
-        t += 86400000;
+        const dt=new Date(t);
+        if(dt.getUTCMonth()!==(m-1)) break;
+        dates.push(toISO(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate()));
+        t+=86400000;
       }
       return dates;
     }
-    function getDatesInMonthKey(monthKey){ return getDatesInMonth(monthKey + "-01"); }
+    function getDatesInMonthKey(mk){ return getDatesInMonth(mk+"-01"); }
 
     async function batchFetchPresPunch(dates){
-      const [presSnaps, punchSnaps] = await Promise.all([
-        Promise.all(dates.map(d => database.ref('presences/'+d).once('value'))),
-        Promise.all(dates.map(d => database.ref('punches/'+d).once('value')))
+      const [presSnaps,punchSnaps]=await Promise.all([
+        Promise.all(dates.map(d=>database.ref('presences/'+d).once('value'))),
+        Promise.all(dates.map(d=>database.ref('punches/'+d).once('value')))
       ]);
-      const presByDay = {}, punchByDay = {};
-      dates.forEach((d, i) => {
-        presByDay[d] = presSnaps[i].val() || {};
-        punchByDay[d] = punchSnaps[i].val() || {};
+      const presByDay={},punchByDay={};
+      dates.forEach((d,i)=>{
+        presByDay[d]=presSnaps[i].val()||{};
+        punchByDay[d]=punchSnaps[i].val()||{};
       });
-      return { presByDay, punchByDay };
+      return {presByDay,punchByDay};
     }
-    async function getMonthData(monthKey){
-      if(monthDataCache.has(monthKey)) return monthDataCache.get(monthKey);
-      const dates = getDatesInMonthKey(monthKey);
-      const { presByDay, punchByDay } = await batchFetchPresPunch(dates);
-      const pack = { monthKey, dates, presByDay, punchByDay };
-      monthDataCache.set(monthKey, pack);
+    async function getMonthData(mk){
+      if(monthDataCache.has(mk)) return monthDataCache.get(mk);
+      const dates=getDatesInMonthKey(mk);
+      const {presByDay,punchByDay}=await batchFetchPresPunch(dates);
+      const pack={monthKey:mk,dates,presByDay,punchByDay};
+      monthDataCache.set(mk,pack);
       return pack;
     }
 
-    const POSTES_ORDER = ['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
+    const POSTES_ORDER=['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
 
+    /* ── Vue Jour ── */
     function renderDayView(data){
-      const container = document.getElementById('dashBody');
-      const groups = {};
-      equipe.forEach(e => (groups[e.poste] ||= []).push(e));
+      const container=document.getElementById('dashBody');
+      const groups={};
+      equipe.forEach(e=>(groups[e.poste]||=[]).push(e));
 
-      let html = '';
-      POSTES_ORDER.filter(p => groups[p]).forEach(poste => {
-        html += `<div class="mb-8">
+      let html='';
+      POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
+        html+=`<div class="mb-8">
           <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${poste}</h3>
-          <div id="grid-${poste}" class="grid grid-cols-2 gap-4">`;
+          <div class="grid grid-cols-2 gap-4">`;
 
         groups[poste].slice().sort((a,b)=>{
-          const A = empIdOf(a), B = empIdOf(b);
-          if(A === "BOUCHNAK_NAOUAL") return -1;
-          if(B === "BOUCHNAK_NAOUAL") return 1;
+          const A=empIdOf(a),B=empIdOf(b);
+          if(A==="BOUCHNAK_NAOUAL") return -1;
+          if(B==="BOUCHNAK_NAOUAL") return 1;
           return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-        }).forEach(emp => {
-          const id = empIdOf(emp);
-          const d = data[id] || {};
-          const diff = diffFromEntry(d, id);
-          const sClass = getStatusClass(diff, !!d.off, !!d.hA);
+        }).forEach(emp=>{
+          const id=empIdOf(emp);
+          const d=data[id]||{};
+          const diff=diffFromEntry(d,id);
+          const sClass=getStatusClass(diff,!!d.off,!!pickHA(d));
 
-          let statusText = 'ATTENTE', statusColor = 'text-slate-400';
-          if(d.hA){
-            if(d.hP){
-              if(diff > 0){ statusText = `${diff}m retard`; statusColor = 'text-rose-600'; }
-              else { statusText = `À L'HEURE`; statusColor = 'text-emerald-600'; }
-            }else{
-              statusText = `OK`; statusColor = 'text-emerald-600';
-            }
-          }else if(d.off){
-            statusText = "OFF";
-            statusColor = "text-slate-400";
-          }
+          let statusText='ATTENTE',statusColor='text-slate-400';
+          if(pickHA(d)){
+            if(pickHP(d)){
+              if(diff>0){ statusText=`${diff}m retard`; statusColor='text-rose-600'; }
+              else { statusText="À L'HEURE"; statusColor='text-emerald-600'; }
+            }else{ statusText="OK"; statusColor='text-emerald-600'; }
+          }else if(d.off){ statusText="OFF"; statusColor="text-slate-400"; }
 
-          html += `
+          html+=`
             <button data-empid="${id}" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
               <div>
                 <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${emp.nom}</p>
@@ -751,154 +745,148 @@
               <p class="text-[10px] font-black ${statusColor}">${statusText}</p>
             </button>`;
         });
-
-        html += `</div></div>`;
+        html+=`</div></div>`;
       });
 
-      container.innerHTML = html;
-
-      container.querySelectorAll('[data-empid]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const emp = getEmpById(btn.dataset.empid);
-          openHistory(emp.nom, emp.prenom);
+      container.innerHTML=html;
+      container.querySelectorAll('[data-empid]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const emp=getEmpById(btn.dataset.empid);
+          openHistory(emp.nom,emp.prenom);
         });
       });
     }
 
-    // Chart
-    function renderChart(labels, lates, presences){
-      const ctx = document.getElementById('trendsChart').getContext('2d');
+    /* ── Chart ── */
+    function renderChart(labels,lates,presences){
+      const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
-      myChart = new Chart(ctx, {
+      myChart=new Chart(ctx,{
         type:'line',
         data:{
           labels,
           datasets:[
-            { label:"Retards (min)", data:lates, borderColor:'#c5a059', tension:.35, borderWidth:3, pointRadius:0, fill:true, backgroundColor:'rgba(197,160,89,0.08)' },
-            { label:"Présences (nb)", data:presences, borderColor:'#0f172a', tension:.35, borderWidth:2, pointRadius:0, fill:false }
+            {label:"Retards (min)",data:lates,borderColor:'#c5a059',tension:.35,borderWidth:3,pointRadius:0,fill:true,backgroundColor:'rgba(197,160,89,0.08)'},
+            {label:"Présences (nb)",data:presences,borderColor:'#0f172a',tension:.35,borderWidth:2,pointRadius:0,fill:false}
           ]
         },
         options:{
           maintainAspectRatio:false,
-          plugins:{ legend:{display:false}, tooltip:{enabled:true} },
-          scales:{ y:{display:false}, x:{grid:{display:false}, ticks:{font:{size:8}}} }
+          plugins:{legend:{display:false},tooltip:{enabled:true}},
+          scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:8}}}}
         }
       });
     }
 
     function loadingCard(text){
-      return `
-        <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
-          <div class="spin"></div>
-          <div class="text-[11px] font-extrabold text-slate-600">${text}</div>
-        </div>`;
+      return `<div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
+        <div class="spin"></div>
+        <div class="text-[11px] font-extrabold text-slate-600">${text}</div>
+      </div>`;
     }
 
     async function updateDashboard(){
-      if(role !== "gerant") return;
-      const dayISO = dateInput.value;
-
-      if(currentMode === "day"){
+      if(role!=="gerant") return;
+      const dayISO=dateInput.value;
+      if(currentMode==="day"){
         attachRealtimeForDate(dayISO);
         renderDayView(mergedDayData());
         return;
       }
-
       detachRealtime();
-      document.getElementById('dashBody').innerHTML = loadingCard("Chargement du bilan mensuel…");
+      document.getElementById('dashBody').innerHTML=loadingCard("Chargement du bilan mensuel…");
       await renderReportView();
     }
 
     async function renderReportView(){
-      const mk = monthKeyFromISO(dateInput.value);
-      const { dates, presByDay, punchByDay } = await getMonthData(mk);
-      const today = todayISO();
+      const mk=monthKeyFromISO(dateInput.value);
+      const {dates,presByDay,punchByDay}=await getMonthData(mk);
+      const today=todayISO();
 
-      const stats = {};
-      equipe.forEach(e => {
-        const id = empIdOf(e);
-        stats[id] = { info:e, present:0, lateMin:0, R:0, C:0, excluded:0 };
-      });
+      const stats={};
+      equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
 
-      const weekRC = {};
-      const dailyLates = [], dailyPresence = [], labels = [];
+      const weekRC={};
+      const dailyLates=[],dailyPresence=[],labels=[];
 
-      dates.forEach((dayISO) => {
+      dates.forEach(dayISO=>{
         labels.push(dayISO.split('-')[2]);
-        if(dayISO > today){ dailyLates.push(0); dailyPresence.push(0); return; }
+        if(dayISO>today){ dailyLates.push(0); dailyPresence.push(0); return; }
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
-          Object.keys(stats).forEach(id => stats[id].excluded++);
+          Object.keys(stats).forEach(id=>stats[id].excluded++);
           return;
         }
 
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-        let tL = 0, tP = 0;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+        let tL=0,tP=0;
 
-        Object.keys(stats).forEach(id => {
-          const e = merged[id] || null;
+        Object.keys(stats).forEach(id=>{
+          const e=merged[id]||null;
 
-          if(!e){ stats[id].C++; return; } // absence => C
+          // absence = C
+          if(!e){ stats[id].C++; return; }
 
+          // OFF => R/C
           if(e.off){
-            const rc = classifyOffDay(id, dayISO, weekRC);
-            stats[id][rc]++; // R ou C
-            return;
+            const rc=classifyOffDay(id,dayISO,weekRC);
+            stats[id][rc]++; return;
           }
 
-          if(e.hA){
-            const diff = diffFromEntry(e, id);
+          // présence si HA existe
+          if(pickHA(e)){
+            const diff=diffFromEntry(e,id);
             stats[id].present++;
-            stats[id].lateMin += diff;
-            tL += diff; tP++;
+            stats[id].lateMin+=diff;
+            tL+=diff; tP++;
             return;
           }
 
-          stats[id].C++; // pas OFF, pas arrivé => C
+          // pas OFF, pas arrivé => C
+          stats[id].C++;
         });
 
         dailyLates.push(tL);
         dailyPresence.push(tP);
       });
 
-      renderChart(labels, dailyLates, dailyPresence);
+      renderChart(labels,dailyLates,dailyPresence);
 
-      const lateList = Object.values(stats).filter(s => s.lateMin > 0).sort((a,b) => b.lateMin - a.lateMin);
-      const goodList = Object.values(stats).filter(s => s.lateMin === 0 && s.present > 0).sort((a,b) => b.present - a.present);
+      const lateList=Object.values(stats).filter(s=>s.lateMin>0).sort((a,b)=>b.lateMin-a.lateMin);
+      const goodList=Object.values(stats).filter(s=>s.lateMin===0&&s.present>0).sort((a,b)=>b.present-a.present);
 
-      let html = '<div class="space-y-8">';
-      html += `<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
+      let html='<div class="space-y-8">';
+      html+=`<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
       if(!lateList.length){
-        html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
       }else{
-        lateList.slice(0,6).forEach(s => {
-          html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
+        lateList.slice(0,6).forEach(s=>{
+          html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
             <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
             <span class="text-rose-600 font-black">${s.lateMin}m</span>
           </div>`;
         });
       }
-      html += `</div>`;
+      html+=`</div>`;
 
-      html += `<div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
+      html+=`<div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
       if(!goodList.length){
-        html += `<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
       }else{
-        goodList.slice(0,6).forEach(s => {
-          html += `<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
+        goodList.slice(0,6).forEach(s=>{
+          html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
             <span class="text-xs font-extrabold uppercase">${s.info.nom}</span>
             <span class="text-emerald-600 font-black">${s.present}j OK</span>
           </div>`;
         });
       }
-      html += '</div></div>';
-
-      document.getElementById('dashBody').innerHTML = html;
+      html+='</div></div>';
+      document.getElementById('dashBody').innerHTML=html;
     }
 
-    // Historique
-    function rowHistory(dayISO, statut, hp, ha, retard, cls, rc){
-      const rcTxt = rc ? ` • ${rc}` : "";
+    /* ── Historique ── */
+    function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
+      const rcTxt=rc?` • ${rc}`:"";
       return `
         <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
           <div class="flex justify-between items-center">
@@ -913,87 +901,71 @@
         </div>`;
     }
 
-    async function openHistory(nom, prenom){
-      const modal = document.getElementById('historyModal');
-      modal.classList.remove("hidden");
-      modal.classList.add('modal-active');
-
-      document.getElementById('modalTitle').innerText = nom + " " + prenom;
-      document.getElementById('modalList').innerHTML = `
+    async function openHistory(nom,prenom){
+      const modal=document.getElementById('historyModal');
+      modal.classList.remove("hidden"); modal.classList.add('modal-active');
+      document.getElementById('modalTitle').innerText=nom+" "+prenom;
+      document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
           <div class="text-[11px] font-extrabold text-slate-600">Chargement historique…</div>
         </div>`;
 
-      const mk = monthKeyFromISO(dateInput.value);
-      const { dates, presByDay, punchByDay } = await getMonthData(mk);
-      const today = todayISO();
-      const empId = nom + '_' + prenom;
+      const mk=monthKeyFromISO(dateInput.value);
+      const {dates,presByDay,punchByDay}=await getMonthData(mk);
+      const today=todayISO();
+      const empId=nom+'_'+prenom;
 
-      const weekRC = {};
-      let html = "";
-      dates.slice().reverse().forEach((dayISO) => {
-        if(dayISO > today){
-          html += rowHistory(dayISO, "À venir", "", "", "", "text-slate-300");
-          return;
-        }
-        if(isExcluded(dayISO)){
-          html += rowHistory(dayISO, "Exclu", "", "", "", "text-slate-400");
-          return;
-        }
+      const weekRC={};
+      let html="";
+      dates.slice().reverse().forEach(dayISO=>{
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-slate-300"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-slate-400"); return; }
 
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-        const e = merged[empId] || null;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+        const e=merged[empId]||null;
 
-        if(!e){
-          html += rowHistory(dayISO, "Congé", "", "", "", "text-slate-500", "C");
-          return;
-        }
+        if(!e){ html+=rowHistory(dayISO,"Congé","","","","text-slate-500","C"); return; }
+
         if(e.off){
-          const rc = classifyOffDay(empId, dayISO, weekRC);
-          html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", e.hP||"", e.hA||"", "", "text-slate-500", rc);
+          const rc=classifyOffDay(empId,dayISO,weekRC);
+          html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",pickHP(e),pickHA(e),"","text-slate-500",rc);
           return;
         }
-        if(e.hA){
-          const hp = e.hP || "";
-          const ha = e.hA || "";
+
+        if(pickHA(e)){
+          const hp=pickHP(e), ha=pickHA(e);
           if(hp){
-            const diff = diffFromEntry(e, empId);
-            if(diff > 0){
-              html += rowHistory(dayISO, "Retard", hp, ha, `+${diff}m`, "text-rose-600");
-            }else{
-              html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "text-emerald-600");
-            }
+            const diff=diffFromEntry(e,empId);
+            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-600");
+            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","text-emerald-600");
           }else{
-            html += rowHistory(dayISO, "OK", "", ha, "", "text-emerald-600");
+            html+=rowHistory(dayISO,"OK","",ha,"","text-emerald-600");
           }
           return;
         }
-        html += rowHistory(dayISO, "Congé", e.hP||"", e.hA||"", "", "text-slate-500", "C");
+
+        html+=rowHistory(dayISO,"Congé",pickHP(e),pickHA(e),"","text-slate-500","C");
       });
 
-      document.getElementById('modalList').innerHTML = html || '<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
+      document.getElementById('modalList').innerHTML=html||'<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
     }
 
     function closeModal(){
-      const m = document.getElementById('historyModal');
-      m.classList.remove('modal-active');
-      m.classList.add('hidden');
+      const m=document.getElementById('historyModal');
+      m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
-    // PDF helpers
-    function showPDF(el){ el.style.visibility="visible"; }
-    function hidePDF(el){ el.style.visibility="hidden"; }
-
-    function pdfHeader(title, sub){
-      const date = dateInput.value;
+    /* ── PDF helpers ── */
+    function pdfHeader(title,sub){
+      const date=dateInput.value;
       return `
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;">
           <div>
             <div style="font-weight:900;letter-spacing:.12em;color:#b0892f;font-size:10px;text-transform:uppercase;">Fès — Maroc</div>
             <div style="font-weight:900;font-size:20px;letter-spacing:-.02em;">GREY CORNER</div>
             <div style="font-weight:800;color:#374151;font-size:12px;margin-top:2px;">${title}</div>
-            <div style="font-weight:700;color:#6b7280;font-size:10px;margin-top:2px;">${sub || ""}</div>
+            <div style="font-weight:700;color:#6b7280;font-size:10px;margin-top:2px;">${sub||""}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-weight:900;color:#111827;font-size:12px;">Date : ${date}</div>
@@ -1002,64 +974,72 @@
         </div>
         <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />`;
     }
-    function kpiBox(t, v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
+    function kpiBox(t,v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
 
     async function exportPDF(filename){
-      const el = document.getElementById("pdfArea");
-      showPDF(el);
+      const el=document.getElementById("pdfArea");
 
-      // ✅ attendre paint + reflow (Android)
-      await new Promise(r => requestAnimationFrame(() => r()));
-      await new Promise(r => setTimeout(r, 80));
+      // visible pour html2canvas
+      el.style.opacity="1";
+      el.style.zIndex="9999";
 
-      return html2pdf().set({
-        margin:8,
-        filename,
-        image:{type:'jpeg',quality:1},
-        html2canvas:{scale:3,useCORS:true,backgroundColor:"#ffffff"},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['avoid-all','css','legacy']}
-      }).from(el).save().finally(()=>hidePDF(el));
+      // attendre le paint
+      await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,120)));
+
+      try{
+        await html2pdf().set({
+          margin: 8,
+          filename,
+          image:       { type:'jpeg', quality:1 },
+          html2canvas: { scale:2, useCORS:true, backgroundColor:"#ffffff", scrollX:0, scrollY:0 },
+          jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
+          pagebreak:   { mode:['css','legacy'] }
+        }).from(el).save();
+      }finally{
+        el.style.opacity="0";
+        el.style.zIndex="-1";
+      }
     }
 
+    /* ── PDF Jour ── */
     async function downloadPDF_Day(){
-      const dayISO = dateInput.value;
-      const merged = mergedDayData();
+      const dayISO=dateInput.value;
+      const merged=mergedDayData();
 
-      document.getElementById("pdfHeader").innerHTML = pdfHeader("Rapport Jour — Supervision", `Jour: ${fmtFR(dayISO)}`);
+      document.getElementById("pdfHeader").innerHTML=pdfHeader("Rapport Jour — Supervision",`Jour: ${fmtFR(dayISO)}`);
 
-      let present=0, off=0, attente=0;
+      let present=0,off=0,attente=0;
       equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        const e = merged[id] || null;
-        if(e && e.hA) present++;
+        const id=empIdOf(emp); const e=merged[id]||null;
+        if(e && pickHA(e)) present++;
         else if(e && e.off) off++;
         else attente++;
       });
 
-      document.getElementById("pdfKpis").innerHTML = `
+      document.getElementById("pdfKpis").innerHTML=`
         <div class="pdfKpi">
-          ${kpiBox("Total", equipe.length)}
-          ${kpiBox("Présents", present)}
-          ${kpiBox("OFF", off)}
-          ${kpiBox("Attente", attente)}
+          ${kpiBox("Total",equipe.length)}
+          ${kpiBox("Présents",present)}
+          ${kpiBox("OFF",off)}
+          ${kpiBox("Attente",attente)}
         </div>`;
 
-      const rows = equipe.slice().sort((a,b)=>{
-        const A=empIdOf(a), B=empIdOf(b);
+      const rows=equipe.slice().sort((a,b)=>{
+        const A=empIdOf(a),B=empIdOf(b);
         if(A==="BOUCHNAK_NAOUAL") return -1;
         if(B==="BOUCHNAK_NAOUAL") return 1;
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       }).map(emp=>{
-        const id = empIdOf(emp);
-        const e = merged[id] || null;
-        let statut="ATTENTE", hp="", ha="", retard="";
+        const id=empIdOf(emp); const e=merged[id]||null;
+        const hp = e ? pickHP(e) : "";
+        const ha = e ? pickHA(e) : "";
+
+        let statut="ATTENTE",retard="";
         if(e){
-          hp=e.hP||""; ha=e.hA||"";
           if(e.off) statut="OFF";
-          if(e.hA){
+          if(ha){
             if(hp){
-              const diff = diffFromEntry(e, id);
+              const diff=diffFromEntry(e,id);
               if(diff>0){ statut="RETARD"; retard=`+${diff}m`; }
               else { statut="A L'HEURE"; retard="0"; }
             }else{
@@ -1076,7 +1056,7 @@
         </tr>`;
       }).join("");
 
-      document.getElementById("pdfContent").innerHTML = `
+      document.getElementById("pdfContent").innerHTML=`
         <table class="pdfTable">
           <thead><tr>
             <th style="text-align:left;">Employé</th>
@@ -1091,48 +1071,46 @@
       await exportPDF(`GC_RH_JOUR_${dayISO}.pdf`);
     }
 
-    // ✅ PDF employé MOIS : ajoute R / C
+    /* ── PDF Employé MOIS ── */
     async function downloadPDF_EmployeeMonth(){
-      const empId = document.getElementById("empSelect").value;
-      const emp = getEmpById(empId);
+      const empId=document.getElementById("empSelect").value;
+      const emp=getEmpById(empId);
+      const mk=(document.getElementById("pdfMonth").value||monthKeyFromISO(dateInput.value));
+      const {dates,presByDay,punchByDay}=await getMonthData(mk);
 
-      const mk = (document.getElementById("pdfMonth").value || monthKeyFromISO(dateInput.value));
-      const { dates, presByDay, punchByDay } = await getMonthData(mk);
+      const today=todayISO();
+      let present=0,R=0,C=0,lateMin=0,excluded=0,ignoredFuture=0;
+      const weekRC={};
 
-      const today = todayISO();
-      let present=0, R=0, C=0, lateMin=0, excluded=0, ignoredFuture=0;
-      const weekRC = {};
-
-      const rows = dates.map((dayISO)=>{
-        if(dayISO > today){ ignoredFuture++; return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`; }
+      const rows=dates.map(dayISO=>{
+        if(dayISO>today){ ignoredFuture++; return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`; }
         if(isExcluded(dayISO)){ excluded++; return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`; }
 
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-        const e = merged[empId] || null;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+        const e=merged[empId]||null;
 
         if(!e){ C++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
 
         if(e.off){
-          const rc = classifyOffDay(empId, dayISO, weekRC);
-          if(rc === "R") R++; else C++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R" ? "Repos (R)" : "Congé (C)"}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          const rc=classifyOffDay(empId,dayISO,weekRC);
+          if(rc==="R") R++; else C++;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R"?"Repos (R)":"Congé (C)"}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
         }
 
-        if(e.hA){
+        if(pickHA(e)){
           present++;
-          const diff = diffFromEntry(e, empId);
-          lateMin += diff;
-          const st = (e.hP && diff>0) ? "Retard" : (e.hP ? "À l'heure" : "OK");
-          const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+          const diff=diffFromEntry(e,empId); lateMin+=diff;
+          const st=(pickHP(e)&&diff>0)?"Retard":(pickHP(e)?"À l'heure":"OK");
+          const r=pickHP(e)?(diff>0?`+${diff}m`:"0"):"";
+          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td>${r}</td></tr>`;
         }
 
         C++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
       }).join("");
 
-      document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`, `Mois: ${mk}`);
-      document.getElementById("pdfKpis").innerHTML = `
+      document.getElementById("pdfHeader").innerHTML=pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`,`Mois: ${mk}`);
+      document.getElementById("pdfKpis").innerHTML=`
         <div class="pdfKpi">
           ${kpiBox("Présents",present)}
           ${kpiBox("Repos (R)",R)}
@@ -1140,7 +1118,7 @@
           ${kpiBox("Retard (min)",lateMin)}
         </div>
         <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">Exclu: ${excluded} • Futurs ignorés: ${ignoredFuture}</div>`;
-      document.getElementById("pdfContent").innerHTML = `
+      document.getElementById("pdfContent").innerHTML=`
         <table class="pdfTable">
           <thead><tr>
             <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
@@ -1152,58 +1130,54 @@
       await exportPDF(`GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`);
     }
 
-    // ✅ PDF employé ANNÉE : R / C + sections par mois (pagebreak)
+    /* ── PDF Employé ANNÉE ── */
     async function downloadPDF_EmployeeYear(){
-      const empId = document.getElementById("empSelect").value;
-      const emp = getEmpById(empId);
+      const empId=document.getElementById("empSelect").value;
+      const emp=getEmpById(empId);
+      const year=dateInput.value.slice(0,4);
+      const today=todayISO();
 
-      const year = dateInput.value.slice(0,4);
-      const today = todayISO();
+      let present=0,R=0,C=0,lateMin=0,excluded=0,ignoredFuture=0;
+      const months=Array.from({length:12},(_,i)=>`${year}-${String(i+1).padStart(2,"0")}`);
+      let content="";
 
-      let present=0, R=0, C=0, lateMin=0, excluded=0, ignoredFuture=0;
+      for(let mi=0;mi<months.length;mi++){
+        const mk=months[mi];
+        const {dates,presByDay,punchByDay}=await getMonthData(mk);
+        const weekRC={};
+        let mPresent=0,mR=0,mC=0,mLate=0;
 
-      const months = Array.from({length:12}, (_,i)=> `${year}-${String(i+1).padStart(2,"0")}`);
-      let content = "";
-
-      for(let mi=0; mi<months.length; mi++){
-        const mk = months[mi];
-        const { dates, presByDay, punchByDay } = await getMonthData(mk);
-
-        const weekRC = {};
-        let mPresent=0, mR=0, mC=0, mLate=0;
-
-        const rows = dates.map((dayISO)=>{
-          if(dayISO > today){ ignoredFuture++; return ""; }
+        const rows=dates.map(dayISO=>{
+          if(dayISO>today){ ignoredFuture++; return ""; }
           if(isExcluded(dayISO)){ excluded++; return ""; }
 
-          const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-          const e = merged[empId] || null;
+          const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+          const e=merged[empId]||null;
 
           if(!e){ mC++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
 
           if(e.off){
-            const rc = classifyOffDay(empId, dayISO, weekRC);
+            const rc=classifyOffDay(empId,dayISO,weekRC);
             if(rc==="R") mR++; else mC++;
-            return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R" ? "Repos (R)" : "Congé (C)"}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+            return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R"?"Repos (R)":"Congé (C)"}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
           }
 
-          if(e.hA){
+          if(pickHA(e)){
             mPresent++;
-            const diff = diffFromEntry(e, empId);
-            mLate += diff;
-            const st = (e.hP && diff>0) ? "Retard" : (e.hP ? "À l'heure" : "OK");
-            const r = e.hP ? (diff>0 ? `+${diff}m` : "0") : "";
-            return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td>${r}</td></tr>`;
+            const diff=diffFromEntry(e,empId); mLate+=diff;
+            const st=(pickHP(e)&&diff>0)?"Retard":(pickHP(e)?"À l'heure":"OK");
+            const r=pickHP(e)?(diff>0?`+${diff}m`:"0"):"";
+            return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td>${r}</td></tr>`;
           }
 
           mC++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
+          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
         }).filter(Boolean).join("");
 
-        present += mPresent; R += mR; C += mC; lateMin += mLate;
+        present+=mPresent; R+=mR; C+=mC; lateMin+=mLate;
 
-        content += `
-          ${mi===0 ? "" : `<div class="pagebreak"></div>`}
+        content+=`
+          ${mi===0?"":`<div class="pagebreak"></div>`}
           <div style="font-weight:900;font-size:14px;color:#111827;margin:4px 0 8px;">Mois : ${mk}</div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
             <div class="pdfBox"><div class="t">Présents</div><div class="v">${mPresent}</div></div>
@@ -1217,14 +1191,13 @@
               <th style="text-align:center;">HP</th><th style="text-align:center;">HA</th><th style="text-align:center;">Retard</th>
             </tr></thead>
             <tbody>
-              ${rows || `<tr><td colspan="5" style="text-align:center;color:#6b7280;font-weight:700;">Aucune donnée</td></tr>`}
+              ${rows||`<tr><td colspan="5" style="text-align:center;color:#6b7280;font-weight:700;">Aucune donnée</td></tr>`}
             </tbody>
-          </table>
-        `;
+          </table>`;
       }
 
-      document.getElementById("pdfHeader").innerHTML = pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`, `Année: ${year}`);
-      document.getElementById("pdfKpis").innerHTML = `
+      document.getElementById("pdfHeader").innerHTML=pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`,`Année: ${year}`);
+      document.getElementById("pdfKpis").innerHTML=`
         <div class="pdfKpi">
           ${kpiBox("Présents",present)}
           ${kpiBox("Repos (R)",R)}
@@ -1234,91 +1207,77 @@
         <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
           Exclu (01/01/2026 → 31/01/2026): ${excluded} ignorés • Futurs ignorés: ${ignoredFuture}
         </div>`;
-      document.getElementById("pdfContent").innerHTML = content;
+      document.getElementById("pdfContent").innerHTML=content;
 
       await exportPDF(`GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`);
     }
 
-    // Export CSV mensuel
+    /* ── Export CSV mensuel ── */
     async function exportCSV_Month(){
-      const mk = monthKeyFromISO(dateInput.value);
-      const { dates, presByDay, punchByDay } = await getMonthData(mk);
-      const today = todayISO();
-      const lines = [["Date","Employe","Poste","Statut","HP","HA","RetardMin","RC"].join(",")];
+      const mk=monthKeyFromISO(dateInput.value);
+      const {dates,presByDay,punchByDay}=await getMonthData(mk);
+      const today=todayISO();
+      const lines=[["Date","Employe","Poste","Statut","HP","HA","RetardMin","RC"].join(",")];
+      const weekRC={};
 
-      const weekRC = {};
-
-      dates.forEach(dayISO => {
-        if(dayISO > today) return;
-        if(isExcluded(dayISO)) return;
-
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+      dates.forEach(dayISO=>{
+        if(dayISO>today||isExcluded(dayISO)) return;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
 
         equipe.forEach(emp=>{
-          const id = empIdOf(emp);
-          const e = merged[id] || null;
+          const id=empIdOf(emp);
+          const e=merged[id]||null;
 
-          let statut="CONGE", hp="", ha="", rmin="", rc="";
+          let statut="CONGE",hp="",ha="",rmin="",rc="";
           if(!e){
             statut="CONGE"; rc="C";
           }else{
-            hp=e.hP||""; ha=e.hA||"";
+            hp=pickHP(e); ha=pickHA(e);
+
             if(e.off){
-              rc = classifyOffDay(id, dayISO, weekRC);
-              statut = (rc==="R") ? "REPOS" : "CONGE";
-            }else if(e.hA){
-              const diff = diffFromEntry(e, id);
-              rmin = String(diff||0);
-              statut = (e.hP && diff>0) ? "RETARD" : (e.hP ? "A_L_HEURE" : "OK");
+              rc=classifyOffDay(id,dayISO,weekRC);
+              statut=(rc==="R")?"REPOS":"CONGE";
+            }else if(ha){
+              const diff=diffFromEntry(e,id);
+              rmin=String(diff||0);
+              statut=(hp && diff>0)?"RETARD":(hp?"A_L_HEURE":"OK");
             }else{
               statut="CONGE"; rc="C";
             }
           }
 
-          lines.push([fmtFR(dayISO), `"${emp.nom} ${emp.prenom}"`, emp.poste, statut, hp, ha, rmin, rc].join(","));
+          lines.push([fmtFR(dayISO),`"${emp.nom} ${emp.prenom}"`,emp.poste,statut,hp,ha,rmin,rc].join(","));
         });
       });
 
-      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
       a.href=url; a.download=`GC_RH_${mk}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
-    // Boot
+    /* ── Boot ── */
     async function bootDashboard(){
-      dateInput.value = todayISO();
+      dateInput.value=todayISO();
+      document.getElementById("pdfMonth").value=monthKeyFromISO(dateInput.value);
 
-      document.getElementById("pdfMonth").value = monthKeyFromISO(dateInput.value);
-
-      dateInput.addEventListener('change', async () => {
+      dateInput.addEventListener('change',async()=>{
         clearMonthCache();
-        document.getElementById("pdfMonth").value = monthKeyFromISO(dateInput.value);
+        document.getElementById("pdfMonth").value=monthKeyFromISO(dateInput.value);
         await updateDashboard();
       });
 
       try{
-        const list = await loadEquipeFromDB();
-        equipe.splice(0, equipe.length, ...list);
+        const list=await loadEquipeFromDB();
+        equipe.splice(0,equipe.length,...list);
       }catch(e){}
 
       fillEmpSelect();
       await initStaffAdminUI();
-
       await updateDashboard();
     }
-
-    /* =========================
-       RULES À AJOUTER (Firebase RTDB)
-       =========================
-       "settings": {
-         ".read": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
-         ".write":"auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
-         "equipe": { ".validate": "newData.isArray()" }
-       }
-    */
   </script>
 </body>
 </html>
