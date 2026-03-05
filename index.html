@@ -8,61 +8,93 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --grey-dark:#2c2c2c;
-      --grey-light:#f4f4f4;
+      --bg:#0d0f12;
+      --card:#13161b;
+      --stroke:rgba(255,255,255,.07);
+      --muted:rgba(255,255,255,.55);
+      --muted2:rgba(255,255,255,.38);
+
       --gold:#c5a059;
-      --status-ok:#10b981;
-      --status-late:#f59e0b;
-      --status-crit:#ef4444;
+
+      --ok:#34d399;
+      --late:#fbbf24;
+      --crit:#f87171;
+
+      --okbg:rgba(52,211,153,.08);
+      --latebg:rgba(251,191,36,.08);
+      --critbg:rgba(248,113,113,.08);
     }
+
+    html,body{height:100%}
     body{
-      font-family:'Plus Jakarta Sans',sans-serif;
-      background:var(--grey-light);
-      color:var(--grey-dark);
+      margin:0;
+      font-family:'DM Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:#e8ecf3;
       -webkit-tap-highlight-color:transparent;
+      position:relative;
+      overflow-x:hidden;
     }
+
+    /* Noise overlay */
+    body:before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+      mix-blend-mode:overlay;
+      opacity:1;
+    }
+
+    /* Scrollbar */
+    *{scrollbar-width:thin; scrollbar-color: rgba(197,160,89,.30) transparent;}
+    *::-webkit-scrollbar{width:4px;height:4px}
+    *::-webkit-scrollbar-thumb{background:rgba(197,160,89,.30);border-radius:999px}
+    *::-webkit-scrollbar-track{background:transparent}
+
     .glass-card{
-      background:#fff;
-      border:1px solid #e5e7eb;
-      box-shadow:0 4px 20px -5px rgba(0,0,0,.05);
+      background:var(--card);
+      border:1px solid var(--stroke);
+      box-shadow:0 12px 34px rgba(0,0,0,.35);
     }
-    .view-btn{color:var(--grey-dark);border:1px solid transparent;transition:.3s}
-    .view-btn.active{background:var(--grey-dark);color:var(--gold);border-color:var(--gold)}
 
-    .staff-card{border-left-width:5px;transition:transform .2s;cursor:pointer}
-    .status-green{border-left-color:var(--status-ok)!important;background:#f0fdf4}
-    .status-orange{border-left-color:var(--status-late)!important;background:#fffbeb}
-    .status-red{border-left-color:var(--status-crit)!important;background:#fef2f2}
-    .status-flash{
-      border-left-color:var(--status-crit)!important;background:#fef2f2;
-      animation:flash-red 1s infinite;
-    }
-    @keyframes flash-red{
-      0%{box-shadow:inset 0 0 0px #ef4444}
-      50%{box-shadow:inset 0 0 15px rgba(239,68,68,.2);border-left-width:8px}
-      100%{box-shadow:inset 0 0 0px #ef4444}
-    }
-    .status-off{border-left-color:#94a3b8!important;background:#f8fafc;opacity:.6}
+    .title-font{font-family:'Cormorant Garamond',serif}
+    .accent{color:var(--gold)}
 
-    .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
-    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .accent-bar{
+      height:2px;
+      background:linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,.0));
+      border-radius:999px;
+    }
+
+    .view-btn{
+      color:#e8ecf3;
+      border:1px solid transparent;
+      transition: .25s ease;
+    }
+    .view-btn.active{
+      background:rgba(197,160,89,.10);
+      color:var(--gold);
+      border-color:rgba(197,160,89,.55);
+    }
 
     .inpt{
       width:100%;
-      background:#fff;
-      border:1px solid #e5e7eb;
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--stroke);
       border-radius:16px;
       padding:12px 12px;
-      color:#111827;
-      font-weight:800;
+      color:#e8ecf3;
+      font-weight:700;
       font-size:12px;
       outline:none;
     }
-    .inpt:focus{border-color:rgba(197,160,89,.55);box-shadow:0 0 0 3px rgba(197,160,89,.15)}
+    .inpt:focus{border-color:rgba(197,160,89,.55);box-shadow:0 0 0 3px rgba(197,160,89,.12)}
     .btn-login{
       width:100%;
       border-radius:16px;
@@ -71,48 +103,124 @@
       font-weight:900;
       letter-spacing:.10em;
       text-transform:uppercase;
-      background:#0f172a;
+      background:#0b0e13;
       color:#fff;
-      border:1px solid #0f172a;
+      border:1px solid rgba(197,160,89,.35);
     }
+    input[type="month"], input[type="date"], select{ color-scheme: dark; }
 
     .spin{
       width:22px;height:22px;border-radius:999px;
-      border:3px solid rgba(15,23,42,.15);
-      border-top-color: rgba(15,23,42,.85);
+      border:3px solid rgba(255,255,255,.12);
+      border-top-color: rgba(197,160,89,.85);
       animation:sp 0.9s linear infinite;
     }
     @keyframes sp{to{transform:rotate(360deg)}}
 
+    /* Cards employés */
+    .staff-card{
+      border-left-width:3px;
+      transition:transform .15s ease, border-color .2s ease, background .2s ease;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .staff-card:active{transform:scale(.99)}
+    .status-green{border-left-color:var(--ok)!important;background:var(--okbg)}
+    .status-orange{border-left-color:var(--late)!important;background:var(--latebg)}
+    .status-red{border-left-color:var(--crit)!important;background:var(--critbg)}
+    .status-flash{
+      border-left-color:var(--crit)!important;background:var(--critbg);
+      animation:flash-red 1s infinite;
+    }
+    @keyframes flash-red{
+      0%{box-shadow:inset 0 0 0px rgba(248,113,113,.25)}
+      50%{box-shadow:inset 0 0 18px rgba(248,113,113,.22)}
+      100%{box-shadow:inset 0 0 0px rgba(248,113,113,.25)}
+    }
+    .status-off{border-left-color:rgba(148,163,184,.55)!important;background:rgba(148,163,184,.06);opacity:.75}
+
+    .status-dot{
+      width:6px;height:6px;border-radius:999px;
+      position:absolute; top:10px; right:10px;
+      box-shadow:0 0 0 4px rgba(255,255,255,.03);
+    }
+
     /* Table (R/C) */
     .rc-table{width:100%;border-collapse:collapse}
-    .rc-table th,.rc-table td{border:1px solid #e5e7eb;padding:10px 10px;font-size:12px;white-space:nowrap}
-    .rc-table th{background:#f8fafc;font-weight:900;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:#64748b}
-    .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb;font-weight:900;font-size:11px}
-    .chip-r{background:#f1f5f9}
-    .chip-c{background:#fff7ed}
-    .chip-p{background:#ecfdf5}
+    .rc-table th,.rc-table td{
+      border:1px solid var(--stroke);
+      padding:10px 10px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .rc-table th{
+      background:rgba(255,255,255,.02);
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      font-size:10px;
+      color:rgba(255,255,255,.55);
+    }
+    .rc-table tbody tr:nth-child(even){background:rgba(255,255,255,.015)}
+    .rc-table tbody tr{transition:background .2s ease}
+    .rc-table tbody tr:hover{background:rgba(197,160,89,.06)}
+
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+      border:1px solid var(--stroke);font-weight:900;font-size:11px;
+      background:rgba(255,255,255,.02);
+    }
+    .chip-r{background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.18)}
+    .chip-c{background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.18)}
+    .chip-p{background:rgba(52,211,153,.08); border-color:rgba(52,211,153,.18)}
+
+    /* Modals */
+    .modal-overlay{
+      background:rgba(0,0,0,.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .modal-active{display:flex!important;animation:slideUp .35s cubic-bezier(0,0,.2,1)}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{
+      width:42px;height:5px;border-radius:999px;background:rgba(255,255,255,.10);
+      margin:0 auto 18px;
+    }
+
+    /* Progress bars in lists */
+    .pbar{
+      height:6px;border-radius:999px;background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      overflow:hidden;
+    }
+    .pbar > i{
+      display:block;height:100%;
+      background:linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,.35));
+      width:0%;
+      border-radius:999px;
+    }
   </style>
 </head>
 
 <body class="antialiased pb-10">
-  <div class="max-w-md mx-auto px-5 pt-8">
+  <div class="max-w-md mx-auto px-5 pt-8 relative z-10">
 
     <!-- LOGIN -->
     <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Accès sécurisé</div>
-          <div class="text-xl font-black text-slate-900 mt-1">Connexion Gérant</div>
-          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</div>
+          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Accès sécurisé</div>
+          <div class="title-font text-2xl font-bold text-white mt-1 tracking-tight">Connexion Gérant</div>
+          <div class="text-[11px] font-bold accent uppercase tracking-[0.32em] mt-1">Grey Corner</div>
         </div>
-        <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">RH</div>
+        <div class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">RH</div>
       </div>
       <div class="mt-4 space-y-2">
         <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username" />
         <input id="loginPass" class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
         <button id="btnLogin" class="btn-login">Se connecter</button>
-        <div id="loginMsg" class="text-[11px] font-extrabold text-rose-600"></div>
+        <div id="loginMsg" class="text-[11px] font-extrabold text-rose-400"></div>
       </div>
     </div>
 
@@ -120,16 +228,19 @@
     <div id="appWrap" class="hidden">
       <header class="flex justify-between items-start mb-6">
         <div>
-          <h1 class="text-2xl font-black tracking-tighter text-slate-900 leading-none">RH SUPERVISION</h1>
-          <p class="text-[10px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</p>
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
-            Connecté : <span id="roleLabel" class="text-slate-900">—</span>
+          <h1 class="title-font text-3xl font-bold tracking-tight text-white leading-none">RH Supervision</h1>
+          <p class="text-[10px] font-bold accent uppercase tracking-[0.32em] mt-2">Grey Corner</p>
+
+          <div class="mt-3 accent-bar w-36"></div>
+
+          <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mt-3">
+            Connecté : <span id="roleLabel" class="text-white">—</span>
           </p>
-          <p id="syncLine" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mt-2">Sync : —</p>
+          <p id="syncLine" class="text-[10px] font-extrabold text-white/40 uppercase tracking-[0.2em] mt-2">Sync : —</p>
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold shadow-sm border border-white/10">
             Déconnexion
           </button>
         </div>
@@ -137,7 +248,7 @@
 
       <!-- CONTROLS -->
       <div class="mb-4 space-y-4">
-        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex bg-white/5 p-1.5 rounded-2xl border border-white/10">
           <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
           <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
           <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
@@ -145,8 +256,13 @@
 
         <!-- Choix du mois -->
         <div class="glass-card rounded-2xl p-4">
-          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Choix du mois</div>
-          <input type="month" id="monthPicker" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-extrabold text-slate-800 outline-none">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Choix du mois</div>
+              <div class="accent-bar w-24"></div>
+            </div>
+          </div>
+          <input type="month" id="monthPicker" class="w-full bg-transparent border-b border-white/10 py-3 font-bold text-white outline-none mt-3">
           <input type="date" id="dashDate" class="hidden">
         </div>
 
@@ -154,17 +270,17 @@
         <div class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Période</div>
-              <div id="periodLabel" class="text-[12px] font-extrabold text-slate-900 mt-1">—</div>
-              <div class="text-[10px] text-slate-500 font-semibold mt-1 leading-snug">
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Période</div>
+              <div id="periodLabel" class="title-font text-[15px] font-bold text-white mt-1">—</div>
+              <div class="text-[10px] text-white/45 font-semibold mt-1 leading-snug">
                 R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
               </div>
             </div>
             <div class="flex flex-col gap-2">
-              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">
+              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-black text-[11px] font-extrabold shadow-sm">
                 Export R/C Mois
               </button>
-              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold shadow-sm border border-white/10">
                 Export Année (résumé)
               </button>
             </div>
@@ -184,13 +300,16 @@
       <!-- OUTILS -->
       <div class="mt-6 space-y-4">
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">COLLABORATEURS</div>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">GÉRER ÉQUIPE</button>
-            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-[12px] border border-slate-200">EXPORT JSON</button>
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Collaborateurs</div>
+            <div class="accent-bar w-28 mt-2"></div>
           </div>
-          <div id="teamPermHint" class="text-[10px] text-slate-500 font-semibold leading-snug">
-            Stocké dans Firebase: <b>settings/equipe</b>.
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl bg-white/5 text-white font-extrabold text-[12px] border border-white/10">GÉRER ÉQUIPE</button>
+            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl bg-white/5 text-white font-extrabold text-[12px] border border-white/10">EXPORT JSON</button>
+          </div>
+          <div id="teamPermHint" class="text-[10px] text-white/45 font-semibold leading-snug">
+            Stocké dans Firebase: <b class="text-white/70">settings/equipe</b>.
           </div>
         </div>
       </div>
@@ -199,35 +318,36 @@
   </div>
 
   <!-- MODAL Historique -->
-  <div id="historyModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeModal()">
-    <div class="bg-white w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
-      <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
-      <h2 id="modalTitle" class="text-xl font-black text-slate-900 uppercase mb-6 tracking-tight">Historique</h2>
+  <div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">
+    <div class="glass-card w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <h2 id="modalTitle" class="title-font text-2xl font-bold text-white mb-6 tracking-tight">Historique</h2>
       <div id="modalList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div>
     </div>
   </div>
 
   <!-- MODAL Admin Équipe -->
-  <div id="staffAdminModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-md items-end" onclick="closeStaffAdmin()">
-    <div class="bg-white w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-      <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+  <div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">
+    <div class="glass-card w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
 
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Admin</div>
-          <div class="text-xl font-black text-slate-900 mt-1">Gérer l'équipe</div>
-          <div class="text-[11px] font-bold text-[#c5a059] uppercase tracking-[0.3em] mt-1">Grey Corner</div>
+          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Admin</div>
+          <div class="title-font text-2xl font-bold text-white mt-1">Gérer l'équipe</div>
+          <div class="text-[11px] font-bold accent uppercase tracking-[0.32em] mt-1">Grey Corner</div>
+          <div class="accent-bar w-28 mt-3"></div>
         </div>
-        <button class="px-3 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold" onclick="closeStaffAdmin()">Fermer</button>
+        <button class="px-3 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold border border-white/10" onclick="closeStaffAdmin()">Fermer</button>
       </div>
 
-      <div class="rounded-2xl border border-slate-100 p-4 bg-slate-50">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Ajouter collaborateur</div>
+      <div class="rounded-2xl border border-white/10 p-4 bg-white/5">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">Ajouter collaborateur</div>
         <div class="grid grid-cols-2 gap-2">
           <input id="addNom" class="inpt" placeholder="NOM (ex: ELALAMI)" />
           <input id="addPrenom" class="inpt" placeholder="Prénom (ex: HASSAN)" />
         </div>
-        <select id="addPoste" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none mt-2">
+        <select id="addPoste" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none mt-2 bg-white/5">
           <option value="SERVICE">SERVICE</option>
           <option value="BAR">BAR</option>
           <option value="CUISINE">CUISINE</option>
@@ -235,13 +355,13 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">AJOUTER</button>
-        <div id="addMsg" class="mt-2 text-[11px] font-extrabold text-slate-500"></div>
+        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-[#c5a059] text-black font-extrabold text-[12px]">AJOUTER</button>
+        <div id="addMsg" class="mt-2 text-[11px] font-extrabold text-white/60"></div>
       </div>
 
-      <div class="rounded-2xl border border-slate-100 p-4 mt-4">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Supprimer collaborateur</div>
-        <select id="delPosteSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
+      <div class="rounded-2xl border border-white/10 p-4 mt-4 bg-white/3">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">Supprimer collaborateur</div>
+        <select id="delPosteSelect" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none bg-white/5">
           <option value="">-- Choisir poste --</option>
           <option value="SERVICE">SERVICE</option>
           <option value="BAR">BAR</option>
@@ -250,15 +370,15 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <select id="delEmpSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none mt-2">
+        <select id="delEmpSelect" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none mt-2 bg-white/5">
           <option value="">Choisir poste d'abord</option>
         </select>
-        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-rose-600 text-white font-extrabold text-[12px]">SUPPRIMER</button>
-        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold text-slate-500"></div>
+        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-rose-500/90 text-black font-extrabold text-[12px]">SUPPRIMER</button>
+        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold text-white/60"></div>
       </div>
 
-      <div class="mt-4 text-[10px] text-slate-500 font-semibold leading-snug">
-        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
+      <div class="mt-4 text-[10px] text-white/50 font-semibold leading-snug">
+        Si tu vois <b class="text-white/70">PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b class="text-white/70">rules Firebase</b> qui bloquent l'écriture de <b class="text-white/70">settings/equipe</b>.
       </div>
     </div>
   </div>
@@ -301,18 +421,16 @@
     const EQUIPE_PATH = "settings/equipe";
 
     /* =========================
-       ✅ XSS FIX (CRITIQUE)
+       ✅ XSS FIX
        ========================= */
     function esc(s){
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
         .replace(/'/g,'&#39;');
     }
     function escAttr(s){ return esc(s); }
 
-    // ✅ FIX safeTime : valide aussi les valeurs (évite "99:99")
     function safeTime(t){
       const s = String(t ?? "").trim();
       if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(s)) return "";
@@ -353,13 +471,9 @@
       clearMonthCache();
     }
 
-    // Pas de retard (HA seule) pour ces IDs
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
-
-    // Exception R/C : pas de Repos (R) pour eux → tout OFF = C
     const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
-    // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -414,6 +528,16 @@
       return '';
     }
 
+    function dotColorForState(diff,isOff,hasArrived){
+      if(hasArrived){
+        if(diff<=0) return 'var(--ok)';
+        if(diff<30) return 'var(--late)';
+        return 'var(--crit)';
+      }
+      if(isOff) return 'rgba(148,163,184,.75)';
+      return 'rgba(255,255,255,.35)';
+    }
+
     /* ── R / C ── */
     function classifyOffDay(empId,dayISO,weekRC){
       if(noReposIds.has(empId)) return "C";
@@ -442,12 +566,12 @@
     async function saveEquipeToDB(list){
       try{
         await database.ref(EQUIPE_PATH).set(list);
-        document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b>settings/equipe</b> ✅`;
+        document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b class="text-white/70">settings/equipe</b> ✅`;
         return true;
       }catch(e){
         document.getElementById("teamPermHint").innerHTML=
-          `<span class="text-rose-600 font-extrabold">⚠️ PERMISSION_DENIED</span> :
-           Ajoute la règle Firebase pour autoriser le gérant à écrire <b>settings/equipe</b>.`;
+          `<span class="text-rose-400 font-extrabold">⚠️ PERMISSION_DENIED</span> :
+           Ajoute la règle Firebase pour autoriser le gérant à écrire <b class="text-white/70">settings/equipe</b>.`;
         throw e;
       }
     }
@@ -598,7 +722,7 @@
       Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
         const pe=p[empId]||{};
-        if(pe.hA) merged[empId].hA = pe.hA; // ✅ HA seulement
+        if(pe.hA) merged[empId].hA = pe.hA;
         if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
@@ -663,8 +787,8 @@
     function getDatesInMonthKey(mk){ return getDatesInMonth(mk+"-01"); }
 
     function errorCard(text){
-      return `<div class="glass-card p-5 rounded-2xl border border-rose-200 bg-rose-50">
-        <div class="text-[11px] font-extrabold text-rose-700">${esc(text)}</div>
+      return `<div class="glass-card p-5 rounded-2xl border border-white/10 bg-white/5">
+        <div class="text-[11px] font-extrabold text-rose-400">${esc(text)}</div>
       </div>`;
     }
 
@@ -750,11 +874,10 @@
           const e = merged[id] || null;
 
           const ha = safeTime(e?.hA);
-          if(ha) return; // présent
+          if(ha) return;
 
           if(e && e.off){ rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC); return; }
 
-          // absences + tout le reste
           rcByEmpDay[id][dayISO] = "C";
         });
       });
@@ -775,7 +898,10 @@
       let html='';
       POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
         html+=`<div class="mb-8">
-          <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">${esc(poste)}</h3>
+          <div class="flex items-center gap-3 mb-3 ml-1">
+            <h3 class="text-[11px] font-black text-white/55 uppercase tracking-[0.22em]">${esc(poste)}</h3>
+            <div class="accent-bar flex-1"></div>
+          </div>
           <div class="grid grid-cols-2 gap-4">`;
 
         groups[poste].slice().sort((a,b)=>{
@@ -791,26 +917,33 @@
           const ha = safeTime(d.hA) || "";
           const diff = diffFromEntry({ hA: ha, hP: hp }, id);
           const sClass = getStatusClass(diff, !!d.off, !!ha);
+          const dot = dotColorForState(diff, !!d.off, !!ha);
 
-          let statusText='ATTENTE',statusColor='text-slate-400';
+          let statusText='Attente',statusColor='text-white/45';
           if(ha){
             if(hp){
-              if(diff>0){ statusText=`${diff}m retard`; statusColor='text-rose-600'; }
-              else { statusText="À L'HEURE"; statusColor='text-emerald-600'; }
+              if(diff>0){ statusText=`${diff} min`; statusColor='text-rose-300'; }
+              else { statusText="À l'heure"; statusColor='text-emerald-300'; }
             }else{
-              statusText="OK"; statusColor='text-emerald-600';
+              statusText="OK"; statusColor='text-emerald-300';
             }
           }else if(d.off){
-            statusText="OFF"; statusColor="text-slate-400";
+            statusText="OFF"; statusColor="text-white/40";
           }
 
           html+=`
             <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
+              <span class="status-dot" style="background:${dot}"></span>
+
               <div>
-                <p class="text-[11px] font-extrabold uppercase text-slate-800 truncate">${esc(emp.nom)}</p>
-                <p class="text-[9px] font-medium text-slate-400">${esc(emp.prenom)}</p>
+                <p class="text-[11px] font-extrabold uppercase text-white truncate">${esc(emp.nom)}</p>
+                <p class="text-[10px] font-semibold text-white/55">${esc(emp.prenom)}</p>
               </div>
-              <p class="text-[10px] font-black ${escAttr(statusColor)}">${esc(statusText)}</p>
+
+              <div class="flex items-end justify-between">
+                <p class="text-[10px] font-black ${escAttr(statusColor)}">${esc(statusText)}</p>
+                <p class="title-font text-[12px] font-bold text-white/75">${esc(ha || "")}</p>
+              </div>
             </button>`;
         });
         html+=`</div></div>`;
@@ -829,19 +962,35 @@
     function renderChart(labels,lates,presences){
       const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
+
+      // dark tooltip + gold border
+      const tooltip = {
+        enabled:true,
+        backgroundColor:'rgba(13,15,18,.92)',
+        titleColor:'#fff',
+        bodyColor:'rgba(255,255,255,.80)',
+        borderColor:'rgba(197,160,89,.55)',
+        borderWidth:1,
+        padding:10,
+        displayColors:false
+      };
+
       myChart=new Chart(ctx,{
         type:'line',
         data:{
           labels,
           datasets:[
-            {label:"Retards (min)",data:lates,borderColor:'#c5a059',tension:.35,borderWidth:3,pointRadius:0,fill:true,backgroundColor:'rgba(197,160,89,0.08)'},
-            {label:"Présences (nb)",data:presences,borderColor:'#0f172a',tension:.35,borderWidth:2,pointRadius:0,fill:false}
+            {label:"Retards (min)",data:lates,borderColor:'#c5a059',tension:.35,borderWidth:3,pointRadius:0,fill:true,backgroundColor:'rgba(197,160,89,0.10)'},
+            {label:"Présences (nb)",data:presences,borderColor:'#34d399',tension:.35,borderWidth:2,pointRadius:0,fill:false}
           ]
         },
         options:{
           maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{enabled:true}},
-          scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:8}}}}
+          plugins:{legend:{display:false},tooltip},
+          scales:{
+            y:{display:false,grid:{display:false}},
+            x:{grid:{display:false},ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'}}
+          }
         }
       });
     }
@@ -849,7 +998,7 @@
     function loadingCard(text){
       return `<div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
         <div class="spin"></div>
-        <div class="text-[11px] font-extrabold text-slate-600">${esc(text)}</div>
+        <div class="text-[11px] font-extrabold text-white/70">${esc(text)}</div>
       </div>`;
     }
 
@@ -935,28 +1084,45 @@
       const lateList=Object.values(stats).filter(s=>s.lateMin>0).sort((a,b)=>b.lateMin-a.lateMin);
       const goodList=Object.values(stats).filter(s=>s.lateMin===0&&s.present>0).sort((a,b)=>b.present-a.present);
 
+      const maxLate = lateList.length ? lateList[0].lateMin : 0;
+
       let html='<div class="space-y-8">';
-      html+=`<div><h3 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4">Top Retardataires</h3>`;
+
+      html+=`<div>
+        <div class="flex items-center gap-3 mb-4">
+          <h3 class="text-[11px] font-black text-rose-300 uppercase tracking-[0.2em]">Top Retardataires</h3>
+          <div class="accent-bar flex-1"></div>
+        </div>`;
+
       if(!lateList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-white/45 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
       }else{
         lateList.slice(0,6).forEach(s=>{
-          html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-xs font-extrabold uppercase">${esc(s.info.nom)}</span>
-            <span class="text-rose-600 font-black">${esc(s.lateMin)}m</span>
+          const pct = maxLate ? Math.max(6, Math.round((s.lateMin/maxLate)*100)) : 0;
+          html+=`<div class="glass-card p-5 rounded-2xl mb-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-extrabold text-white">${esc(s.info.nom)}</span>
+              <span class="title-font text-[15px] font-bold accent">${esc(s.lateMin)}m</span>
+            </div>
+            <div class="mt-3 pbar"><i style="width:${pct}%"></i></div>
           </div>`;
         });
       }
       html+=`</div>`;
 
-      html+=`<div><h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Les plus exemplaires</h3>`;
+      html+=`<div>
+        <div class="flex items-center gap-3 mb-4">
+          <h3 class="text-[11px] font-black text-emerald-300 uppercase tracking-[0.2em]">Les plus exemplaires</h3>
+          <div class="accent-bar flex-1"></div>
+        </div>`;
+
       if(!goodList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-slate-400 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-white/45 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
       }else{
         goodList.slice(0,6).forEach(s=>{
           html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-xs font-extrabold uppercase">${esc(s.info.nom)}</span>
-            <span class="text-emerald-600 font-black">${esc(s.present)}j OK</span>
+            <span class="text-xs font-extrabold text-white">${esc(s.info.nom)}</span>
+            <span class="title-font text-[15px] font-bold text-emerald-300">${esc(s.present)} j</span>
           </div>`;
         });
       }
@@ -1027,16 +1193,16 @@
         <div class="glass-card rounded-3xl p-5">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tableau R/C</div>
-              <div class="text-[12px] font-extrabold text-slate-900 mt-1">Mois: ${esc(mk)}</div>
-              <div class="mt-2 flex flex-wrap gap-2">
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Tableau R/C</div>
+              <div class="title-font text-[16px] font-bold text-white mt-1">Mois: ${esc(mk)}</div>
+              <div class="accent-bar w-32 mt-2"></div>
+              <div class="mt-3 flex flex-wrap gap-2">
                 <span class="chip chip-p">Présents: <b>${esc(tP)}</b></span>
                 <span class="chip chip-r">R: <b>${esc(tR)}</b></span>
                 <span class="chip chip-c">C: <b>${esc(tC)}</b></span>
                 <span class="chip">Retard: <b>${esc(tL)}m</b></span>
               </div>
             </div>
-            <div class="hidden"></div>
           </div>
 
           <div class="mt-4 overflow-x-auto">
@@ -1048,25 +1214,27 @@
                   <th style="text-align:center;">Présents</th>
                   <th style="text-align:center;">R</th>
                   <th style="text-align:center;">C</th>
-                  <th style="text-align:center;">Retard (min)</th>
+                  <th style="text-align:center;">Retard</th>
                 </tr>
               </thead>
               <tbody>
-                ${rows.map(r=>`
+                ${rows.map(r=>{
+                  const ret = (Number(r.lateMin)||0) === 0 ? "—" : String(r.lateMin);
+                  return `
                   <tr>
-                    <td style="font-weight:900;text-transform:uppercase;">${esc(r.nom)} ${esc(r.prenom)}</td>
-                    <td style="font-weight:800;color:#475569;">${esc(r.poste)}</td>
-                    <td style="text-align:center;font-weight:900;color:#065f46;">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:#0f172a;">${esc(r.R)}</td>
-                    <td style="text-align:center;font-weight:900;color:#9a3412;">${esc(r.C)}</td>
-                    <td style="text-align:center;font-weight:900;color:#7c2d12;">${esc(r.lateMin)}</td>
-                  </tr>
-                `).join("")}
+                    <td style="font-weight:900;text-transform:uppercase;color:#fff;">${esc(r.nom)} <span style="text-transform:none;font-weight:700;color:rgba(255,255,255,.65)">${esc(r.prenom)}</span></td>
+                    <td style="font-weight:800;color:rgba(255,255,255,.55);">${esc(r.poste)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.92);">${esc(r.present)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.92);">${esc(r.R)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--late);">${esc(r.C)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--crit);">${esc(ret)}</td>
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           </div>
 
-          <div class="mt-3 text-[10px] text-slate-500 font-semibold">
+          <div class="mt-3 text-[10px] text-white/45 font-semibold">
             R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
           </div>
         </div>
@@ -1079,15 +1247,15 @@
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
       const rcTxt=rc?` • ${esc(rc)}`:"";
       return `
-        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+        <div class="p-4 bg-white/5 rounded-xl border border-white/10">
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black text-slate-400 uppercase">${esc(fmtFR(dayISO))}</span>
+            <span class="text-[10px] font-black text-white/45 uppercase">${esc(fmtFR(dayISO))}</span>
             <span class="text-[10px] font-black ${escAttr(cls)} uppercase">${esc(statut)}${rcTxt}</span>
           </div>
           <div class="mt-2 grid grid-cols-3 gap-2">
-            <div class="text-[10px] font-extrabold text-slate-500">HP: <span class="text-slate-900">${esc(hp||"—")}</span></div>
-            <div class="text-[10px] font-extrabold text-slate-500">HA: <span class="text-slate-900">${esc(ha||"—")}</span></div>
-            <div class="text-[10px] font-extrabold text-slate-500">Ret: <span class="text-slate-900">${esc(retard||"—")}</span></div>
+            <div class="text-[10px] font-extrabold text-white/50">HP: <span class="text-white/85">${esc(hp||"—")}</span></div>
+            <div class="text-[10px] font-extrabold text-white/50">HA: <span class="text-white/85">${esc(ha||"—")}</span></div>
+            <div class="text-[10px] font-extrabold text-white/50">Ret: <span class="text-white/85">${esc(retard||"—")}</span></div>
           </div>
         </div>`;
     }
@@ -1099,7 +1267,7 @@
       document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
-          <div class="text-[11px] font-extrabold text-slate-600">Chargement historique…</div>
+          <div class="text-[11px] font-extrabold text-white/70">Chargement historique…</div>
         </div>`;
 
       const mk=monthKeyFromISO(dateInput.value);
@@ -1121,8 +1289,8 @@
 
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-slate-300"); return; }
-        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-slate-400"); return; }
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-white/30"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-white/45"); return; }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
@@ -1133,19 +1301,19 @@
         if(ha){
           if(hp){
             const diff=diffFromEntry({hA:ha,hP:hp},empId);
-            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-600");
-            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","text-emerald-600");
+            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-300");
+            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","text-emerald-300");
           }else{
-            html+=rowHistory(dayISO,"OK","",ha,"","text-emerald-600");
+            html+=rowHistory(dayISO,"OK","",ha,"","text-emerald-300");
           }
           return;
         }
 
         const rc = (rcByEmpDay[empId] && rcByEmpDay[empId][dayISO]) ? rcByEmpDay[empId][dayISO] : "C";
-        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "text-slate-500", rc);
+        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "text-white/55", rc);
       });
 
-      document.getElementById('modalList').innerHTML=html||'<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
+      document.getElementById('modalList').innerHTML=html||'<p class="text-center text-white/40 py-10">Aucune donnée</p>';
     }
 
     function closeModal(){
