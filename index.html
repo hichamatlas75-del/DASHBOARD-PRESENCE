@@ -8,7 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Fonts: Cormorant Garamond (titres/chiffres) + DM Sans (UI) -->
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -44,7 +43,6 @@
       overflow-x:hidden;
     }
 
-    /* Noise overlay (very subtle) */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -55,12 +53,10 @@
       mix-blend-mode:overlay;
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar{width:4px;height:4px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background: rgba(197,160,89,.30); border-radius:999px}
 
-    /* Cards */
     .glass-card{
       background: linear-gradient(180deg, rgba(19,22,27,.96), rgba(17,20,26,.92));
       border:1px solid var(--stroke);
@@ -68,7 +64,6 @@
       backdrop-filter: blur(6px);
     }
 
-    /* Headings */
     .hTitle{
       font-family: "Cormorant Garamond", serif;
       letter-spacing: .02em;
@@ -81,7 +76,6 @@
       color: var(--muted2);
     }
 
-    /* Accent bar (2px gold → transparent) */
     .accent-bar{
       height:2px;
       width:100%;
@@ -90,7 +84,6 @@
       opacity:.9;
     }
 
-    /* Mode switch */
     .view-btn{
       color: rgba(255,255,255,.82);
       border:1px solid transparent;
@@ -104,7 +97,6 @@
       box-shadow: inset 0 0 0 1px rgba(197,160,89,.12);
     }
 
-    /* Inputs */
     .inpt{
       width:100%;
       background: rgba(255,255,255,.03);
@@ -135,7 +127,6 @@
     }
     .btn-login:active{transform:translateY(1px)}
 
-    /* Spinner */
     .spin{
       width:22px;height:22px;border-radius:999px;
       border:3px solid rgba(255,255,255,.14);
@@ -144,7 +135,6 @@
     }
     @keyframes sp{to{transform:rotate(360deg)}}
 
-    /* Employee cards */
     .staff-card{
       border-left-width:3px;
       transition:transform .15s ease, box-shadow .15s ease;
@@ -184,7 +174,6 @@
     }
     .status-off{border-left-color: rgba(148,163,184,.6)!important; background: rgba(255,255,255,.03); opacity:.62}
 
-    /* Chips */
     .chip{
       display:inline-flex;align-items:center;gap:6px;
       padding:5px 10px;border-radius:999px;
@@ -197,7 +186,6 @@
     .chip-r{background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12)}
     .chip-c{background: rgba(251,191,36,.10); border-color: rgba(251,191,36,.22)}
 
-    /* Table */
     .rc-table{width:100%;border-collapse:collapse}
     .rc-table th,.rc-table td{
       border:1px solid rgba(255,255,255,.08);
@@ -217,7 +205,6 @@
     .rc-table tbody tr:hover{ background: rgba(197,160,89,.07); transition: background .2s ease; }
     .muted-dash{opacity:.55}
 
-    /* Drawer / Accordion */
     .drawer{
       border:1px solid rgba(255,255,255,.10);
       border-radius:24px;
@@ -238,7 +225,6 @@
     .drawer[open] .chev{transform:rotate(180deg)}
     .drawer .body{padding:0 16px 16px 16px}
 
-    /* Modals */
     .modal-active{display:flex!important;animation:slideUp .35s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .modal-overlay{
@@ -313,7 +299,7 @@
           </div>
         </div>
 
-        <!-- Choix du jour (vue Jour) -->
+        <!-- Choix du jour -->
         <div id="dayPickWrap" class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between">
             <div class="smallCaps">Choix du jour</div>
@@ -325,7 +311,7 @@
           </div>
         </div>
 
-        <!-- Choix du mois (Bilan / R-C) -->
+        <!-- Choix du mois -->
         <div id="monthPickWrap" class="glass-card rounded-2xl p-4 hidden">
           <div class="smallCaps">Choix du mois</div>
           <div class="accent-bar mt-2 mb-3"></div>
@@ -357,7 +343,7 @@
         </div>
       </div>
 
-      <!-- CHART (Bilan) -->
+      <!-- CHART -->
       <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
         <div class="h-[180px] w-full">
           <canvas id="trendsChart"></canvas>
@@ -399,7 +385,7 @@
     </div>
   </div>
 
-  <!-- MODAL Admin Équipe -->
+  <!-- MODAL Admin -->
   <div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">
     <div class="modal-sheet w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="handle"></div>
@@ -485,7 +471,7 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const dateInput    = document.getElementById('dashDate');   // hidden seed mois (YYYY-MM-01)
+    const dateInput    = document.getElementById('dashDate');
     const monthPicker  = document.getElementById('monthPicker');
     const dayPicker    = document.getElementById('dayPicker');
 
@@ -505,9 +491,6 @@
 
     const EQUIPE_PATH = "settings/equipe";
 
-    /* =========================
-       ✅ XSS FIX
-       ========================= */
     function esc(s){
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -516,7 +499,6 @@
     }
     function escAttr(s){ return esc(s); }
 
-    // ✅ FIX CRITIQUE: safeTime valide les valeurs (pas "99:99"), accepte "9:05" et normalise "09:05"
     function safeTime(t){
       const s = String(t ?? "").trim();
       if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(s)) return "";
@@ -524,7 +506,6 @@
       return h.padStart(2,'0') + ":" + m;
     }
 
-    // équipe mutable via setEquipe()
     let equipe = [
       {nom:'BOUCHNAK',   prenom:'NAOUAL',    poste:'CUISINE'},
       {nom:'ALAOUI',     prenom:'LAZIZ',     poste:'SERVICE'},
@@ -557,18 +538,13 @@
       clearMonthCache();
     }
 
-    // Pas de retard (HA seule) pour ces IDs
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
-
-    // Exception R/C : pas de Repos (R) pour eux → tout OFF = C
     const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
-    // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
 
-    /* ── Dates UTC ── */
     function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
     function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
     function addDaysISO(iso, delta){
@@ -601,7 +577,6 @@
       return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
     }
 
-    /* ── Retard (HA-HP uniquement) ── */
     function getTimeDiff(a,p,id){
       if(!a) return 0;
       if(id && haOnlyIds.has(id)) return 0;
@@ -632,7 +607,6 @@
       return 'rgba(255,255,255,.20)';
     }
 
-    /* ── R / C ── */
     function classifyOffDay(empId,dayISO,weekRC){
       if(noReposIds.has(empId)) return "C";
       const wk=weekStartMondayISO(dayISO);
@@ -642,13 +616,11 @@
       return "C";
     }
 
-    /* ── Equipe helpers ── */
     function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
     function getEmpById(empId){
       return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:""};
     }
 
-    /* ── Admin ── */
     function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
     function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
 
@@ -676,7 +648,7 @@
     }
     function closeStaffAdmin(){
       const m=document.getElementById("staffAdminModal");
-      m.classList.remove("modal-active"); m.classList.add("hidden");
+      m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
     async function exportEquipeJSON(){
@@ -754,7 +726,6 @@
       };
     }
 
-    /* ── Auth ── */
     async function fetchRole(uid){
       const s=await database.ref("users/"+uid).once("value");
       return s.val()||null;
@@ -800,7 +771,6 @@
       bootDashboard();
     });
 
-    /* ── Temps réel ── */
     function detachRealtime(){
       try{
         if(activePresRef){ activePresRef.off(); activePresRef=null; }
@@ -809,14 +779,13 @@
       presCache={}; punchCache={};
     }
 
-    // ✅ STRICT MODEL : HP = presences, HA = punches (uniquement hA)
     function mergeDay(pres,punches){
       const merged=JSON.parse(JSON.stringify(pres||{}));
       const p=punches||{};
       Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
         const pe=p[empId]||{};
-        if(pe.hA) merged[empId].hA = pe.hA; // ✅ HA seulement
+        if(pe.hA) merged[empId].hA = pe.hA;
         if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
@@ -865,7 +834,6 @@
       updateDashboard();
     }
 
-    /* ── Month cache ── */
     const monthDataCache=new Map();
     const monthRCMapCache=new Map();
 
@@ -929,7 +897,6 @@
       return pack;
     }
 
-    // ✅ FIX CRITIQUE: seed cross-mois (semaines chevauchantes)
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
 
@@ -945,7 +912,6 @@
 
       const weekRC = {};
 
-      // ── SEED CROSS-MOIS ──────────────────────────────────────────
       const firstDay = mk + "-01";
       const wkStart  = weekStartMondayISO(firstDay);
       if(wkStart < firstDay){
@@ -960,11 +926,10 @@
           equipe.forEach(emp=>{
             const id = empIdOf(emp);
             const e  = merged[id] || null;
-            if(e && e.off) classifyOffDay(id, dayISO, weekRC); // consomme R si off officiel
+            if(e && e.off) classifyOffDay(id, dayISO, weekRC);
           });
         });
       }
-      // ─────────────────────────────────────────────────────────────
 
       dates.forEach(dayISO=>{
         if(dayISO > today) return;
@@ -977,12 +942,12 @@
           const e = merged[id] || null;
 
           const ha = safeTime(e?.hA);
-          if(ha) return;                    // présence ne consomme pas R
-          if(e && e.off){                   // off officiel consomme R/C
+          if(ha) return;
+          if(e && e.off){
             rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC);
             return;
           }
-          rcByEmpDay[id][dayISO] = "C";     // absences + tout le reste
+          rcByEmpDay[id][dayISO] = "C";
         });
       });
 
@@ -993,7 +958,6 @@
 
     const POSTES_ORDER=['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
 
-    /* ── Vue Jour ── */
     function renderDayView(data){
       const container=document.getElementById('dashBody');
       const groups={};
@@ -1058,7 +1022,6 @@
       });
     }
 
-    /* ── Chart (Bilan) ── */
     function renderChart(labels,lates,presences){
       const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
@@ -1068,20 +1031,8 @@
         data:{
           labels,
           datasets:[
-            {
-              label:"Retards (min)",
-              data:lates,
-              borderColor:'rgba(197,160,89,.95)',
-              backgroundColor:'rgba(197,160,89,.10)',
-              tension:.35,borderWidth:3,pointRadius:0,fill:true
-            },
-            {
-              label:"Présences (nb)",
-              data:presences,
-              borderColor:'rgba(52,211,153,.95)',
-              backgroundColor:'rgba(52,211,153,.10)',
-              tension:.35,borderWidth:2,pointRadius:0,fill:false
-            }
+            { label:"Retards (min)", data:lates, borderColor:'rgba(197,160,89,.95)', backgroundColor:'rgba(197,160,89,.10)', tension:.35,borderWidth:3,pointRadius:0,fill:true },
+            { label:"Présences (nb)", data:presences, borderColor:'rgba(52,211,153,.95)', backgroundColor:'rgba(52,211,153,.10)', tension:.35,borderWidth:2,pointRadius:0,fill:false }
           ]
         },
         options:{
@@ -1100,10 +1051,7 @@
           },
           scales:{
             y:{display:false},
-            x:{
-              grid:{display:false},
-              ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'}
-            }
+            x:{ grid:{display:false}, ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'} }
           }
         }
       });
@@ -1146,7 +1094,6 @@
       else await renderRCView();
     }
 
-    /* ── Bilan ── */
     async function renderReportView(){
       const mk=monthKeyFromISO(dateInput.value);
       const md = await getMonthData(mk);
@@ -1169,18 +1116,13 @@
       dates.forEach(dayISO=>{
         labels.push(dayISO.split('-')[2]);
         if(dayISO>today){ dailyLates.push(0); dailyPresence.push(0); return; }
-        if(isExcluded(dayISO)){
-          dailyLates.push(0); dailyPresence.push(0);
-          Object.keys(stats).forEach(id=>stats[id].excluded++);
-          return;
-        }
+        if(isExcluded(dayISO)){ dailyLates.push(0); dailyPresence.push(0); return; }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         let tL=0,tP=0;
 
         Object.keys(stats).forEach(id=>{
           const e=merged[id]||null;
-
           const hp = safeTime(e?.hP) || "";
           const ha = safeTime(e?.hA) || "";
 
@@ -1191,7 +1133,6 @@
             tL+=diff; tP++;
             return;
           }
-
           const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
           stats[id][rc]++;
         });
@@ -1208,8 +1149,6 @@
       const maxLate = lateList.length ? lateList[0].lateMin : 0;
 
       let html='<div class="space-y-8">';
-
-      // Top retardataires + progress bar
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
           <div class="smallCaps" style="color:rgba(248,113,113,.90)">Top retardataires</div>
@@ -1235,7 +1174,6 @@
       }
       html+=`</div>`;
 
-      // Exemplaires
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
           <div class="smallCaps" style="color:rgba(52,211,153,.90)">Les plus exemplaires</div>
@@ -1263,7 +1201,6 @@
       const {rcByEmpDay} = await getMonthRCMap(mk);
 
       const today=todayISO();
-
       const out = {};
       equipe.forEach(emp=>{
         const id = empIdOf(emp);
@@ -1298,14 +1235,10 @@
 
     async function buildYearSummary(year){
       const currentMk = monthKeyFromISO(todayISO());
-
       const totalsByEmp = {};
       equipe.forEach(emp=>{
         const id = empIdOf(emp);
-        totalsByEmp[id] = {
-          empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste,
-          present:0, R:0, C:0, lateMin:0
-        };
+        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
       });
 
       for(let i=1;i<=12;i++){
@@ -1315,10 +1248,7 @@
         const month = await buildMonthlySummary(mk);
         Object.values(month).forEach(s=>{
           if(!totalsByEmp[s.empId]){
-            totalsByEmp[s.empId] = {
-              empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"",
-              present:0, R:0, C:0, lateMin:0
-            };
+            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"", present:0, R:0, C:0, lateMin:0 };
           }
           totalsByEmp[s.empId].present += Number(s.present)||0;
           totalsByEmp[s.empId].R       += Number(s.R)||0;
@@ -1326,11 +1256,37 @@
           totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
         });
       }
-
       return totalsByEmp;
     }
 
-    /* ── Table R/C (2 tiroirs) ── */
+    // ✅ PERF FIX: éviter le recalcul du mois courant dans renderRCView
+    // buildYearSummary(year, monthPrefetch)
+    async function buildYearSummaryOptimized(year, monthPrefetch){
+      const currentMk = monthKeyFromISO(todayISO());
+      const totalsByEmp = {};
+      equipe.forEach(emp=>{
+        const id = empIdOf(emp);
+        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
+      });
+
+      for(let i=1;i<=12;i++){
+        const mk = `${year}-${String(i).padStart(2,"0")}`;
+        if(mk > currentMk) break;
+
+        const month = (monthPrefetch && monthPrefetch[mk]) ? monthPrefetch[mk] : await buildMonthlySummary(mk);
+        Object.values(month).forEach(s=>{
+          if(!totalsByEmp[s.empId]){
+            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"", present:0, R:0, C:0, lateMin:0 };
+          }
+          totalsByEmp[s.empId].present += Number(s.present)||0;
+          totalsByEmp[s.empId].R       += Number(s.R)||0;
+          totalsByEmp[s.empId].C       += Number(s.C)||0;
+          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
+        });
+      }
+      return totalsByEmp;
+    }
+
     async function renderRCView(){
       const mk   = monthKeyFromISO(dateInput.value);
       const year = dateInput.value.slice(0,4);
@@ -1342,13 +1298,16 @@
         return;
       }
 
-      // Mois
+      // Mois courant calculé 1 seule fois
       const monthSummary = await buildMonthlySummary(mk);
+
+      // Année optimisée: réutilise monthSummary pour mk
+      const yearSummary  = await buildYearSummaryOptimized(year, { [mk]: monthSummary });
+
       const monthRows = Object.values(monthSummary).sort((a,b)=>{
         if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       });
-
       let mP=0,mR=0,mC=0,mL=0;
       monthRows.forEach(r=>{ mP+=r.present; mR+=r.R; mC+=r.C; mL+=r.lateMin; });
 
@@ -1386,13 +1345,10 @@
         </div>
       `;
 
-      // Année
-      const yearSummary = await buildYearSummary(year);
       const yearRows = Object.values(yearSummary).sort((a,b)=>{
         if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       });
-
       let yP=0,yR=0,yC=0,yL=0;
       yearRows.forEach(r=>{ yP+=r.present; yR+=r.R; yC+=r.C; yL+=r.lateMin; });
 
@@ -1472,7 +1428,6 @@
       document.getElementById('dashBody').innerHTML = html;
     }
 
-    /* ── Historique ── */
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
       const rcTxt=rc?` • ${esc(rc)}`:"";
       return `
@@ -1512,7 +1467,6 @@
       const {rcByEmpDay} = await getMonthRCMap(mk);
       const today=todayISO();
 
-      // ✅ FIX: empId canonique (empIdOf)
       const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
       const empId = emp ? empIdOf(emp) : (nom + "_" + prenom);
 
@@ -1550,7 +1504,6 @@
       m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
-    /* ── CSV ── */
     function escapeCSV(v){
       const s = String(v ?? "");
       if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
@@ -1596,10 +1549,7 @@
       const totalsByEmp = {};
       equipe.forEach(emp=>{
         const id = empIdOf(emp);
-        totalsByEmp[id] = {
-          empId: id, nom: emp.nom, prenom: emp.prenom, poste: emp.poste,
-          present: 0, R: 0, C: 0, lateMin: 0
-        };
+        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
       });
 
       for(let i=1;i<=12;i++){
@@ -1609,10 +1559,7 @@
         const summary = await buildMonthlySummary(mk);
         Object.values(summary).forEach(s=>{
           if(!totalsByEmp[s.empId]){
-            totalsByEmp[s.empId] = {
-              empId: s.empId, nom: s.nom || s.empId, prenom: s.prenom || "", poste: s.poste || "",
-              present: 0, R: 0, C: 0, lateMin: 0
-            };
+            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom || s.empId, prenom:s.prenom || "", poste:s.poste || "", present:0, R:0, C:0, lateMin:0 };
           }
           totalsByEmp[s.empId].present += Number(s.present)||0;
           totalsByEmp[s.empId].R       += Number(s.R)||0;
@@ -1649,21 +1596,17 @@
       URL.revokeObjectURL(url);
     }
 
-    /* ── Boot ── */
     async function bootDashboard(){
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
-      // Day picker init
+      // Day picker init (⚠️ pas de .max figé: on autorise navigation, et évite le bug "minuit")
       dayPicker.value = today;
-      dayPicker.max = today;
 
-      // Month picker init
       monthPicker.value = mkToday;
       dateInput.value = isoFromMonthKey(mkToday);
 
       dayPicker.addEventListener('change', async()=>{
-        // Pas de clearMonthCache ici (vue jour)
         await updateDashboard();
       });
 
