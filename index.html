@@ -8,93 +8,119 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Fonts: Cormorant Garamond (titres/chiffres) + DM Sans (UI) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg:#0d0f12;
       --card:#13161b;
-      --stroke:rgba(255,255,255,.07);
-      --muted:rgba(255,255,255,.55);
-      --muted2:rgba(255,255,255,.38);
+      --card2:#11141a;
+      --stroke: rgba(255,255,255,.07);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.55);
+      --muted2: rgba(255,255,255,.40);
 
       --gold:#c5a059;
 
       --ok:#34d399;
-      --late:#fbbf24;
+      --amber:#fbbf24;
       --crit:#f87171;
 
-      --okbg:rgba(52,211,153,.08);
-      --latebg:rgba(251,191,36,.08);
-      --critbg:rgba(248,113,113,.08);
+      --okBg: rgba(52,211,153,.08);
+      --amberBg: rgba(251,191,36,.08);
+      --critBg: rgba(248,113,113,.08);
     }
 
+    *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family:'DM Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:#e8ecf3;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       -webkit-tap-highlight-color:transparent;
       position:relative;
       overflow-x:hidden;
     }
 
-    /* Noise overlay */
-    body:before{
+    /* Noise overlay (very subtle) */
+    body::before{
       content:"";
       position:fixed; inset:0;
       pointer-events:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+      opacity:.035;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
       mix-blend-mode:overlay;
-      opacity:1;
     }
 
     /* Scrollbar */
-    *{scrollbar-width:thin; scrollbar-color: rgba(197,160,89,.30) transparent;}
-    *::-webkit-scrollbar{width:4px;height:4px}
-    *::-webkit-scrollbar-thumb{background:rgba(197,160,89,.30);border-radius:999px}
-    *::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background: rgba(197,160,89,.30); border-radius:999px}
 
+    /* Cards */
     .glass-card{
-      background:var(--card);
+      background: linear-gradient(180deg, rgba(19,22,27,.96), rgba(17,20,26,.92));
       border:1px solid var(--stroke);
-      box-shadow:0 12px 34px rgba(0,0,0,.35);
+      box-shadow: 0 14px 45px rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
     }
 
-    .title-font{font-family:'Cormorant Garamond',serif}
-    .accent{color:var(--gold)}
+    /* Headings */
+    .hTitle{
+      font-family: "Cormorant Garamond", serif;
+      letter-spacing: .02em;
+    }
+    .smallCaps{
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.22em;
+      font-size:10px;
+      color: var(--muted2);
+    }
 
+    /* Accent bar (2px gold → transparent) */
     .accent-bar{
       height:2px;
-      background:linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,.0));
+      width:100%;
+      background: linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,0));
       border-radius:999px;
+      opacity:.9;
     }
 
+    /* Mode switch */
     .view-btn{
-      color:#e8ecf3;
+      color: rgba(255,255,255,.82);
       border:1px solid transparent;
-      transition: .25s ease;
+      transition:.25s ease;
+      background: transparent;
     }
     .view-btn.active{
-      background:rgba(197,160,89,.10);
-      color:var(--gold);
-      border-color:rgba(197,160,89,.55);
+      background: rgba(197,160,89,.14);
+      color: rgba(197,160,89,.95);
+      border-color: rgba(197,160,89,.40);
+      box-shadow: inset 0 0 0 1px rgba(197,160,89,.12);
     }
 
+    /* Inputs */
     .inpt{
       width:100%;
-      background:rgba(255,255,255,.02);
+      background: rgba(255,255,255,.03);
       border:1px solid var(--stroke);
       border-radius:16px;
       padding:12px 12px;
-      color:#e8ecf3;
-      font-weight:700;
+      color: var(--text);
+      font-weight:800;
       font-size:12px;
       outline:none;
+      color-scheme: dark;
     }
-    .inpt:focus{border-color:rgba(197,160,89,.55);box-shadow:0 0 0 3px rgba(197,160,89,.12)}
+    .inpt:focus{
+      border-color: rgba(197,160,89,.55);
+      box-shadow: 0 0 0 3px rgba(197,160,89,.16);
+    }
     .btn-login{
       width:100%;
       border-radius:16px;
@@ -103,124 +129,154 @@
       font-weight:900;
       letter-spacing:.10em;
       text-transform:uppercase;
-      background:#0b0e13;
-      color:#fff;
-      border:1px solid rgba(197,160,89,.35);
+      background: rgba(197,160,89,.16);
+      color: rgba(197,160,89,.96);
+      border:1px solid rgba(197,160,89,.45);
     }
-    input[type="month"], input[type="date"], select{ color-scheme: dark; }
+    .btn-login:active{transform:translateY(1px)}
 
+    /* Spinner */
     .spin{
       width:22px;height:22px;border-radius:999px;
-      border:3px solid rgba(255,255,255,.12);
-      border-top-color: rgba(197,160,89,.85);
+      border:3px solid rgba(255,255,255,.14);
+      border-top-color: rgba(197,160,89,.9);
       animation:sp 0.9s linear infinite;
     }
     @keyframes sp{to{transform:rotate(360deg)}}
 
-    /* Cards employés */
+    /* Employee cards */
     .staff-card{
       border-left-width:3px;
-      transition:transform .15s ease, border-color .2s ease, background .2s ease;
+      transition:transform .15s ease, box-shadow .15s ease;
       cursor:pointer;
       position:relative;
       overflow:hidden;
+      background: rgba(19,22,27,.96);
     }
-    .staff-card:active{transform:scale(.99)}
-    .status-green{border-left-color:var(--ok)!important;background:var(--okbg)}
-    .status-orange{border-left-color:var(--late)!important;background:var(--latebg)}
-    .status-red{border-left-color:var(--crit)!important;background:var(--critbg)}
+    .staff-card:active{transform: scale(.995)}
+    .status-dot{
+      position:absolute; top:10px; right:10px;
+      width:6px; height:6px; border-radius:999px;
+      box-shadow: 0 0 0 6px rgba(255,255,255,.03);
+      opacity:.95;
+    }
+    .arrive-time{
+      position:absolute; bottom:12px; right:12px;
+      font-family:"Cormorant Garamond", serif;
+      font-weight:700;
+      font-size:14px;
+      color: rgba(255,255,255,.78);
+      letter-spacing:.02em;
+    }
+
+    .status-green{border-left-color: var(--ok)!important; background: var(--okBg)}
+    .status-orange{border-left-color: var(--amber)!important; background: var(--amberBg)}
+    .status-red{border-left-color: var(--crit)!important; background: var(--critBg)}
     .status-flash{
-      border-left-color:var(--crit)!important;background:var(--critbg);
+      border-left-color: var(--crit)!important;
+      background: var(--critBg);
       animation:flash-red 1s infinite;
     }
     @keyframes flash-red{
-      0%{box-shadow:inset 0 0 0px rgba(248,113,113,.25)}
-      50%{box-shadow:inset 0 0 18px rgba(248,113,113,.22)}
-      100%{box-shadow:inset 0 0 0px rgba(248,113,113,.25)}
+      0%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
+      50%{box-shadow:inset 0 0 18px rgba(248,113,113,.10);border-left-width:6px}
+      100%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
     }
-    .status-off{border-left-color:rgba(148,163,184,.55)!important;background:rgba(148,163,184,.06);opacity:.75}
+    .status-off{border-left-color: rgba(148,163,184,.6)!important; background: rgba(255,255,255,.03); opacity:.62}
 
-    .status-dot{
-      width:6px;height:6px;border-radius:999px;
-      position:absolute; top:10px; right:10px;
-      box-shadow:0 0 0 4px rgba(255,255,255,.03);
+    /* Chips */
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 10px;border-radius:999px;
+      border:1px solid var(--stroke);
+      font-weight:900;font-size:11px;
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.86);
     }
+    .chip-p{background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.22)}
+    .chip-r{background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12)}
+    .chip-c{background: rgba(251,191,36,.10); border-color: rgba(251,191,36,.22)}
 
-    /* Table (R/C) */
+    /* Table */
     .rc-table{width:100%;border-collapse:collapse}
     .rc-table th,.rc-table td{
-      border:1px solid var(--stroke);
+      border:1px solid rgba(255,255,255,.08);
       padding:10px 10px;
       font-size:12px;
       white-space:nowrap;
     }
     .rc-table th{
-      background:rgba(255,255,255,.02);
+      background: rgba(255,255,255,.03);
       font-weight:900;
       text-transform:uppercase;
       letter-spacing:.12em;
       font-size:10px;
-      color:rgba(255,255,255,.55);
+      color: rgba(255,255,255,.55);
     }
-    .rc-table tbody tr:nth-child(even){background:rgba(255,255,255,.015)}
-    .rc-table tbody tr{transition:background .2s ease}
-    .rc-table tbody tr:hover{background:rgba(197,160,89,.06)}
+    .rc-table tbody tr:nth-child(odd){ background: rgba(255,255,255,.015); }
+    .rc-table tbody tr:hover{ background: rgba(197,160,89,.07); transition: background .2s ease; }
+    .muted-dash{opacity:.55}
 
-    .chip{
-      display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
-      border:1px solid var(--stroke);font-weight:900;font-size:11px;
-      background:rgba(255,255,255,.02);
+    /* Drawer / Accordion */
+    .drawer{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:24px;
+      overflow:hidden;
+      background: rgba(19,22,27,.92);
     }
-    .chip-r{background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.18)}
-    .chip-c{background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.18)}
-    .chip-p{background:rgba(52,211,153,.08); border-color:rgba(52,211,153,.18)}
+    .drawer summary{
+      list-style:none;
+      cursor:pointer;
+      padding:16px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .drawer summary::-webkit-details-marker{display:none}
+    .drawer .chev{transition:transform .2s ease; opacity:.8}
+    .drawer[open] .chev{transform:rotate(180deg)}
+    .drawer .body{padding:0 16px 16px 16px}
 
     /* Modals */
-    .modal-overlay{
-      background:rgba(0,0,0,.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
     .modal-active{display:flex!important;animation:slideUp .35s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-    .modal-handle{
-      width:42px;height:5px;border-radius:999px;background:rgba(255,255,255,.10);
-      margin:0 auto 18px;
+    .modal-overlay{
+      background: rgba(0,0,0,.70);
+      backdrop-filter: blur(12px);
     }
-
-    /* Progress bars in lists */
-    .pbar{
-      height:6px;border-radius:999px;background:rgba(255,255,255,.06);
-      border:1px solid var(--stroke);
-      overflow:hidden;
+    .modal-sheet{
+      background: linear-gradient(180deg, rgba(19,22,27,.98), rgba(17,20,26,.96));
+      border:1px solid rgba(255,255,255,.10);
     }
-    .pbar > i{
-      display:block;height:100%;
-      background:linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,.35));
-      width:0%;
+    .handle{
+      width:36px; height:4px;
+      background: rgba(255,255,255,.18);
       border-radius:999px;
+      margin: 0 auto 14px auto;
+      opacity:.85;
     }
   </style>
 </head>
 
 <body class="antialiased pb-10">
-  <div class="max-w-md mx-auto px-5 pt-8 relative z-10">
+  <div class="max-w-md mx-auto px-5 pt-8">
 
     <!-- LOGIN -->
     <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Accès sécurisé</div>
-          <div class="title-font text-2xl font-bold text-white mt-1 tracking-tight">Connexion Gérant</div>
-          <div class="text-[11px] font-bold accent uppercase tracking-[0.32em] mt-1">Grey Corner</div>
+          <div class="smallCaps">Accès sécurisé</div>
+          <div class="hTitle text-3xl font-bold mt-1" style="color:rgba(255,255,255,.92)">Connexion</div>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
         </div>
-        <div class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">RH</div>
+        <div class="smallCaps">RH</div>
       </div>
       <div class="mt-4 space-y-2">
         <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username" />
         <input id="loginPass" class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
         <button id="btnLogin" class="btn-login">Se connecter</button>
-        <div id="loginMsg" class="text-[11px] font-extrabold text-rose-400"></div>
+        <div id="loginMsg" class="text-[11px] font-extrabold" style="color:var(--crit)"></div>
       </div>
     </div>
 
@@ -228,19 +284,20 @@
     <div id="appWrap" class="hidden">
       <header class="flex justify-between items-start mb-6">
         <div>
-          <h1 class="title-font text-3xl font-bold tracking-tight text-white leading-none">RH Supervision</h1>
-          <p class="text-[10px] font-bold accent uppercase tracking-[0.32em] mt-2">Grey Corner</p>
+          <h1 class="hTitle text-4xl font-bold leading-none">RH Supervision</h1>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
 
-          <div class="mt-3 accent-bar w-36"></div>
-
-          <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mt-3">
-            Connecté : <span id="roleLabel" class="text-white">—</span>
-          </p>
-          <p id="syncLine" class="text-[10px] font-extrabold text-white/40 uppercase tracking-[0.2em] mt-2">Sync : —</p>
+          <div class="mt-3 space-y-1">
+            <div class="smallCaps">
+              Connecté : <span id="roleLabel" style="color:rgba(255,255,255,.86)">—</span>
+            </div>
+            <div id="syncLine" class="smallCaps">Sync : —</div>
+          </div>
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold shadow-sm border border-white/10">
+          <button id="btnLogout" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+            style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.85)">
             Déconnexion
           </button>
         </div>
@@ -248,21 +305,31 @@
 
       <!-- CONTROLS -->
       <div class="mb-4 space-y-4">
-        <div class="flex bg-white/5 p-1.5 rounded-2xl border border-white/10">
-          <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
-          <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
+        <div class="glass-card p-1.5 rounded-2xl">
+          <div class="flex">
+            <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
+            <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
+            <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
+          </div>
         </div>
 
-        <!-- Choix du mois -->
-        <div class="glass-card rounded-2xl p-4">
+        <!-- Choix du jour (vue Jour) -->
+        <div id="dayPickWrap" class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between">
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Choix du mois</div>
-              <div class="accent-bar w-24"></div>
-            </div>
+            <div class="smallCaps">Choix du jour</div>
           </div>
-          <input type="month" id="monthPicker" class="w-full bg-transparent border-b border-white/10 py-3 font-bold text-white outline-none mt-3">
+          <div class="accent-bar mt-2 mb-3"></div>
+          <input type="date" id="dayPicker" class="inpt" />
+          <div class="mt-2 text-[10px] font-semibold" style="color:var(--muted)">
+            Permet d’afficher les jours précédents (temps réel uniquement sur aujourd’hui).
+          </div>
+        </div>
+
+        <!-- Choix du mois (Bilan / R-C) -->
+        <div id="monthPickWrap" class="glass-card rounded-2xl p-4 hidden">
+          <div class="smallCaps">Choix du mois</div>
+          <div class="accent-bar mt-2 mb-3"></div>
+          <input type="month" id="monthPicker" class="inpt">
           <input type="date" id="dashDate" class="hidden">
         </div>
 
@@ -270,17 +337,19 @@
         <div class="glass-card rounded-2xl p-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Période</div>
-              <div id="periodLabel" class="title-font text-[15px] font-bold text-white mt-1">—</div>
-              <div class="text-[10px] text-white/45 font-semibold mt-1 leading-snug">
+              <div class="smallCaps">Période</div>
+              <div id="periodLabel" class="hTitle text-2xl font-bold mt-1">—</div>
+              <div class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted)">
                 R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
               </div>
             </div>
             <div class="flex flex-col gap-2">
-              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-black text-[11px] font-extrabold shadow-sm">
+              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+                style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
                 Export R/C Mois
               </button>
-              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold shadow-sm border border-white/10">
+              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+                style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82)">
                 Export Année (résumé)
               </button>
             </div>
@@ -300,16 +369,20 @@
       <!-- OUTILS -->
       <div class="mt-6 space-y-4">
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-          <div>
-            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Collaborateurs</div>
-            <div class="accent-bar w-28 mt-2"></div>
-          </div>
+          <div class="smallCaps">Collaborateurs</div>
+          <div class="accent-bar"></div>
           <div class="grid grid-cols-2 gap-2">
-            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl bg-white/5 text-white font-extrabold text-[12px] border border-white/10">GÉRER ÉQUIPE</button>
-            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl bg-white/5 text-white font-extrabold text-[12px] border border-white/10">EXPORT JSON</button>
+            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+              style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.88)">
+              Gérer équipe
+            </button>
+            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+              style="background:rgba(197,160,89,.18);border:1px solid rgba(197,160,89,.50);color:rgba(197,160,89,.95)">
+              Export JSON
+            </button>
           </div>
-          <div id="teamPermHint" class="text-[10px] text-white/45 font-semibold leading-snug">
-            Stocké dans Firebase: <b class="text-white/70">settings/equipe</b>.
+          <div id="teamPermHint" class="text-[10px] font-semibold leading-snug" style="color:var(--muted)">
+            Stocké dans Firebase: <b>settings/equipe</b>.
           </div>
         </div>
       </div>
@@ -319,35 +392,37 @@
 
   <!-- MODAL Historique -->
   <div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">
-    <div class="glass-card w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
-      <div class="modal-handle"></div>
-      <h2 id="modalTitle" class="title-font text-2xl font-bold text-white mb-6 tracking-tight">Historique</h2>
-      <div id="modalList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div>
+    <div class="modal-sheet w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="handle"></div>
+      <h2 id="modalTitle" class="hTitle text-3xl font-bold mb-6">Historique</h2>
+      <div id="modalList" class="space-y-3 max-h-[62vh] overflow-y-auto pr-2"></div>
     </div>
   </div>
 
   <!-- MODAL Admin Équipe -->
   <div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">
-    <div class="glass-card w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-      <div class="modal-handle"></div>
+    <div class="modal-sheet w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="handle"></div>
 
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-          <div class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Admin</div>
-          <div class="title-font text-2xl font-bold text-white mt-1">Gérer l'équipe</div>
-          <div class="text-[11px] font-bold accent uppercase tracking-[0.32em] mt-1">Grey Corner</div>
-          <div class="accent-bar w-28 mt-3"></div>
+          <div class="smallCaps">Admin</div>
+          <div class="hTitle text-3xl font-bold mt-1">Gérer l'équipe</div>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
         </div>
-        <button class="px-3 py-2 rounded-full bg-white/5 text-white text-[11px] font-extrabold border border-white/10" onclick="closeStaffAdmin()">Fermer</button>
+        <button class="px-3 py-2 rounded-full text-[11px] font-extrabold" onclick="closeStaffAdmin()"
+          style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.86)">
+          Fermer
+        </button>
       </div>
 
-      <div class="rounded-2xl border border-white/10 p-4 bg-white/5">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">Ajouter collaborateur</div>
+      <div class="rounded-2xl border p-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.03)">
+        <div class="smallCaps mb-3">Ajouter collaborateur</div>
         <div class="grid grid-cols-2 gap-2">
           <input id="addNom" class="inpt" placeholder="NOM (ex: ELALAMI)" />
           <input id="addPrenom" class="inpt" placeholder="Prénom (ex: HASSAN)" />
         </div>
-        <select id="addPoste" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none mt-2 bg-white/5">
+        <select id="addPoste" class="inpt mt-2">
           <option value="SERVICE">SERVICE</option>
           <option value="BAR">BAR</option>
           <option value="CUISINE">CUISINE</option>
@@ -355,13 +430,16 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-[#c5a059] text-black font-extrabold text-[12px]">AJOUTER</button>
-        <div id="addMsg" class="mt-2 text-[11px] font-extrabold text-white/60"></div>
+        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+          style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
+          AJOUTER
+        </button>
+        <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
       </div>
 
-      <div class="rounded-2xl border border-white/10 p-4 mt-4 bg-white/3">
-        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">Supprimer collaborateur</div>
-        <select id="delPosteSelect" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none bg-white/5">
+      <div class="rounded-2xl border p-4 mt-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.02)">
+        <div class="smallCaps mb-3">Supprimer collaborateur</div>
+        <select id="delPosteSelect" class="inpt">
           <option value="">-- Choisir poste --</option>
           <option value="SERVICE">SERVICE</option>
           <option value="BAR">BAR</option>
@@ -370,15 +448,18 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <select id="delEmpSelect" class="w-full px-4 py-3 rounded-2xl border border-white/10 font-extrabold text-white outline-none mt-2 bg-white/5">
+        <select id="delEmpSelect" class="inpt mt-2">
           <option value="">Choisir poste d'abord</option>
         </select>
-        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl bg-rose-500/90 text-black font-extrabold text-[12px]">SUPPRIMER</button>
-        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold text-white/60"></div>
+        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+          style="background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.50);color:rgba(248,113,113,.95)">
+          SUPPRIMER
+        </button>
+        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
       </div>
 
-      <div class="mt-4 text-[10px] text-white/50 font-semibold leading-snug">
-        Si tu vois <b class="text-white/70">PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b class="text-white/70">rules Firebase</b> qui bloquent l'écriture de <b class="text-white/70">settings/equipe</b>.
+      <div class="mt-4 text-[10px] font-semibold leading-snug" style="color:var(--muted)">
+        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
       </div>
     </div>
   </div>
@@ -406,6 +487,10 @@
 
     const dateInput    = document.getElementById('dashDate');   // hidden seed mois (YYYY-MM-01)
     const monthPicker  = document.getElementById('monthPicker');
+    const dayPicker    = document.getElementById('dayPicker');
+
+    const dayPickWrap  = document.getElementById('dayPickWrap');
+    const monthPickWrap= document.getElementById('monthPickWrap');
 
     const loginWrap    = document.getElementById("loginWrap");
     const appWrap      = document.getElementById("appWrap");
@@ -431,11 +516,12 @@
     }
     function escAttr(s){ return esc(s); }
 
+    // ✅ FIX CRITIQUE: safeTime valide les valeurs (pas "99:99"), accepte "9:05" et normalise "09:05"
     function safeTime(t){
       const s = String(t ?? "").trim();
       if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(s)) return "";
-      const [h,m] = s.split(":");
-      return h.padStart(2,"0")+":"+m;
+      const [h,m] = s.split(':');
+      return h.padStart(2,'0') + ":" + m;
     }
 
     // équipe mutable via setEquipe()
@@ -471,9 +557,13 @@
       clearMonthCache();
     }
 
+    // Pas de retard (HA seule) pour ces IDs
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
+
+    // Exception R/C : pas de Repos (R) pour eux → tout OFF = C
     const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
+    // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -506,6 +596,11 @@
     function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
     function isoFromMonthKey(mk){ return mk + "-01"; }
 
+    function titleCase(s){
+      const t = String(s||"").toLowerCase();
+      return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+    }
+
     /* ── Retard (HA-HP uniquement) ── */
     function getTimeDiff(a,p,id){
       if(!a) return 0;
@@ -527,15 +622,14 @@
       if(isOff) return 'status-off';
       return '';
     }
-
-    function dotColorForState(diff,isOff,hasArrived){
+    function getDotColor(diff,isOff,hasArrived){
       if(hasArrived){
         if(diff<=0) return 'var(--ok)';
-        if(diff<30) return 'var(--late)';
+        if(diff<30)  return 'var(--amber)';
         return 'var(--crit)';
       }
       if(isOff) return 'rgba(148,163,184,.75)';
-      return 'rgba(255,255,255,.35)';
+      return 'rgba(255,255,255,.20)';
     }
 
     /* ── R / C ── */
@@ -566,12 +660,12 @@
     async function saveEquipeToDB(list){
       try{
         await database.ref(EQUIPE_PATH).set(list);
-        document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b class="text-white/70">settings/equipe</b> ✅`;
+        document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b>settings/equipe</b> ✅`;
         return true;
       }catch(e){
         document.getElementById("teamPermHint").innerHTML=
-          `<span class="text-rose-400 font-extrabold">⚠️ PERMISSION_DENIED</span> :
-           Ajoute la règle Firebase pour autoriser le gérant à écrire <b class="text-white/70">settings/equipe</b>.`;
+          `<span style="color:var(--crit);font-weight:900">⚠️ PERMISSION_DENIED</span> :
+           Ajoute la règle Firebase pour autoriser le gérant à écrire <b>settings/equipe</b>.`;
         throw e;
       }
     }
@@ -602,7 +696,7 @@
       if(!poste){ sel.innerHTML=`<option value="">Choisir poste d'abord</option>`; return; }
       const list=equipe.filter(e=>e.poste===poste).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom));
       sel.innerHTML=list.length
-        ?list.map(e=>`<option value="${escAttr(empIdOf(e))}">${esc(e.nom)} ${esc(e.prenom)}</option>`).join("")
+        ?list.map(e=>`<option value="${escAttr(empIdOf(e))}">${esc(e.nom)} ${esc(titleCase(e.prenom))}</option>`).join("")
         :`<option value="">Aucun collaborateur</option>`;
     }
 
@@ -722,7 +816,7 @@
       Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
         const pe=p[empId]||{};
-        if(pe.hA) merged[empId].hA = pe.hA;
+        if(pe.hA) merged[empId].hA = pe.hA; // ✅ HA seulement
         if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
@@ -737,21 +831,25 @@
       syncLine.textContent=`Sync : temps réel ✅ (${hh}:${mm}:${ss})`;
     }
     function setSyncWaiting(){ syncLine.textContent="Sync : connexion…"; }
+    function setSyncStatic(dayISO){ syncLine.textContent=`Sync : lecture (${fmtFR(dayISO)})`; }
     function setSyncError(){ syncLine.textContent="Sync : erreur (réseau ?) ⚠️"; }
 
-    function attachRealtimeForDate(dayISO){
-      detachRealtime(); setSyncWaiting();
+    function attachRealtimeForDate(dayISO, realtime){
+      detachRealtime();
+      if(realtime) setSyncWaiting(); else setSyncStatic(dayISO);
+
       activePresRef=database.ref('presences/'+dayISO);
       activePresRef.on('value',(snap)=>{
         presCache=snap.val()||{};
         if(currentMode==="day") renderDayView(mergedDayData());
-        setSyncOK();
+        if(realtime) setSyncOK();
       },()=>setSyncError());
+
       activePunchRef=database.ref('punches/'+dayISO);
       activePunchRef.on('value',(snap)=>{
         punchCache=snap.val()||{};
         if(currentMode==="day") renderDayView(mergedDayData());
-        setSyncOK();
+        if(realtime) setSyncOK();
       },()=>setSyncError());
     }
 
@@ -759,13 +857,17 @@
       currentMode=mode;
       document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
+
       document.getElementById('chartContainer').classList.toggle('hidden',mode!=='report');
+      dayPickWrap.classList.toggle('hidden',mode!=='day');
+      monthPickWrap.classList.toggle('hidden',mode==='day');
+
       updateDashboard();
     }
 
     /* ── Month cache ── */
-    const monthDataCache = new Map();
-    const monthRCMapCache = new Map();
+    const monthDataCache=new Map();
+    const monthRCMapCache=new Map();
 
     function clearMonthCache(){
       monthDataCache.clear();
@@ -787,8 +889,8 @@
     function getDatesInMonthKey(mk){ return getDatesInMonth(mk+"-01"); }
 
     function errorCard(text){
-      return `<div class="glass-card p-5 rounded-2xl border border-white/10 bg-white/5">
-        <div class="text-[11px] font-extrabold text-rose-400">${esc(text)}</div>
+      return `<div class="glass-card p-5 rounded-2xl" style="border-color:rgba(248,113,113,.28);background:rgba(248,113,113,.06)">
+        <div class="text-[11px] font-extrabold" style="color:rgba(248,113,113,.95)">${esc(text)}</div>
       </div>`;
     }
 
@@ -827,6 +929,7 @@
       return pack;
     }
 
+    // ✅ FIX CRITIQUE: seed cross-mois (semaines chevauchantes)
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
 
@@ -857,7 +960,7 @@
           equipe.forEach(emp=>{
             const id = empIdOf(emp);
             const e  = merged[id] || null;
-            if(e && e.off) classifyOffDay(id, dayISO, weekRC);
+            if(e && e.off) classifyOffDay(id, dayISO, weekRC); // consomme R si off officiel
           });
         });
       }
@@ -874,11 +977,12 @@
           const e = merged[id] || null;
 
           const ha = safeTime(e?.hA);
-          if(ha) return;
-
-          if(e && e.off){ rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC); return; }
-
-          rcByEmpDay[id][dayISO] = "C";
+          if(ha) return;                    // présence ne consomme pas R
+          if(e && e.off){                   // off officiel consomme R/C
+            rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC);
+            return;
+          }
+          rcByEmpDay[id][dayISO] = "C";     // absences + tout le reste
         });
       });
 
@@ -898,9 +1002,9 @@
       let html='';
       POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
         html+=`<div class="mb-8">
-          <div class="flex items-center gap-3 mb-3 ml-1">
-            <h3 class="text-[11px] font-black text-white/55 uppercase tracking-[0.22em]">${esc(poste)}</h3>
-            <div class="accent-bar flex-1"></div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="smallCaps">${esc(poste)}</div>
+            <div class="accent-bar" style="flex:1"></div>
           </div>
           <div class="grid grid-cols-2 gap-4">`;
 
@@ -917,33 +1021,29 @@
           const ha = safeTime(d.hA) || "";
           const diff = diffFromEntry({ hA: ha, hP: hp }, id);
           const sClass = getStatusClass(diff, !!d.off, !!ha);
-          const dot = dotColorForState(diff, !!d.off, !!ha);
+          const dot = getDotColor(diff, !!d.off, !!ha);
 
-          let statusText='Attente',statusColor='text-white/45';
+          let statusText='Attente',statusColor='color:rgba(255,255,255,.45)';
           if(ha){
             if(hp){
-              if(diff>0){ statusText=`${diff} min`; statusColor='text-rose-300'; }
-              else { statusText="À l'heure"; statusColor='text-emerald-300'; }
+              if(diff>0){ statusText=`${diff} min`; statusColor='color:var(--crit)'; }
+              else { statusText="À l'heure"; statusColor='color:var(--ok)'; }
             }else{
-              statusText="OK"; statusColor='text-emerald-300';
+              statusText="OK"; statusColor='color:var(--ok)';
             }
           }else if(d.off){
-            statusText="OFF"; statusColor="text-white/40";
+            statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
           }
 
           html+=`
             <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
-              <span class="status-dot" style="background:${dot}"></span>
-
+              <span class="status-dot" style="background:${escAttr(dot)}"></span>
+              ${ha ? `<div class="arrive-time">${esc(ha)}</div>` : ``}
               <div>
-                <p class="text-[11px] font-extrabold uppercase text-white truncate">${esc(emp.nom)}</p>
-                <p class="text-[10px] font-semibold text-white/55">${esc(emp.prenom)}</p>
+                <p class="text-[11px] font-extrabold uppercase truncate" style="color:rgba(255,255,255,.86)">${esc(emp.nom)}</p>
+                <p class="text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">${esc(titleCase(emp.prenom))}</p>
               </div>
-
-              <div class="flex items-end justify-between">
-                <p class="text-[10px] font-black ${escAttr(statusColor)}">${esc(statusText)}</p>
-                <p class="title-font text-[12px] font-bold text-white/75">${esc(ha || "")}</p>
-              </div>
+              <p class="text-[11px] font-extrabold" style="${escAttr(statusColor)}">${esc(statusText)}</p>
             </button>`;
         });
         html+=`</div></div>`;
@@ -963,33 +1063,47 @@
       const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
 
-      // dark tooltip + gold border
-      const tooltip = {
-        enabled:true,
-        backgroundColor:'rgba(13,15,18,.92)',
-        titleColor:'#fff',
-        bodyColor:'rgba(255,255,255,.80)',
-        borderColor:'rgba(197,160,89,.55)',
-        borderWidth:1,
-        padding:10,
-        displayColors:false
-      };
-
       myChart=new Chart(ctx,{
         type:'line',
         data:{
           labels,
           datasets:[
-            {label:"Retards (min)",data:lates,borderColor:'#c5a059',tension:.35,borderWidth:3,pointRadius:0,fill:true,backgroundColor:'rgba(197,160,89,0.10)'},
-            {label:"Présences (nb)",data:presences,borderColor:'#34d399',tension:.35,borderWidth:2,pointRadius:0,fill:false}
+            {
+              label:"Retards (min)",
+              data:lates,
+              borderColor:'rgba(197,160,89,.95)',
+              backgroundColor:'rgba(197,160,89,.10)',
+              tension:.35,borderWidth:3,pointRadius:0,fill:true
+            },
+            {
+              label:"Présences (nb)",
+              data:presences,
+              borderColor:'rgba(52,211,153,.95)',
+              backgroundColor:'rgba(52,211,153,.10)',
+              tension:.35,borderWidth:2,pointRadius:0,fill:false
+            }
           ]
         },
         options:{
           maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip},
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              enabled:true,
+              backgroundColor:'rgba(13,15,18,.92)',
+              titleColor:'rgba(255,255,255,.92)',
+              bodyColor:'rgba(255,255,255,.78)',
+              borderColor:'rgba(197,160,89,.55)',
+              borderWidth:1,
+              padding:10
+            }
+          },
           scales:{
-            y:{display:false,grid:{display:false}},
-            x:{grid:{display:false},ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'}}
+            y:{display:false},
+            x:{
+              grid:{display:false},
+              ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'}
+            }
           }
         }
       });
@@ -998,34 +1112,41 @@
     function loadingCard(text){
       return `<div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
         <div class="spin"></div>
-        <div class="text-[11px] font-extrabold text-white/70">${esc(text)}</div>
+        <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">${esc(text)}</div>
       </div>`;
+    }
+
+    function currentDayForDayMode(){
+      const t = todayISO();
+      const v = (dayPicker.value || t);
+      return v;
     }
 
     async function updateDashboard(){
       if(role!=="gerant") return;
 
-      const dayISO = (currentMode === "day") ? todayISO() : dateInput.value;
-
-      const seedISO = dateInput.value;
+      const seedISO = dateInput.value || isoFromMonthKey(monthKeyFromISO(todayISO()));
       const mkSeed = monthKeyFromISO(seedISO);
       periodLabel.textContent = `Mois: ${esc(mkSeed)} • Année: ${esc(seedISO.slice(0,4))}`;
 
       if(currentMode==="day"){
-        attachRealtimeForDate(dayISO);
+        const dayISO = currentDayForDayMode();
+        const realtime = (dayISO === todayISO());
+        attachRealtimeForDate(dayISO, realtime);
         renderDayView(mergedDayData());
         return;
       }
 
       detachRealtime();
       document.getElementById('dashBody').innerHTML=loadingCard(
-        currentMode==="report" ? "Chargement du bilan…" : "Chargement du tableau R/C…"
+        currentMode==="report" ? "Chargement du bilan…" : "Chargement des tableaux R/C…"
       );
 
       if(currentMode==="report") await renderReportView();
       else await renderRCView();
     }
 
+    /* ── Bilan ── */
     async function renderReportView(){
       const mk=monthKeyFromISO(dateInput.value);
       const md = await getMonthData(mk);
@@ -1088,44 +1209,50 @@
 
       let html='<div class="space-y-8">';
 
+      // Top retardataires + progress bar
       html+=`<div>
-        <div class="flex items-center gap-3 mb-4">
-          <h3 class="text-[11px] font-black text-rose-300 uppercase tracking-[0.2em]">Top Retardataires</h3>
-          <div class="accent-bar flex-1"></div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="smallCaps" style="color:rgba(248,113,113,.90)">Top retardataires</div>
+          <div class="accent-bar" style="flex:1;opacity:.45;background:linear-gradient(90deg, rgba(248,113,113,.85), rgba(248,113,113,0))"></div>
         </div>`;
 
       if(!lateList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-white/45 font-extrabold text-[12px]">Aucun retard enregistré</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucun retard enregistré</div>`;
       }else{
         lateList.slice(0,6).forEach(s=>{
-          const pct = maxLate ? Math.max(6, Math.round((s.lateMin/maxLate)*100)) : 0;
-          html+=`<div class="glass-card p-5 rounded-2xl mb-3">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-extrabold text-white">${esc(s.info.nom)}</span>
-              <span class="title-font text-[15px] font-bold accent">${esc(s.lateMin)}m</span>
-            </div>
-            <div class="mt-3 pbar"><i style="width:${pct}%"></i></div>
-          </div>`;
+          const pct = maxLate ? Math.max(6, Math.round((s.lateMin / maxLate) * 100)) : 0;
+          html+=`
+            <div class="glass-card p-5 rounded-2xl mb-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
+                <span style="color:var(--crit);font-weight:900">${esc(s.lateMin)}m</span>
+              </div>
+              <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:10px;overflow:hidden">
+                <div style="height:6px;width:${escAttr(pct)}%;background:rgba(248,113,113,.55)"></div>
+              </div>
+            </div>`;
         });
       }
       html+=`</div>`;
 
+      // Exemplaires
       html+=`<div>
-        <div class="flex items-center gap-3 mb-4">
-          <h3 class="text-[11px] font-black text-emerald-300 uppercase tracking-[0.2em]">Les plus exemplaires</h3>
-          <div class="accent-bar flex-1"></div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="smallCaps" style="color:rgba(52,211,153,.90)">Les plus exemplaires</div>
+          <div class="accent-bar" style="flex:1;opacity:.45;background:linear-gradient(90deg, rgba(52,211,153,.85), rgba(52,211,153,0))"></div>
         </div>`;
 
       if(!goodList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-white/45 font-extrabold text-[12px]">Aucune présence "OK" trouvée</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucune présence "OK" trouvée</div>`;
       }else{
         goodList.slice(0,6).forEach(s=>{
           html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-xs font-extrabold text-white">${esc(s.info.nom)}</span>
-            <span class="title-font text-[15px] font-bold text-emerald-300">${esc(s.present)} j</span>
+            <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
+            <span style="color:var(--ok);font-weight:900">${esc(s.present)}j OK</span>
           </div>`;
         });
       }
+
       html+='</div></div>';
       document.getElementById('dashBody').innerHTML=html;
     }
@@ -1169,72 +1296,174 @@
       return out;
     }
 
-    async function renderRCView(){
-      const mk = monthKeyFromISO(dateInput.value);
-      const md = await getMonthData(mk);
+    async function buildYearSummary(year){
+      const currentMk = monthKeyFromISO(todayISO());
 
+      const totalsByEmp = {};
+      equipe.forEach(emp=>{
+        const id = empIdOf(emp);
+        totalsByEmp[id] = {
+          empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste,
+          present:0, R:0, C:0, lateMin:0
+        };
+      });
+
+      for(let i=1;i<=12;i++){
+        const mk = `${year}-${String(i).padStart(2,"0")}`;
+        if(mk > currentMk) break;
+
+        const month = await buildMonthlySummary(mk);
+        Object.values(month).forEach(s=>{
+          if(!totalsByEmp[s.empId]){
+            totalsByEmp[s.empId] = {
+              empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"",
+              present:0, R:0, C:0, lateMin:0
+            };
+          }
+          totalsByEmp[s.empId].present += Number(s.present)||0;
+          totalsByEmp[s.empId].R       += Number(s.R)||0;
+          totalsByEmp[s.empId].C       += Number(s.C)||0;
+          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
+        });
+      }
+
+      return totalsByEmp;
+    }
+
+    /* ── Table R/C (2 tiroirs) ── */
+    async function renderRCView(){
+      const mk   = monthKeyFromISO(dateInput.value);
+      const year = dateInput.value.slice(0,4);
+
+      const md = await getMonthData(mk);
       if(md.anyFail){
         document.getElementById('dashBody').innerHTML =
           errorCard("Réseau instable : certaines journées n’ont pas pu être chargées. Réessaie (changer de mois puis revenir) ou vérifie la connexion.");
         return;
       }
 
-      const summary = await buildMonthlySummary(mk);
-
-      const rows = Object.values(summary).sort((a,b)=>{
+      // Mois
+      const monthSummary = await buildMonthlySummary(mk);
+      const monthRows = Object.values(monthSummary).sort((a,b)=>{
         if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
       });
 
-      let tP=0,tR=0,tC=0,tL=0;
-      rows.forEach(r=>{ tP+=r.present; tR+=r.R; tC+=r.C; tL+=r.lateMin; });
+      let mP=0,mR=0,mC=0,mL=0;
+      monthRows.forEach(r=>{ mP+=r.present; mR+=r.R; mC+=r.C; mL+=r.lateMin; });
+
+      const monthTable = `
+        <div class="mt-4 overflow-x-auto">
+          <table class="rc-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Employé</th>
+                <th style="text-align:left;">Poste</th>
+                <th style="text-align:center;">Présents</th>
+                <th style="text-align:center;">R</th>
+                <th style="text-align:center;">C</th>
+                <th style="text-align:center;">Retard (min)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${monthRows.map(r=>{
+                const late = (Number(r.lateMin)||0);
+                return `
+                  <tr>
+                    <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
+                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--crit);">
+                      ${late ? esc(late) : '<span class="muted-dash">—</span>'}
+                    </td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Année
+      const yearSummary = await buildYearSummary(year);
+      const yearRows = Object.values(yearSummary).sort((a,b)=>{
+        if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
+        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+      });
+
+      let yP=0,yR=0,yC=0,yL=0;
+      yearRows.forEach(r=>{ yP+=r.present; yR+=r.R; yC+=r.C; yL+=r.lateMin; });
+
+      const yearTable = `
+        <div class="mt-4 overflow-x-auto">
+          <table class="rc-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Employé</th>
+                <th style="text-align:left;">Poste</th>
+                <th style="text-align:center;">Présents</th>
+                <th style="text-align:center;">Repos</th>
+                <th style="text-align:center;">Congé cumulé</th>
+                <th style="text-align:center;">Retard (min)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${yearRows.map(r=>{
+                const late = (Number(r.lateMin)||0);
+                return `
+                  <tr>
+                    <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
+                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
+                    <td style="text-align:center;font-weight:900;color:var(--crit);">
+                      ${late ? esc(late) : '<span class="muted-dash">—</span>'}
+                    </td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
 
       const html = `
-        <div class="glass-card rounded-3xl p-5">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Tableau R/C</div>
-              <div class="title-font text-[16px] font-bold text-white mt-1">Mois: ${esc(mk)}</div>
-              <div class="accent-bar w-32 mt-2"></div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span class="chip chip-p">Présents: <b>${esc(tP)}</b></span>
-                <span class="chip chip-r">R: <b>${esc(tR)}</b></span>
-                <span class="chip chip-c">C: <b>${esc(tC)}</b></span>
-                <span class="chip">Retard: <b>${esc(tL)}m</b></span>
+        <div class="space-y-4">
+          <details class="drawer" open>
+            <summary>
+              <div>
+                <div class="smallCaps">Tableau Mois</div>
+                <div class="hTitle text-xl font-bold mt-1">${esc(mk)}
+                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(mP)} • R ${esc(mR)} • C ${esc(mC)} • Retard ${esc(mL)}m</span>
+                </div>
+              </div>
+              <div class="chev">▾</div>
+            </summary>
+            <div class="body">${monthTable}</div>
+          </details>
+
+          <details class="drawer">
+            <summary>
+              <div>
+                <div class="smallCaps">Tableau Année (résumé)</div>
+                <div class="hTitle text-xl font-bold mt-1">${esc(year)}
+                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(yP)} • Repos ${esc(yR)} • Congé ${esc(yC)} • Retard ${esc(yL)}m</span>
+                </div>
+              </div>
+              <div class="chev">▾</div>
+            </summary>
+            <div class="body">
+              ${yearTable}
+              <div class="mt-3 text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">
+                Année = cumul des mois jusqu’au mois courant • Congé cumulé = C seulement.
               </div>
             </div>
-          </div>
+          </details>
 
-          <div class="mt-4 overflow-x-auto">
-            <table class="rc-table">
-              <thead>
-                <tr>
-                  <th style="text-align:left;">Employé</th>
-                  <th style="text-align:left;">Poste</th>
-                  <th style="text-align:center;">Présents</th>
-                  <th style="text-align:center;">R</th>
-                  <th style="text-align:center;">C</th>
-                  <th style="text-align:center;">Retard</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map(r=>{
-                  const ret = (Number(r.lateMin)||0) === 0 ? "—" : String(r.lateMin);
-                  return `
-                  <tr>
-                    <td style="font-weight:900;text-transform:uppercase;color:#fff;">${esc(r.nom)} <span style="text-transform:none;font-weight:700;color:rgba(255,255,255,.65)">${esc(r.prenom)}</span></td>
-                    <td style="font-weight:800;color:rgba(255,255,255,.55);">${esc(r.poste)}</td>
-                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.92);">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.92);">${esc(r.R)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--late);">${esc(r.C)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--crit);">${esc(ret)}</td>
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="mt-3 text-[10px] text-white/45 font-semibold">
+          <div class="mt-2 text-[10px] font-semibold" style="color:rgba(255,255,255,.50)">
             R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
           </div>
         </div>
@@ -1247,15 +1476,15 @@
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
       const rcTxt=rc?` • ${esc(rc)}`:"";
       return `
-        <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+        <div class="p-4 rounded-xl" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black text-white/45 uppercase">${esc(fmtFR(dayISO))}</span>
-            <span class="text-[10px] font-black ${escAttr(cls)} uppercase">${esc(statut)}${rcTxt}</span>
+            <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
+            <span class="smallCaps" style="font-size:10px;${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
           </div>
-          <div class="mt-2 grid grid-cols-3 gap-2">
-            <div class="text-[10px] font-extrabold text-white/50">HP: <span class="text-white/85">${esc(hp||"—")}</span></div>
-            <div class="text-[10px] font-extrabold text-white/50">HA: <span class="text-white/85">${esc(ha||"—")}</span></div>
-            <div class="text-[10px] font-extrabold text-white/50">Ret: <span class="text-white/85">${esc(retard||"—")}</span></div>
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HP: <span style="color:rgba(255,255,255,.85)">${esc(hp||"—")}</span></div>
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HA: <span style="color:rgba(255,255,255,.85)">${esc(ha||"—")}</span></div>
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">Ret: <span style="color:rgba(255,255,255,.85)">${esc(retard||"—")}</span></div>
           </div>
         </div>`;
     }
@@ -1263,11 +1492,11 @@
     async function openHistory(nom,prenom){
       const modal=document.getElementById('historyModal');
       modal.classList.remove("hidden"); modal.classList.add('modal-active');
-      document.getElementById('modalTitle').innerText=nom+" "+prenom;
+      document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
       document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
-          <div class="text-[11px] font-extrabold text-white/70">Chargement historique…</div>
+          <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">Chargement historique…</div>
         </div>`;
 
       const mk=monthKeyFromISO(dateInput.value);
@@ -1281,16 +1510,16 @@
 
       const {dates,presByDay,punchByDay}=md;
       const {rcByEmpDay} = await getMonthRCMap(mk);
-
       const today=todayISO();
 
+      // ✅ FIX: empId canonique (empIdOf)
       const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
       const empId = emp ? empIdOf(emp) : (nom + "_" + prenom);
 
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-white/30"); return; }
-        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-white/45"); return; }
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:rgba(255,255,255,.35)"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:rgba(255,255,255,.45)"); return; }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
@@ -1301,19 +1530,19 @@
         if(ha){
           if(hp){
             const diff=diffFromEntry({hA:ha,hP:hp},empId);
-            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-300");
-            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","text-emerald-300");
+            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"color:var(--crit)");
+            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
           }else{
-            html+=rowHistory(dayISO,"OK","",ha,"","text-emerald-300");
+            html+=rowHistory(dayISO,"OK","",ha,"","color:var(--ok)");
           }
           return;
         }
 
         const rc = (rcByEmpDay[empId] && rcByEmpDay[empId][dayISO]) ? rcByEmpDay[empId][dayISO] : "C";
-        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "text-white/55", rc);
+        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(255,255,255,.60)", rc);
       });
 
-      document.getElementById('modalList').innerHTML=html||'<p class="text-center text-white/40 py-10">Aucune donnée</p>';
+      document.getElementById('modalList').innerHTML=html||'<p class="text-center py-10" style="color:rgba(255,255,255,.45);font-weight:800">Aucune donnée</p>';
     }
 
     function closeModal(){
@@ -1340,7 +1569,7 @@
         .forEach(s=>{
           lines.push([
             mk,
-            escapeCSV(`${s.nom} ${s.prenom}`),
+            escapeCSV(`${s.nom} ${titleCase(s.prenom)}`),
             escapeCSV(s.poste),
             s.present,
             s.R,
@@ -1400,7 +1629,7 @@
         .forEach(t=>{
           lines.push([
             year,
-            escapeCSV(`${t.nom} ${t.prenom}`.trim()),
+            escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()),
             escapeCSV(t.poste),
             t.present,
             t.R,
@@ -1425,8 +1654,18 @@
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
+      // Day picker init
+      dayPicker.value = today;
+      dayPicker.max = today;
+
+      // Month picker init
       monthPicker.value = mkToday;
       dateInput.value = isoFromMonthKey(mkToday);
+
+      dayPicker.addEventListener('change', async()=>{
+        // Pas de clearMonthCache ici (vue jour)
+        await updateDashboard();
+      });
 
       monthPicker.addEventListener('change', async()=>{
         const mk = monthPicker.value || mkToday;
