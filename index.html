@@ -21,7 +21,7 @@
       --status-crit:#ef4444;
     }
     body{
-      font-family:'Plus+Jakarta+Sans',sans-serif;
+      font-family:'Plus Jakarta Sans',sans-serif; /* ✅ FIX */
       background:var(--grey-light);
       color:var(--grey-dark);
       -webkit-tap-highlight-color:transparent;
@@ -52,17 +52,21 @@
     .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-    /* ✅ FIX PDF vide: jamais display:none
-       -> on rend le container "invisible" mais rendu (html2canvas capture OK)
+    /* ✅ FIX PDF vide (Android/html2canvas) :
+       - jamais position:fixed
+       - jamais display:none
+       - hors viewport via left négatif, mais rendu/capturable
     */
     #pdfArea{
-      position:fixed;
-      left:-99999px;
+      position:absolute;
+      left:-100000px;
       top:0;
-      width:794px;            /* ~ A4 @ 96dpi */
+      width:794px;              /* ~ A4 @ 96dpi */
       background:#fff;
       color:#111827;
       visibility:hidden;
+      display:block;
+      pointer-events:none;
     }
     .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
     .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -381,7 +385,7 @@
     }
     function monthKeyFromISO(iso){ return (iso || "").slice(0,7); }
 
-    // ✅ retard HA-HP uniquement
+    // ✅ retard = HA-HP uniquement
     function getTimeDiff(a, p, id) {
       if(!a) return 0;
       if(id && haOnlyIds.has(id)) return 0;
@@ -1004,16 +1008,17 @@
       const el = document.getElementById("pdfArea");
       showPDF(el);
 
-      // ✅ FIX: attendre le "reflow" avant capture (sinon page blanche sur Android)
-      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 60)));
+      // ✅ attendre paint + reflow (Android)
+      await new Promise(r => requestAnimationFrame(() => r()));
+      await new Promise(r => setTimeout(r, 80));
 
       return html2pdf().set({
         margin:8,
         filename,
         image:{type:'jpeg',quality:1},
-        html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+        html2canvas:{scale:3,useCORS:true,backgroundColor:"#ffffff"},
         jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['css','legacy']}
+        pagebreak:{mode:['avoid-all','css','legacy']}
       }).from(el).save().finally(()=>hidePDF(el));
     }
 
@@ -1195,7 +1200,6 @@
           return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${e.hP||""}</td><td>${e.hA||""}</td><td></td></tr>`;
         }).filter(Boolean).join("");
 
-        // totals année
         present += mPresent; R += mR; C += mC; lateMin += mLate;
 
         content += `
@@ -1287,7 +1291,6 @@
     async function bootDashboard(){
       dateInput.value = todayISO();
 
-      // ✅ init pdfMonth par défaut = mois du dashDate
       document.getElementById("pdfMonth").value = monthKeyFromISO(dateInput.value);
 
       dateInput.addEventListener('change', async () => {
