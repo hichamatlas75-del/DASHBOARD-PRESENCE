@@ -138,16 +138,15 @@
       <!-- CONTROLS -->
       <div class="mb-4 space-y-4">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-          <button id="btnModeDay" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-          <button id="btnModeReport" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
-          <button id="btnModeRC" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
+          <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
+          <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
+          <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
         </div>
 
         <!-- Choix du mois -->
         <div class="glass-card rounded-2xl p-4">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Choix du mois</div>
           <input type="month" id="monthPicker" class="w-full bg-transparent border-b-2 border-slate-200 py-2 font-extrabold text-slate-800 outline-none">
-          <!-- seed ISO utilisé pour chargements mensuels -->
           <input type="date" id="dashDate" class="hidden">
         </div>
 
@@ -162,10 +161,10 @@
               </div>
             </div>
             <div class="flex flex-col gap-2">
-              <button id="btnExportMonth" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">
+              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-[#c5a059] text-white text-[11px] font-extrabold shadow-sm">
                 Export R/C Mois
               </button>
-              <button id="btnExportYear" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
                 Export Année (résumé)
               </button>
             </div>
@@ -285,7 +284,7 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const dateInput    = document.getElementById('dashDate');   // seed mois (YYYY-MM-01)
+    const dateInput    = document.getElementById('dashDate');   // hidden seed mois (YYYY-MM-01)
     const monthPicker  = document.getElementById('monthPicker');
 
     const loginWrap    = document.getElementById("loginWrap");
@@ -294,44 +293,34 @@
     const syncLine     = document.getElementById("syncLine");
     const periodLabel  = document.getElementById("periodLabel");
 
-    const btnModeDay    = document.getElementById("btnModeDay");
-    const btnModeReport = document.getElementById("btnModeReport");
-    const btnModeRC     = document.getElementById("btnModeRC");
-    const btnExportMonth= document.getElementById("btnExportMonth");
-    const btnExportYear = document.getElementById("btnExportYear");
-
     let currentMode = 'day', myChart = null;
     let role = null;
-
-    // Temps réel (jour courant uniquement)
     let activePresRef = null, activePunchRef = null;
     let presCache = {}, punchCache = {};
 
     const EQUIPE_PATH = "settings/equipe";
 
     /* =========================
-       ✅ Cohérence avec tes RULES
-       - punches: HA uniquement (hA, empKey, retard, retardMin, timestamp)
-       - presences: HP (hP), off/on, etc.
-       Donc: mergeDay() ne doit PAS dépendre de punches.hP
-       ========================= */
-
-    /* =========================
-       ✅ XSS FIX (indispensable car données viennent de Firebase)
+       ✅ XSS FIX (CRITIQUE)
        ========================= */
     function esc(s){
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
         .replace(/'/g,'&#39;');
     }
     function escAttr(s){ return esc(s); }
+
+    // ✅ FIX safeTime : valide aussi les valeurs (évite "99:99")
     function safeTime(t){
       const s = String(t ?? "").trim();
-      return (/^([01]\d|2[0-3]):[0-5]\d$/.test(s)) ? s : "";
+      if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(s)) return "";
+      const [h,m] = s.split(":");
+      return h.padStart(2,"0")+":"+m;
     }
 
-    // équipe mutable via setEquipe() (robustesse)
+    // équipe mutable via setEquipe()
     let equipe = [
       {nom:'BOUCHNAK',   prenom:'NAOUAL',    poste:'CUISINE'},
       {nom:'ALAOUI',     prenom:'LAZIZ',     poste:'SERVICE'},
@@ -370,7 +359,7 @@
     // Exception R/C : pas de Repos (R) pour eux → tout OFF = C
     const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
-    // Exclure Janvier 2026 (bilan/table/csv)
+    // Exclure Janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
@@ -427,7 +416,6 @@
 
     /* ── R / C ── */
     function classifyOffDay(empId,dayISO,weekRC){
-      // cohérent avec ta demande: SALIL + BENKHADA => jamais R
       if(noReposIds.has(empId)) return "C";
       const wk=weekStartMondayISO(dayISO);
       weekRC[wk]||={};
@@ -447,13 +435,11 @@
     function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
 
     async function loadEquipeFromDB(){
-      // rules: settings.read autorise gerant/equipe
       const snap=await database.ref(EQUIPE_PATH).once("value");
       const arr=snap.val();
       return (Array.isArray(arr)&&arr.length)?arr:equipe;
     }
     async function saveEquipeToDB(list){
-      // rules: settings.write = gerant (OK)
       try{
         await database.ref(EQUIPE_PATH).set(list);
         document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b>settings/equipe</b> ✅`;
@@ -461,7 +447,7 @@
       }catch(e){
         document.getElementById("teamPermHint").innerHTML=
           `<span class="text-rose-600 font-extrabold">⚠️ PERMISSION_DENIED</span> :
-           Rules bloquent l’écriture sur <b>settings/equipe</b>.`;
+           Ajoute la règle Firebase pour autoriser le gérant à écrire <b>settings/equipe</b>.`;
         throw e;
       }
     }
@@ -476,7 +462,6 @@
     }
 
     async function exportEquipeJSON(){
-      // export de la version Firebase si possible (évite désync)
       let list = equipe;
       try{ list = await loadEquipeFromDB(); }catch(e){}
       const blob=new Blob([JSON.stringify(list,null,2)],{type:"application/json"});
@@ -553,7 +538,6 @@
 
     /* ── Auth ── */
     async function fetchRole(uid){
-      // rules: users.read auth != null (OK)
       const s=await database.ref("users/"+uid).once("value");
       return s.val()||null;
     }
@@ -607,18 +591,14 @@
       presCache={}; punchCache={};
     }
 
-    // ✅ COHÉRENT AVEC TES RULES:
-    // - presences: contient hP (et off/on)
-    // - punches: contient hA uniquement (PAS hP)
+    // ✅ STRICT MODEL : HP = presences, HA = punches (uniquement hA)
     function mergeDay(pres,punches){
       const merged=JSON.parse(JSON.stringify(pres||{}));
       const p=punches||{};
       Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
         const pe=p[empId]||{};
-        // HA vient de punches
-        if(pe.hA) merged[empId].hA = pe.hA;
-        // si on a une HA, on ne doit pas rester OFF
+        if(pe.hA) merged[empId].hA = pe.hA; // ✅ HA seulement
         if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
@@ -636,16 +616,13 @@
     function setSyncError(){ syncLine.textContent="Sync : erreur (réseau ?) ⚠️"; }
 
     function attachRealtimeForDate(dayISO){
-      // rules: gerant peut lire presences + punches (OK)
       detachRealtime(); setSyncWaiting();
-
       activePresRef=database.ref('presences/'+dayISO);
       activePresRef.on('value',(snap)=>{
         presCache=snap.val()||{};
         if(currentMode==="day") renderDayView(mergedDayData());
         setSyncOK();
       },()=>setSyncError());
-
       activePunchRef=database.ref('punches/'+dayISO);
       activePunchRef.on('value',(snap)=>{
         punchCache=snap.val()||{};
@@ -663,8 +640,8 @@
     }
 
     /* ── Month cache ── */
-    const monthDataCache=new Map();
-    const monthRCMapCache=new Map();
+    const monthDataCache = new Map();
+    const monthRCMapCache = new Map();
 
     function clearMonthCache(){
       monthDataCache.clear();
@@ -692,7 +669,6 @@
     }
 
     async function batchFetchPresPunch(dates){
-      // robustesse réseau: ne bloque pas tout si 1 journée échoue
       try{
         const [presRes, punchRes] = await Promise.all([
           Promise.allSettled(dates.map(d => database.ref('presences/'+d).once('value'))),
@@ -700,7 +676,6 @@
         ]);
 
         const presByDay={}, punchByDay={};
-
         dates.forEach((d,i)=>{
           presByDay[d]  = (presRes[i].status === "fulfilled" ? (presRes[i].value.val()||{}) : {});
           punchByDay[d] = (punchRes[i].status === "fulfilled" ? (punchRes[i].value.val()||{}) : {});
@@ -728,7 +703,6 @@
       return pack;
     }
 
-    // Centralise RC (partagé entre table + bilan + historique)
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
 
@@ -744,6 +718,27 @@
 
       const weekRC = {};
 
+      // ── SEED CROSS-MOIS ──────────────────────────────────────────
+      const firstDay = mk + "-01";
+      const wkStart  = weekStartMondayISO(firstDay);
+      if(wkStart < firstDay){
+        const ctxDates = [];
+        let d = wkStart;
+        while(d < firstDay){ ctxDates.push(d); d = addDaysISO(d,1); }
+
+        const ctx = await batchFetchPresPunch(ctxDates);
+        ctxDates.forEach(dayISO=>{
+          if(dayISO > today || isExcluded(dayISO)) return;
+          const merged = mergeDay(ctx.presByDay[dayISO]||{}, ctx.punchByDay[dayISO]||{});
+          equipe.forEach(emp=>{
+            const id = empIdOf(emp);
+            const e  = merged[id] || null;
+            if(e && e.off) classifyOffDay(id, dayISO, weekRC);
+          });
+        });
+      }
+      // ─────────────────────────────────────────────────────────────
+
       dates.forEach(dayISO=>{
         if(dayISO > today) return;
         if(isExcluded(dayISO)) return;
@@ -754,16 +749,12 @@
           const id = empIdOf(emp);
           const e = merged[id] || null;
 
-          // règle métier: absence => C
-          if(!e){ rcByEmpDay[id][dayISO] = "C"; return; }
+          const ha = safeTime(e?.hA);
+          if(ha) return; // présent
 
-          // off => R/C
-          if(e.off){ rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC); return; }
+          if(e && e.off){ rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC); return; }
 
-          // arrivé => pas R/C
-          if(e.hA){ return; }
-
-          // ni off ni arrivé => C
+          // absences + tout le reste
           rcByEmpDay[id][dayISO] = "C";
         });
       });
@@ -795,18 +786,23 @@
         }).forEach(emp=>{
           const id=empIdOf(emp);
           const d=data[id]||{};
+
           const hp = safeTime(d.hP) || "";
           const ha = safeTime(d.hA) || "";
-          const diff=diffFromEntry({hA:ha,hP:hp},id);
-          const sClass=getStatusClass(diff,!!d.off,!!ha);
+          const diff = diffFromEntry({ hA: ha, hP: hp }, id);
+          const sClass = getStatusClass(diff, !!d.off, !!ha);
 
           let statusText='ATTENTE',statusColor='text-slate-400';
           if(ha){
             if(hp){
               if(diff>0){ statusText=`${diff}m retard`; statusColor='text-rose-600'; }
               else { statusText="À L'HEURE"; statusColor='text-emerald-600'; }
-            }else{ statusText="OK"; statusColor='text-emerald-600'; }
-          }else if(d.off){ statusText="OFF"; statusColor="text-slate-400"; }
+            }else{
+              statusText="OK"; statusColor='text-emerald-600';
+            }
+          }else if(d.off){
+            statusText="OFF"; statusColor="text-slate-400";
+          }
 
           html+=`
             <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
@@ -860,13 +856,13 @@
     async function updateDashboard(){
       if(role!=="gerant") return;
 
+      const dayISO = (currentMode === "day") ? todayISO() : dateInput.value;
+
       const seedISO = dateInput.value;
       const mkSeed = monthKeyFromISO(seedISO);
       periodLabel.textContent = `Mois: ${esc(mkSeed)} • Année: ${esc(seedISO.slice(0,4))}`;
 
       if(currentMode==="day"){
-        // temps réel sur le jour courant (cohérent usage)
-        const dayISO = todayISO();
         attachRealtimeForDate(dayISO);
         renderDayView(mergedDayData());
         return;
@@ -898,7 +894,6 @@
       equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
 
       const {rcByEmpDay} = await getMonthRCMap(mk);
-
       const dailyLates=[],dailyPresence=[],labels=[];
 
       dates.forEach(dayISO=>{
@@ -916,8 +911,8 @@
         Object.keys(stats).forEach(id=>{
           const e=merged[id]||null;
 
-          const hp = safeTime(e?.hP)||"";
-          const ha = safeTime(e?.hA)||"";
+          const hp = safeTime(e?.hP) || "";
+          const ha = safeTime(e?.hA) || "";
 
           if(ha){
             const diff=diffFromEntry({hA:ha,hP:hp},id);
@@ -990,8 +985,8 @@
 
         Object.keys(out).forEach(id=>{
           const e = merged[id] || null;
-          const hp = safeTime(e?.hP)||"";
-          const ha = safeTime(e?.hA)||"";
+          const hp = safeTime(e?.hP) || "";
+          const ha = safeTime(e?.hA) || "";
 
           if(ha){
             out[id].present++;
@@ -1072,7 +1067,7 @@
           </div>
 
           <div class="mt-3 text-[10px] text-slate-500 font-semibold">
-            R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA(punches) - HP(presences)
+            R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
           </div>
         </div>
       `;
@@ -1120,7 +1115,9 @@
       const {rcByEmpDay} = await getMonthRCMap(mk);
 
       const today=todayISO();
-      const empId=nom+'_'+prenom;
+
+      const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
+      const empId = emp ? empIdOf(emp) : (nom + "_" + prenom);
 
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
@@ -1175,11 +1172,11 @@
         .forEach(s=>{
           lines.push([
             mk,
-            escapeCSV(`${s.nom} ${s.prenom}`.trim()),
+            escapeCSV(`${s.nom} ${s.prenom}`),
             escapeCSV(s.poste),
             s.present,
             s.R,
-            s.C,      // C = congé (absences + off sup) — cohérent règles métier
+            s.C,
             s.lateMin
           ].join(","));
         });
@@ -1208,7 +1205,6 @@
         };
       });
 
-      // optimisation: ne pas fetch les mois futurs
       for(let i=1;i<=12;i++){
         const mk = `${year}-${String(i).padStart(2,"0")}`;
         if(mk > currentMk) break;
@@ -1223,12 +1219,11 @@
           }
           totalsByEmp[s.empId].present += Number(s.present)||0;
           totalsByEmp[s.empId].R       += Number(s.R)||0;
-          totalsByEmp[s.empId].C       += Number(s.C)||0;     // ✅ CongéCumuleAnnee = C uniquement
+          totalsByEmp[s.empId].C       += Number(s.C)||0;
           totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
         });
       }
 
-      // ✅ CSV ANNUEL RÉSUMÉ (1 ligne par personne)
       const header = ["Annee","Employe","Poste","PresentsTotal","ReposTotal","CongeCumuleAnnee","RetardTotalMin"];
       const lines = [header.join(",")];
 
@@ -1256,19 +1251,6 @@
       a.remove();
       URL.revokeObjectURL(url);
     }
-
-    /* ── UI wiring ── */
-    function setActiveBtn(btn){
-      document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-    }
-
-    btnModeDay.onclick=()=>{ setActiveBtn(btnModeDay); switchMode('day', btnModeDay); };
-    btnModeReport.onclick=()=>{ setActiveBtn(btnModeReport); switchMode('report', btnModeReport); };
-    btnModeRC.onclick=()=>{ setActiveBtn(btnModeRC); switchMode('rc', btnModeRC); };
-
-    btnExportMonth.onclick=()=>exportCSV_RC_Month();
-    btnExportYear.onclick=()=>exportCSV_RC_Year();
 
     /* ── Boot ── */
     async function bootDashboard(){
