@@ -7,7 +7,6 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
@@ -51,31 +50,6 @@
 
     .modal-active{display:flex!important;animation:slideUp .4s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-
-    /*
-      ✅ FIX PDF VIDE (Android/Safari) :
-      - zone rendue (opacity:0) jamais display:none/visibility:hidden
-      - scrollX/scrollY = 0 dans html2canvas
-    */
-    #pdfArea{
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 794px;         /* ~ A4 @ 96dpi */
-      background: #fff;
-      color: #111827;
-      opacity: 0;           /* invisible MAIS rendu */
-      pointer-events: none;
-      z-index: -1;
-    }
-    .pdfBox{border:1px solid #e5e7eb;border-radius:14px;padding:10px}
-    .pdfKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-    .pdfKpi .t{font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;font-size:10px}
-    .pdfKpi .v{font-weight:900;font-size:18px;margin-top:4px;color:#111827}
-    .pdfTable{width:100%;border-collapse:collapse}
-    .pdfTable th,.pdfTable td{border:1px solid #e5e7eb;padding:7px;font-size:10.5px}
-    .pdfTable th{background:#f3f4f6;font-weight:900}
-    .pagebreak{page-break-before:always;}
 
     .inpt{
       width:100%;
@@ -144,10 +118,20 @@
           </p>
           <p id="syncLine" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mt-2">Sync : —</p>
         </div>
+
         <div class="flex flex-col items-end gap-2">
-          <button onclick="downloadPDF_Day()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">PDF JOUR</button>
-          <button onclick="exportCSV_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">EXPORT CSV</button>
-          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">Déconnexion</button>
+          <button onclick="toggleRCTable()" class="px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-extrabold shadow-sm">
+            TABLEAU R/C
+          </button>
+          <button onclick="exportCSV_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+            CSV DÉTAIL
+          </button>
+          <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+            CSV RÉCAP R/C
+          </button>
+          <button id="btnLogout" class="px-4 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold shadow-sm border border-slate-200">
+            Déconnexion
+          </button>
         </div>
       </header>
 
@@ -171,33 +155,44 @@
 
       <div id="dashBody" class="space-y-6"></div>
 
-      <!-- OUTILS -->
-      <div class="mt-6 space-y-4">
-
-        <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PDF PAR EMPLOYÉ</div>
-
-          <div class="grid grid-cols-2 gap-2">
+      <!-- TABLEAU R/C (mois) -->
+      <div id="rcWrap" class="hidden mt-6">
+        <div class="glass-card rounded-3xl p-5">
+          <div class="flex items-center justify-between gap-3 mb-3">
             <div>
-              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Employé</div>
-              <select id="empSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none"></select>
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">RÉCAP MENSUEL</div>
+              <div id="rcTitle" class="text-sm font-black text-slate-900 mt-1">R/C</div>
             </div>
-            <div>
-              <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Mois PDF</div>
-              <input id="pdfMonth" type="month" class="w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-800 outline-none">
-            </div>
+            <button onclick="exportCSV_RC_Month()" class="px-3 py-2 rounded-full bg-white text-slate-900 text-[11px] font-extrabold border border-slate-200">
+              Export CSV
+            </button>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="downloadPDF_EmployeeMonth()" class="px-4 py-3 rounded-2xl bg-[#c5a059] text-white font-extrabold text-[12px]">PDF MOIS</button>
-            <button onclick="downloadPDF_EmployeeYear()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-[12px]">PDF ANNÉE</button>
+          <input id="rcSearch" class="inpt mb-3" placeholder="Rechercher un nom..." />
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-[11px] font-semibold">
+              <thead>
+                <tr class="text-slate-400 uppercase text-[10px]">
+                  <th class="text-left py-2">Employé</th>
+                  <th class="text-left py-2">Poste</th>
+                  <th class="text-center py-2">Présents</th>
+                  <th class="text-center py-2">R</th>
+                  <th class="text-center py-2">C</th>
+                </tr>
+              </thead>
+              <tbody id="rcTbody"></tbody>
+            </table>
           </div>
 
-          <div class="text-[10px] text-slate-500 font-semibold leading-snug">
+          <div class="mt-3 text-[10px] text-slate-500 font-semibold leading-snug">
             ✅ R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu.
           </div>
         </div>
+      </div>
 
+      <!-- OUTILS -->
+      <div class="mt-6 space-y-4">
         <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
           <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">COLLABORATEURS</div>
           <div class="grid grid-cols-2 gap-2">
@@ -208,7 +203,6 @@
             Stocké dans Firebase: <b>settings/equipe</b>.
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -273,16 +267,9 @@
       </div>
 
       <div class="mt-4 text-[10px] text-slate-500 font-semibold leading-snug">
-        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
+        Si tu vois <b>PERMISSION_DENIED</b>, tes <b>rules Firebase</b> bloquent l'écriture de <b>settings/equipe</b>.
       </div>
     </div>
-  </div>
-
-  <!-- Zone PDF hors-écran (opacity:0, rendu) -->
-  <div id="pdfArea" class="p-6">
-    <div id="pdfHeader" class="mb-4"></div>
-    <div id="pdfKpis" class="mb-4"></div>
-    <div id="pdfContent"></div>
   </div>
 
   <!-- Firebase v8 -->
@@ -346,22 +333,14 @@
       {nom:'ZAIR',       prenom:'FATIMA',    poste:'CUISINE'}
     ];
 
-    // employés HA-only (pas de HP => pas de retard)
     const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
-
-    // exclure janvier 2026
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
     function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
 
-    /* ─────────────
-       Normalisation clés (HP/HA)
-       - HP est sur presences
-       - HA est sur punches
-       On accepte aussi hp/ha au cas où une ancienne version a écrit en minuscules.
-    ───────────── */
-    function pickHP(e){ return (e?.hP ?? e?.hp ?? ""); }
-    function pickHA(e){ return (e?.hA ?? e?.ha ?? ""); }
+    /* ── HP / HA : robustes (hp/hP, ha/hA) ── */
+    function pickHP(e){ return (e?.hP ?? e?.hp ?? ""); }   // HP = presences (principal)
+    function pickHA(e){ return (e?.hA ?? e?.ha ?? ""); }   // HA = punches (principal)
 
     /* ── Dates UTC ── */
     function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
@@ -378,7 +357,6 @@
       const dow=dt.getUTCDay();
       return addDaysISO(iso, -(dow===0?6:dow-1));
     }
-
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
         timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'
@@ -391,17 +369,17 @@
     }
     function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
 
-    /* ── Retard = HA - HP uniquement ── */
-    function getTimeDiff(ha, hp, id){
+    /* ── Retard = HA - HP seulement ── */
+    function getTimeDiff(ha,hp,empId){
       if(!ha) return 0;
-      if(id && haOnlyIds.has(id)) return 0;
+      if(empId && haOnlyIds.has(empId)) return 0;
       if(!hp) return 0;
       const [h1,m1]=String(ha).split(':').map(Number);
       const [h2,m2]=String(hp).split(':').map(Number);
       const d=(h1*60+m1)-(h2*60+m2);
       return d>0?d:0;
     }
-    function diffFromEntry(entry, empId){
+    function diffFromEntry(entry,empId){
       if(!entry) return 0;
       return getTimeDiff(pickHA(entry), pickHP(entry), empId);
     }
@@ -472,17 +450,6 @@
       URL.revokeObjectURL(url);
     }
 
-    function fillEmpSelect(){
-      const sel=document.getElementById("empSelect");
-      const list=equipe.slice().sort((a,b)=>{
-        const A=empIdOf(a),B=empIdOf(b);
-        if(A==="BOUCHNAK_NAOUAL") return -1;
-        if(B==="BOUCHNAK_NAOUAL") return 1;
-        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-      });
-      sel.innerHTML=list.map(e=>`<option value="${empIdOf(e)}">${e.nom} ${e.prenom} — ${e.poste}</option>`).join("");
-    }
-
     function fillDelEmpSelectByPoste(poste){
       const sel=document.getElementById("delEmpSelect");
       if(!sel) return;
@@ -517,7 +484,8 @@
           addMsg.textContent="✅ Ajouté.";
           document.getElementById("addNom").value="";
           document.getElementById("addPrenom").value="";
-          fillEmpSelect(); closeStaffAdmin(); updateDashboard();
+          closeStaffAdmin();
+          updateDashboard();
         }catch(e){
           const idx=equipe.findIndex(x=>empIdOf(x)===id);
           if(idx>=0) equipe.splice(idx,1);
@@ -536,9 +504,9 @@
           const idx=equipe.findIndex(e=>empIdOf(e)===empId);
           if(idx>=0){ equipe.splice(idx,1); await saveEquipeToDB(equipe); }
           delMsg.textContent="✅ Supprimé.";
-          fillEmpSelect();
           fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value||"");
-          closeStaffAdmin(); updateDashboard();
+          closeStaffAdmin();
+          updateDashboard();
         }catch(e){ delMsg.textContent="⚠️ Erreur : "+(e?.message||"Permission denied"); }
       };
     }
@@ -598,36 +566,29 @@
       presCache={}; punchCache={};
     }
 
-    // ✅ merge : HP depuis presences, HA depuis punches (et normalise hp/ha)
-    function mergeDay(pres, punches){
-      const merged = JSON.parse(JSON.stringify(pres || {}));
-
-      // normaliser presences (hp->hP, ha->hA si jamais)
-      Object.keys(merged).forEach(empId=>{
-        const e = merged[empId] || {};
-        if(e.hp && !e.hP) e.hP = e.hp;
-        if(e.ha && !e.hA) e.hA = e.ha;
-      });
-
-      const p = punches || {};
+    /* mergeDay :
+       - base = presences (contient HP + OFF manuel)
+       - punches = HA (et parfois hp, mais on privilégie presences)
+    */
+    function mergeDay(pres,punches){
+      const merged=JSON.parse(JSON.stringify(pres||{}));
+      const p=punches||{};
       Object.keys(p).forEach(empId=>{
         merged[empId] ||= {};
-        const pe = p[empId] || {};
+        const pe=p[empId]||{};
+        // HA depuis punches
+        const ha = (pe.hA ?? pe.ha ?? "");
+        if(ha && !pickHA(merged[empId])) merged[empId].hA = ha;
 
-        // HA vient de punches
-        const ha = pe.hA || pe.ha;
-        if(ha && !merged[empId].hA) merged[empId].hA = ha;
+        // HP : seulement si absent dans presences (fallback)
+        const hp = (pe.hP ?? pe.hp ?? "");
+        if(hp && !pickHP(merged[empId])) merged[empId].hP = hp;
 
-        // HP ne vient PAS de punches (chez toi)
-        // const hp = pe.hP || pe.hp;
-        // if(hp && !merged[empId].hP) merged[empId].hP = hp;
-
-        if(merged[empId].hA && merged[empId].off === true) merged[empId].off = false;
+        // si HA existe, OFF doit être faux
+        if(pickHA(merged[empId]) && merged[empId].off === true) merged[empId].off = false;
       });
-
       return merged;
     }
-
     function mergedDayData(){ return mergeDay(presCache||{},punchCache||{}); }
 
     function setSyncOK(){
@@ -725,16 +686,23 @@
         }).forEach(emp=>{
           const id=empIdOf(emp);
           const d=data[id]||{};
+          const ha = pickHA(d);
+          const hp = pickHP(d);
           const diff=diffFromEntry(d,id);
-          const sClass=getStatusClass(diff,!!d.off,!!pickHA(d));
+          const sClass=getStatusClass(diff,!!d.off,!!ha);
 
           let statusText='ATTENTE',statusColor='text-slate-400';
-          if(pickHA(d)){
-            if(pickHP(d)){
+          if(ha){
+            if(hp){
               if(diff>0){ statusText=`${diff}m retard`; statusColor='text-rose-600'; }
               else { statusText="À L'HEURE"; statusColor='text-emerald-600'; }
-            }else{ statusText="OK"; statusColor='text-emerald-600'; }
-          }else if(d.off){ statusText="OFF"; statusColor="text-slate-400"; }
+            }else{
+              statusText="OK"; statusColor='text-emerald-600';
+            }
+          }else if(d.off){
+            statusText="OFF";
+            statusColor="text-slate-400";
+          }
 
           html+=`
             <button data-empid="${id}" class="staff-card ${sClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
@@ -745,10 +713,12 @@
               <p class="text-[10px] font-black ${statusColor}">${statusText}</p>
             </button>`;
         });
+
         html+=`</div></div>`;
       });
 
       container.innerHTML=html;
+
       container.querySelectorAll('[data-empid]').forEach(btn=>{
         btn.addEventListener('click',()=>{
           const emp=getEmpById(btn.dataset.empid);
@@ -788,11 +758,18 @@
     async function updateDashboard(){
       if(role!=="gerant") return;
       const dayISO=dateInput.value;
+
+      // si tableau R/C ouvert, on le rafraîchit sur changement date
+      if(!document.getElementById("rcWrap").classList.contains("hidden")){
+        await renderMonthlyRCTable();
+      }
+
       if(currentMode==="day"){
         attachRealtimeForDate(dayISO);
         renderDayView(mergedDayData());
         return;
       }
+
       detachRealtime();
       document.getElementById('dashBody').innerHTML=loadingCard("Chargement du bilan mensuel…");
       await renderReportView();
@@ -804,7 +781,10 @@
       const today=todayISO();
 
       const stats={};
-      equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
+      equipe.forEach(e=>{
+        const id=empIdOf(e);
+        stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0};
+      });
 
       const weekRC={};
       const dailyLates=[],dailyPresence=[],labels=[];
@@ -812,6 +792,7 @@
       dates.forEach(dayISO=>{
         labels.push(dayISO.split('-')[2]);
         if(dayISO>today){ dailyLates.push(0); dailyPresence.push(0); return; }
+
         if(isExcluded(dayISO)){
           dailyLates.push(0); dailyPresence.push(0);
           Object.keys(stats).forEach(id=>stats[id].excluded++);
@@ -824,17 +805,16 @@
         Object.keys(stats).forEach(id=>{
           const e=merged[id]||null;
 
-          // absence = C
           if(!e){ stats[id].C++; return; }
 
-          // OFF => R/C
           if(e.off){
             const rc=classifyOffDay(id,dayISO,weekRC);
-            stats[id][rc]++; return;
+            stats[id][rc]++; // R ou C
+            return;
           }
 
-          // présence si HA existe
-          if(pickHA(e)){
+          const ha = pickHA(e);
+          if(ha){
             const diff=diffFromEntry(e,id);
             stats[id].present++;
             stats[id].lateMin+=diff;
@@ -842,7 +822,6 @@
             return;
           }
 
-          // pas OFF, pas arrivé => C
           stats[id].C++;
         });
 
@@ -881,6 +860,7 @@
         });
       }
       html+='</div></div>';
+
       document.getElementById('dashBody').innerHTML=html;
     }
 
@@ -904,6 +884,7 @@
     async function openHistory(nom,prenom){
       const modal=document.getElementById('historyModal');
       modal.classList.remove("hidden"); modal.classList.add('modal-active');
+
       document.getElementById('modalTitle').innerText=nom+" "+prenom;
       document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
@@ -919,13 +900,22 @@
       const weekRC={};
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","text-slate-300"); return; }
-        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","text-slate-400"); return; }
+        if(dayISO>today){
+          html+=rowHistory(dayISO,"À venir","","","","text-slate-300");
+          return;
+        }
+        if(isExcluded(dayISO)){
+          html+=rowHistory(dayISO,"Exclu","","","","text-slate-400");
+          return;
+        }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
 
-        if(!e){ html+=rowHistory(dayISO,"Congé","","","","text-slate-500","C"); return; }
+        if(!e){
+          html+=rowHistory(dayISO,"Congé","","","","text-slate-500","C");
+          return;
+        }
 
         if(e.off){
           const rc=classifyOffDay(empId,dayISO,weekRC);
@@ -933,8 +923,10 @@
           return;
         }
 
-        if(pickHA(e)){
-          const hp=pickHP(e), ha=pickHA(e);
+        const ha = pickHA(e);
+        const hp = pickHP(e);
+
+        if(ha){
           if(hp){
             const diff=diffFromEntry(e,empId);
             if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"text-rose-600");
@@ -945,7 +937,7 @@
           return;
         }
 
-        html+=rowHistory(dayISO,"Congé",pickHP(e),pickHA(e),"","text-slate-500","C");
+        html+=rowHistory(dayISO,"Congé",hp,ha,"","text-slate-500","C");
       });
 
       document.getElementById('modalList').innerHTML=html||'<p class="text-center text-slate-300 py-10">Aucune donnée</p>';
@@ -956,263 +948,9 @@
       m.classList.remove('modal-active'); m.classList.add('hidden');
     }
 
-    /* ── PDF helpers ── */
-    function pdfHeader(title,sub){
-      const date=dateInput.value;
-      return `
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;">
-          <div>
-            <div style="font-weight:900;letter-spacing:.12em;color:#b0892f;font-size:10px;text-transform:uppercase;">Fès — Maroc</div>
-            <div style="font-weight:900;font-size:20px;letter-spacing:-.02em;">GREY CORNER</div>
-            <div style="font-weight:800;color:#374151;font-size:12px;margin-top:2px;">${title}</div>
-            <div style="font-weight:700;color:#6b7280;font-size:10px;margin-top:2px;">${sub||""}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-weight:900;color:#111827;font-size:12px;">Date : ${date}</div>
-            <div style="font-weight:700;color:#6b7280;font-size:10px;">(Exclus: 01/01/2026 → 31/01/2026)</div>
-          </div>
-        </div>
-        <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb;" />`;
-    }
-    function kpiBox(t,v){ return `<div class="pdfBox"><div class="t">${t}</div><div class="v">${v}</div></div>`; }
-
-    async function exportPDF(filename){
-      const el=document.getElementById("pdfArea");
-
-      // visible pour html2canvas
-      el.style.opacity="1";
-      el.style.zIndex="9999";
-
-      // attendre le paint
-      await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,120)));
-
-      try{
-        await html2pdf().set({
-          margin: 8,
-          filename,
-          image:       { type:'jpeg', quality:1 },
-          html2canvas: { scale:2, useCORS:true, backgroundColor:"#ffffff", scrollX:0, scrollY:0 },
-          jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
-          pagebreak:   { mode:['css','legacy'] }
-        }).from(el).save();
-      }finally{
-        el.style.opacity="0";
-        el.style.zIndex="-1";
-      }
-    }
-
-    /* ── PDF Jour ── */
-    async function downloadPDF_Day(){
-      const dayISO=dateInput.value;
-      const merged=mergedDayData();
-
-      document.getElementById("pdfHeader").innerHTML=pdfHeader("Rapport Jour — Supervision",`Jour: ${fmtFR(dayISO)}`);
-
-      let present=0,off=0,attente=0;
-      equipe.forEach(emp=>{
-        const id=empIdOf(emp); const e=merged[id]||null;
-        if(e && pickHA(e)) present++;
-        else if(e && e.off) off++;
-        else attente++;
-      });
-
-      document.getElementById("pdfKpis").innerHTML=`
-        <div class="pdfKpi">
-          ${kpiBox("Total",equipe.length)}
-          ${kpiBox("Présents",present)}
-          ${kpiBox("OFF",off)}
-          ${kpiBox("Attente",attente)}
-        </div>`;
-
-      const rows=equipe.slice().sort((a,b)=>{
-        const A=empIdOf(a),B=empIdOf(b);
-        if(A==="BOUCHNAK_NAOUAL") return -1;
-        if(B==="BOUCHNAK_NAOUAL") return 1;
-        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-      }).map(emp=>{
-        const id=empIdOf(emp); const e=merged[id]||null;
-        const hp = e ? pickHP(e) : "";
-        const ha = e ? pickHA(e) : "";
-
-        let statut="ATTENTE",retard="";
-        if(e){
-          if(e.off) statut="OFF";
-          if(ha){
-            if(hp){
-              const diff=diffFromEntry(e,id);
-              if(diff>0){ statut="RETARD"; retard=`+${diff}m`; }
-              else { statut="A L'HEURE"; retard="0"; }
-            }else{
-              statut="OK";
-            }
-          }
-        }
-        return `<tr>
-          <td>${emp.nom} ${emp.prenom}</td>
-          <td style="text-align:center;">${statut}</td>
-          <td style="text-align:center;">${hp}</td>
-          <td style="text-align:center;">${ha}</td>
-          <td style="text-align:center;">${retard}</td>
-        </tr>`;
-      }).join("");
-
-      document.getElementById("pdfContent").innerHTML=`
-        <table class="pdfTable">
-          <thead><tr>
-            <th style="text-align:left;">Employé</th>
-            <th style="text-align:center;">Statut</th>
-            <th style="text-align:center;">HP</th>
-            <th style="text-align:center;">HA</th>
-            <th style="text-align:center;">Retard</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
-
-      await exportPDF(`GC_RH_JOUR_${dayISO}.pdf`);
-    }
-
-    /* ── PDF Employé MOIS ── */
-    async function downloadPDF_EmployeeMonth(){
-      const empId=document.getElementById("empSelect").value;
-      const emp=getEmpById(empId);
-      const mk=(document.getElementById("pdfMonth").value||monthKeyFromISO(dateInput.value));
-      const {dates,presByDay,punchByDay}=await getMonthData(mk);
-
-      const today=todayISO();
-      let present=0,R=0,C=0,lateMin=0,excluded=0,ignoredFuture=0;
-      const weekRC={};
-
-      const rows=dates.map(dayISO=>{
-        if(dayISO>today){ ignoredFuture++; return `<tr><td>${fmtFR(dayISO)}</td><td>À venir</td><td></td><td></td><td></td></tr>`; }
-        if(isExcluded(dayISO)){ excluded++; return `<tr><td>${fmtFR(dayISO)}</td><td>Exclu</td><td></td><td></td><td></td></tr>`; }
-
-        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-        const e=merged[empId]||null;
-
-        if(!e){ C++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
-
-        if(e.off){
-          const rc=classifyOffDay(empId,dayISO,weekRC);
-          if(rc==="R") R++; else C++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R"?"Repos (R)":"Congé (C)"}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
-        }
-
-        if(pickHA(e)){
-          present++;
-          const diff=diffFromEntry(e,empId); lateMin+=diff;
-          const st=(pickHP(e)&&diff>0)?"Retard":(pickHP(e)?"À l'heure":"OK");
-          const r=pickHP(e)?(diff>0?`+${diff}m`:"0"):"";
-          return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td>${r}</td></tr>`;
-        }
-
-        C++;
-        return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
-      }).join("");
-
-      document.getElementById("pdfHeader").innerHTML=pdfHeader(`Rapport Mensuel — ${emp.nom} ${emp.prenom}`,`Mois: ${mk}`);
-      document.getElementById("pdfKpis").innerHTML=`
-        <div class="pdfKpi">
-          ${kpiBox("Présents",present)}
-          ${kpiBox("Repos (R)",R)}
-          ${kpiBox("Congés (C)",C)}
-          ${kpiBox("Retard (min)",lateMin)}
-        </div>
-        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">Exclu: ${excluded} • Futurs ignorés: ${ignoredFuture}</div>`;
-      document.getElementById("pdfContent").innerHTML=`
-        <table class="pdfTable">
-          <thead><tr>
-            <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
-            <th style="text-align:center;">HP</th><th style="text-align:center;">HA</th><th style="text-align:center;">Retard</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
-
-      await exportPDF(`GC_RH_MOIS_${emp.nom}_${emp.prenom}_${mk}.pdf`);
-    }
-
-    /* ── PDF Employé ANNÉE ── */
-    async function downloadPDF_EmployeeYear(){
-      const empId=document.getElementById("empSelect").value;
-      const emp=getEmpById(empId);
-      const year=dateInput.value.slice(0,4);
-      const today=todayISO();
-
-      let present=0,R=0,C=0,lateMin=0,excluded=0,ignoredFuture=0;
-      const months=Array.from({length:12},(_,i)=>`${year}-${String(i+1).padStart(2,"0")}`);
-      let content="";
-
-      for(let mi=0;mi<months.length;mi++){
-        const mk=months[mi];
-        const {dates,presByDay,punchByDay}=await getMonthData(mk);
-        const weekRC={};
-        let mPresent=0,mR=0,mC=0,mLate=0;
-
-        const rows=dates.map(dayISO=>{
-          if(dayISO>today){ ignoredFuture++; return ""; }
-          if(isExcluded(dayISO)){ excluded++; return ""; }
-
-          const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-          const e=merged[empId]||null;
-
-          if(!e){ mC++; return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td></td><td></td><td></td></tr>`; }
-
-          if(e.off){
-            const rc=classifyOffDay(empId,dayISO,weekRC);
-            if(rc==="R") mR++; else mC++;
-            return `<tr><td>${fmtFR(dayISO)}</td><td>${rc==="R"?"Repos (R)":"Congé (C)"}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
-          }
-
-          if(pickHA(e)){
-            mPresent++;
-            const diff=diffFromEntry(e,empId); mLate+=diff;
-            const st=(pickHP(e)&&diff>0)?"Retard":(pickHP(e)?"À l'heure":"OK");
-            const r=pickHP(e)?(diff>0?`+${diff}m`:"0"):"";
-            return `<tr><td>${fmtFR(dayISO)}</td><td>${st}</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td>${r}</td></tr>`;
-          }
-
-          mC++;
-          return `<tr><td>${fmtFR(dayISO)}</td><td>Congé (C)</td><td>${pickHP(e)}</td><td>${pickHA(e)}</td><td></td></tr>`;
-        }).filter(Boolean).join("");
-
-        present+=mPresent; R+=mR; C+=mC; lateMin+=mLate;
-
-        content+=`
-          ${mi===0?"":`<div class="pagebreak"></div>`}
-          <div style="font-weight:900;font-size:14px;color:#111827;margin:4px 0 8px;">Mois : ${mk}</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
-            <div class="pdfBox"><div class="t">Présents</div><div class="v">${mPresent}</div></div>
-            <div class="pdfBox"><div class="t">Repos (R)</div><div class="v">${mR}</div></div>
-            <div class="pdfBox"><div class="t">Congés (C)</div><div class="v">${mC}</div></div>
-            <div class="pdfBox"><div class="t">Retard (min)</div><div class="v">${mLate}</div></div>
-          </div>
-          <table class="pdfTable">
-            <thead><tr>
-              <th style="text-align:left;">Date</th><th style="text-align:center;">Statut</th>
-              <th style="text-align:center;">HP</th><th style="text-align:center;">HA</th><th style="text-align:center;">Retard</th>
-            </tr></thead>
-            <tbody>
-              ${rows||`<tr><td colspan="5" style="text-align:center;color:#6b7280;font-weight:700;">Aucune donnée</td></tr>`}
-            </tbody>
-          </table>`;
-      }
-
-      document.getElementById("pdfHeader").innerHTML=pdfHeader(`Rapport Annuel — ${emp.nom} ${emp.prenom}`,`Année: ${year}`);
-      document.getElementById("pdfKpis").innerHTML=`
-        <div class="pdfKpi">
-          ${kpiBox("Présents",present)}
-          ${kpiBox("Repos (R)",R)}
-          ${kpiBox("Congés (C)",C)}
-          ${kpiBox("Retard (min)",lateMin)}
-        </div>
-        <div style="margin-top:8px;color:#6b7280;font-size:10px;font-weight:700;">
-          Exclu (01/01/2026 → 31/01/2026): ${excluded} ignorés • Futurs ignorés: ${ignoredFuture}
-        </div>`;
-      document.getElementById("pdfContent").innerHTML=content;
-
-      await exportPDF(`GC_RH_ANNEE_${emp.nom}_${emp.prenom}_${year}.pdf`);
-    }
-
-    /* ── Export CSV mensuel ── */
+    /* ───────────────────────────────
+       CSV DÉTAIL (mensuel) — comme avant
+       ─────────────────────────────── */
     async function exportCSV_Month(){
       const mk=monthKeyFromISO(dateInput.value);
       const {dates,presByDay,punchByDay}=await getMonthData(mk);
@@ -1222,13 +960,14 @@
 
       dates.forEach(dayISO=>{
         if(dayISO>today||isExcluded(dayISO)) return;
+
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
 
         equipe.forEach(emp=>{
           const id=empIdOf(emp);
           const e=merged[id]||null;
 
-          let statut="CONGE",hp="",ha="",rmin="",rc="";
+          let statut="CONGE", hp="", ha="", rmin="", rc="";
           if(!e){
             statut="CONGE"; rc="C";
           }else{
@@ -1253,19 +992,147 @@
       const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a");
-      a.href=url; a.download=`GC_RH_${mk}.csv`;
+      a.href=url; a.download=`GC_DETAIL_${mk}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ───────────────────────────────
+       TABLEAU R/C + CSV récap
+       ─────────────────────────────── */
+    function escapeCSV(v){
+      const s = String(v ?? "");
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    async function buildMonthlySummary(mk){
+      const {dates, presByDay, punchByDay} = await getMonthData(mk);
+      const today = todayISO();
+
+      const summary = {};
+      equipe.forEach(emp=>{
+        const id = empIdOf(emp);
+        summary[id] = { nom: emp.nom, prenom: emp.prenom, poste: emp.poste, present:0, R:0, C:0 };
+      });
+
+      const weekRC = {};
+
+      dates.forEach(dayISO=>{
+        if(dayISO > today) return;
+        if(isExcluded(dayISO)) return;
+
+        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+
+        Object.keys(summary).forEach(empId=>{
+          const e = merged[empId] || null;
+
+          // absent => C
+          if(!e){
+            summary[empId].C++;
+            return;
+          }
+
+          // OFF => R/C
+          if(e.off){
+            const rc = classifyOffDay(empId, dayISO, weekRC);
+            if(rc === "R") summary[empId].R++;
+            else summary[empId].C++;
+            return;
+          }
+
+          // Présent si HA existe
+          if(pickHA(e)){
+            summary[empId].present++;
+            return;
+          }
+
+          // Ni OFF ni HA => C
+          summary[empId].C++;
+        });
+      });
+
+      return summary;
+    }
+
+    async function renderMonthlyRCTable(){
+      const mk = monthKeyFromISO(dateInput.value);
+      document.getElementById("rcTitle").textContent = `R/C — Mois: ${mk}`;
+      const tbody = document.getElementById("rcTbody");
+      tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-slate-500">Chargement…</td></tr>`;
+
+      const summary = await buildMonthlySummary(mk);
+
+      const rows = Object.entries(summary)
+        .map(([id,s])=>({id,...s}))
+        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+
+      const render = (q="")=>{
+        const qq = q.trim().toUpperCase();
+        const filtered = !qq ? rows : rows.filter(r => (`${r.nom} ${r.prenom}`.toUpperCase().includes(qq)));
+        tbody.innerHTML = filtered.map(r=>`
+          <tr class="border-t border-slate-100">
+            <td class="py-2 font-extrabold uppercase text-slate-900">${r.nom} <span class="font-bold text-slate-400 normal-case">${r.prenom}</span></td>
+            <td class="py-2 text-slate-600 font-extrabold">${r.poste}</td>
+            <td class="py-2 text-center font-black text-slate-900">${r.present}</td>
+            <td class="py-2 text-center font-black text-slate-900">${r.R}</td>
+            <td class="py-2 text-center font-black text-slate-900">${r.C}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="5" class="py-3 text-slate-500">Aucun résultat</td></tr>`;
+      };
+
+      const inp = document.getElementById("rcSearch");
+      inp.oninput = ()=> render(inp.value);
+      render(inp.value);
+    }
+
+    async function toggleRCTable(){
+      const wrap = document.getElementById("rcWrap");
+      const show = wrap.classList.contains("hidden");
+      wrap.classList.toggle("hidden", !show);
+      if(show){
+        await renderMonthlyRCTable();
+        setTimeout(()=>wrap.scrollIntoView({behavior:"smooth", block:"start"}), 50);
+      }
+    }
+
+    async function exportCSV_RC_Month(){
+      const mk = monthKeyFromISO(dateInput.value);
+      const summary = await buildMonthlySummary(mk);
+
+      const header = ["Mois","Employe","Poste","Presents","R","C"];
+      const lines = [header.join(",")];
+
+      Object.values(summary)
+        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+        .forEach(s=>{
+          lines.push([
+            mk,
+            escapeCSV(`${s.nom} ${s.prenom}`),
+            escapeCSV(s.poste),
+            s.present,
+            s.R,
+            s.C
+          ].join(","));
+        });
+
+      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `GC_RC_${mk}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       URL.revokeObjectURL(url);
     }
 
     /* ── Boot ── */
     async function bootDashboard(){
       dateInput.value=todayISO();
-      document.getElementById("pdfMonth").value=monthKeyFromISO(dateInput.value);
 
       dateInput.addEventListener('change',async()=>{
         clearMonthCache();
-        document.getElementById("pdfMonth").value=monthKeyFromISO(dateInput.value);
         await updateDashboard();
       });
 
@@ -1274,7 +1141,6 @@
         equipe.splice(0,equipe.length,...list);
       }catch(e){}
 
-      fillEmpSelect();
       await initStaffAdminUI();
       await updateDashboard();
     }
