@@ -821,8 +821,9 @@ async function exportYear_ToSheets(){
 
   try{
     syncLine.textContent = "Sheets : envoi…";
-    const res  = await fetch(SHEETS_WEBHOOK_URL, {
+   const res  = await fetch(SHEETS_WEBHOOK_URL, {
       method: "POST",
+      redirect: "follow",
       body:   JSON.stringify({ year, rows, secret: SHEETS_SECRET })
     });
     const json = await res.json();
