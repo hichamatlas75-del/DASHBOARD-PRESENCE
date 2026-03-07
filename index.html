@@ -319,30 +319,32 @@
           <input type="date" id="dashDate" class="hidden">
         </div>
 
-        <!-- Exports -->
-        <div class="glass-card rounded-2xl p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="smallCaps">Période</div>
-              <div id="periodLabel" class="hTitle text-2xl font-bold mt-1">—</div>
-              <div class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted)">
-                R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
-              </div>
-            </div>
-            <div class="flex flex-col gap-2">
-              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
-                Export R/C Mois
-              </button>
-              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82)">
-                Export Année (résumé)
-              </button>
-            </div>
-          </div>
-        </div>
+       <!-- Exports -->
+<div class="glass-card rounded-2xl p-4">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <div class="smallCaps">Période</div>
+      <div id="periodLabel" class="hTitle text-2xl font-bold mt-1">—</div>
+      <div class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted)">
+        R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
       </div>
-
+    </div>
+    <div class="flex flex-col gap-2">
+      <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+        style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
+        Export R/C Mois
+      </button>
+      <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+        style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82)">
+        Export Année CSV
+      </button>
+      <button onclick="exportYear_ToSheets()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
+        style="background:rgba(66,133,244,.18);border:1px solid rgba(66,133,244,.55);color:rgba(130,180,255,.95)">
+        ↗ Sync Google Sheets
+      </button>
+    </div>
+  </div>
+</div>
       <!-- CHART -->
       <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
         <div class="h-[180px] w-full">
@@ -770,6 +772,70 @@
       showAppUI();
       bootDashboard();
     });
+// ═══════════════════════════════════════════════
+// GOOGLE SHEETS WEBHOOK
+// ═══════════════════════════════════════════════
+const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
+const SHEETS_SECRET      = "GC_SECRET_2026";
+
+async function exportYear_ToSheets(){
+  const year      = dateInput.value.slice(0,4);
+  const currentMk = monthKeyFromISO(todayISO());
+
+  // ── Calcul cumul année ──
+  const totalsByEmp = {};
+  equipe.forEach(emp=>{
+    const id = empIdOf(emp);
+    totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
+  });
+
+  syncLine.textContent = "Sheets : calcul en cours…";
+
+  for(let i=1; i<=12; i++){
+    const mk = `${year}-${String(i).padStart(2,"0")}`;
+    if(mk > currentMk) break;
+    const summary = await buildMonthlySummary(mk);
+    Object.values(summary).forEach(s=>{
+      if(!totalsByEmp[s.empId]){
+        totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"", present:0, R:0, C:0, lateMin:0 };
+      }
+      totalsByEmp[s.empId].present  += Number(s.present)  || 0;
+      totalsByEmp[s.empId].R        += Number(s.R)        || 0;
+      totalsByEmp[s.empId].C        += Number(s.C)        || 0;
+      totalsByEmp[s.empId].lateMin  += Number(s.lateMin)  || 0;
+    });
+  }
+
+  // ── Envoi vers Sheets ──
+  const rows = Object.values(totalsByEmp)
+    .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+    .map(t=>({
+      year,
+      employe:  `${t.nom} ${titleCase(t.prenom)}`.trim(),
+      poste:    t.poste,
+      presents: t.present,
+      repos:    t.R,
+      conge:    t.C,
+      retard:   t.lateMin
+    }));
+
+  try{
+    syncLine.textContent = "Sheets : envoi…";
+    const res  = await fetch(SHEETS_WEBHOOK_URL, {
+      method: "POST",
+      body:   JSON.stringify({ year, rows, secret: SHEETS_SECRET })
+    });
+    const json = await res.json();
+    if(json.ok){
+      syncLine.textContent = `✅ Google Sheets mis à jour — ${json.written} lignes (${year})`;
+    } else {
+      syncLine.textContent = `⚠️ Sheets erreur : ${json.error || "inconnue"}`;
+    }
+  } catch(err){
+    syncLine.textContent = "⚠️ Sheets : connexion échouée";
+    console.error(err);
+  }
+}
 
     function detachRealtime(){
       try{
