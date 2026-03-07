@@ -490,6 +490,8 @@
     let role = null;
     let activePresRef = null, activePunchRef = null;
     let presCache = {}, punchCache = {};
+    let midnightTimer = null;
+    let sheetsSyncRunning = false;
 
     const EQUIPE_PATH = "settings/equipe";
 
@@ -733,8 +735,16 @@
       return s.val()||null;
     }
     function showLoginUI(msg){
-      detachRealtime(); role=null;
-      appWrap.classList.add("hidden"); loginWrap.classList.remove("hidden");
+      detachRealtime();
+      role=null;
+
+      if(midnightTimer){
+        clearInterval(midnightTimer);
+        midnightTimer = null;
+      }
+
+      appWrap.classList.add("hidden");
+      loginWrap.classList.remove("hidden");
       document.getElementById("loginMsg").textContent=msg||"";
     }
     function showAppUI(){
@@ -751,6 +761,10 @@
       catch(e){ showLoginUI("Identifiants invalides."); }
     };
     document.getElementById("btnLogout").onclick=async()=>{
+      if(midnightTimer){
+        clearInterval(midnightTimer);
+        midnightTimer = null;
+      }
       try{ await auth.signOut(); }catch(e){}
       location.reload();
     };
@@ -772,108 +786,110 @@
       showAppUI();
       bootDashboard();
     });
-// ═══════════════════════════════════════════════
-// GOOGLE SHEETS WEBHOOK
-// ═══════════════════════════════════════════════
-const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
-const SHEETS_SECRET      = "GC_SECRET_2026";
 
-async function exportYear_ToSheets(){
-  const year = dateInput.value.slice(0,4);
-  const currentMk = monthKeyFromISO(todayISO());
+    // ═══════════════════════════════════════════════
+    // GOOGLE SHEETS WEBHOOK
+    // ═══════════════════════════════════════════════
+    const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
+    const SHEETS_SECRET      = "GC_SECRET_2026";
 
-  const totalsByEmp = {};
-  equipe.forEach(emp=>{
-    const id = empIdOf(emp);
-    totalsByEmp[id] = {
-      empId:id,
-      nom:emp.nom,
-      prenom:emp.prenom,
-      poste:emp.poste,
-      present:0,
-      R:0,
-      C:0,
-      lateMin:0
-    };
-  });
+    async function exportYear_ToSheets(){
+      if(sheetsSyncRunning) return;
+      sheetsSyncRunning = true;
 
-  syncLine.textContent = "Sheets : calcul en cours…";
+      try{
+        const year = dateInput.value.slice(0,4);
+        const currentMk = monthKeyFromISO(todayISO());
 
-  for(let i=1; i<=12; i++){
-    const mk = `${year}-${String(i).padStart(2,"0")}`;
-    if(mk > currentMk) break;
+        const totalsByEmp = {};
+        equipe.forEach(emp=>{
+          const id = empIdOf(emp);
+          totalsByEmp[id] = {
+            empId:id,
+            nom:emp.nom,
+            prenom:emp.prenom,
+            poste:emp.poste,
+            present:0,
+            R:0,
+            C:0,
+            lateMin:0
+          };
+        });
 
-    const summary = await buildMonthlySummary(mk);
-    Object.values(summary).forEach(s=>{
-      if(!totalsByEmp[s.empId]){
-        totalsByEmp[s.empId] = {
-          empId:s.empId,
-          nom:s.nom || s.empId,
-          prenom:s.prenom || "",
-          poste:s.poste || "",
-          present:0,
-          R:0,
-          C:0,
-          lateMin:0
-        };
+        syncLine.textContent = "Sheets : calcul en cours…";
+
+        for(let i=1; i<=12; i++){
+          const mk = `${year}-${String(i).padStart(2,"0")}`;
+          if(mk > currentMk) break;
+
+          const summary = await buildMonthlySummary(mk);
+          Object.values(summary).forEach(s=>{
+            if(!totalsByEmp[s.empId]){
+              totalsByEmp[s.empId] = {
+                empId:s.empId,
+                nom:s.nom || s.empId,
+                prenom:s.prenom || "",
+                poste:s.poste || "",
+                present:0,
+                R:0,
+                C:0,
+                lateMin:0
+              };
+            }
+            totalsByEmp[s.empId].present += Number(s.present) || 0;
+            totalsByEmp[s.empId].R += Number(s.R) || 0;
+            totalsByEmp[s.empId].C += Number(s.C) || 0;
+            totalsByEmp[s.empId].lateMin += Number(s.lateMin) || 0;
+          });
+        }
+
+        const rows = Object.values(totalsByEmp)
+          .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+          .map(t=>({
+            year,
+            employe: `${t.nom} ${titleCase(t.prenom)}`.trim(),
+            poste: t.poste,
+            presents: t.present,
+            repos: t.R,
+            conge: t.C,
+            retard: t.lateMin
+          }));
+
+        syncLine.textContent = "Sheets : envoi…";
+
+        const res = await fetch(SHEETS_WEBHOOK_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            year,
+            rows,
+            secret: SHEETS_SECRET
+          })
+        });
+
+        const raw = await res.text();
+        console.log("Sheets raw response:", raw);
+
+        let json;
+        try{
+          json = JSON.parse(raw);
+        }catch(parseErr){
+          throw new Error("Réponse non JSON : " + raw.slice(0, 300));
+        }
+
+        if(json.ok){
+          syncLine.textContent = `✅ Google Sheets mis à jour — ${json.written || 0} lignes (${year})`;
+        }else{
+          syncLine.textContent = `⚠️ Sheets erreur : ${json.error || "inconnue"}`;
+        }
+
+      }catch(err){
+        console.error("Sheets export error:", err);
+        syncLine.textContent = `⚠️ Sheets : ${err.message || "connexion échouée"}`;
+      }finally{
+        sheetsSyncRunning = false;
       }
-      totalsByEmp[s.empId].present += Number(s.present) || 0;
-      totalsByEmp[s.empId].R += Number(s.R) || 0;
-      totalsByEmp[s.empId].C += Number(s.C) || 0;
-      totalsByEmp[s.empId].lateMin += Number(s.lateMin) || 0;
-    });
-  }
-
-  const rows = Object.values(totalsByEmp)
-    .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-    .map(t=>({
-      year,
-      employe: `${t.nom} ${titleCase(t.prenom)}`.trim(),
-      poste: t.poste,
-      presents: t.present,
-      repos: t.R,
-      conge: t.C,
-      retard: t.lateMin
-    }));
-
-  try{
-    syncLine.textContent = "Sheets : envoi…";
-
-    const payload = {
-      year,
-      rows,
-      secret: SHEETS_SECRET
-    };
-
-    const res = await fetch(SHEETS_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const raw = await res.text();
-    console.log("Sheets raw response:", raw);
-
-    let json;
-    try{
-      json = JSON.parse(raw);
-    }catch(parseErr){
-      throw new Error("Réponse non JSON : " + raw.slice(0, 300));
     }
 
-    if(json.ok){
-      syncLine.textContent = `✅ Google Sheets mis à jour — ${json.written || 0} lignes (${year})`;
-    }else{
-      syncLine.textContent = `⚠️ Sheets erreur : ${json.error || "inconnue"}`;
-    }
-
-  }catch(err){
-    console.error("Sheets export error:", err);
-    syncLine.textContent = `⚠️ Sheets : ${err.message || "connexion échouée"}`;
-  }
-}
     function detachRealtime(){
       try{
         if(activePresRef){ activePresRef.off(); activePresRef=null; }
@@ -1362,8 +1378,6 @@ async function exportYear_ToSheets(){
       return totalsByEmp;
     }
 
-    // ✅ PERF FIX: éviter le recalcul du mois courant dans renderRCView
-    // buildYearSummary(year, monthPrefetch)
     async function buildYearSummaryOptimized(year, monthPrefetch){
       const currentMk = monthKeyFromISO(todayISO());
       const totalsByEmp = {};
@@ -1401,10 +1415,7 @@ async function exportYear_ToSheets(){
         return;
       }
 
-      // Mois courant calculé 1 seule fois
       const monthSummary = await buildMonthlySummary(mk);
-
-      // Année optimisée: réutilise monthSummary pour mk
       const yearSummary  = await buildYearSummaryOptimized(year, { [mk]: monthSummary });
 
       const monthRows = Object.values(monthSummary).sort((a,b)=>{
@@ -1699,13 +1710,43 @@ async function exportYear_ToSheets(){
       URL.revokeObjectURL(url);
     }
 
+    function startMidnightWatcher(){
+      if(midnightTimer) clearInterval(midnightTimer);
+
+      let lastDay = todayISO();
+
+      midnightTimer = setInterval(async () => {
+        const nowDay = todayISO();
+
+        if(nowDay !== lastDay){
+          lastDay = nowDay;
+
+          const mkToday = monthKeyFromISO(nowDay);
+
+          dayPicker.value = nowDay;
+          monthPicker.value = mkToday;
+          dateInput.value = isoFromMonthKey(mkToday);
+
+          clearMonthCache();
+
+          syncLine.textContent = "Sheets : resync après minuit…";
+
+          try{
+            await updateDashboard();
+            await exportYear_ToSheets();
+          }catch(err){
+            console.error("Midnight resync error:", err);
+            syncLine.textContent = "⚠️ Sheets : erreur resync minuit";
+          }
+        }
+      }, 30000);
+    }
+
     async function bootDashboard(){
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
-      // Day picker init (⚠️ pas de .max figé: on autorise navigation, et évite le bug "minuit")
       dayPicker.value = today;
-
       monthPicker.value = mkToday;
       dateInput.value = isoFromMonthKey(mkToday);
 
@@ -1727,6 +1768,7 @@ async function exportYear_ToSheets(){
 
       await initStaffAdminUI();
       await updateDashboard();
+      startMidnightWatcher();
     }
   </script>
 </body>
