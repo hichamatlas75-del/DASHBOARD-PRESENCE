@@ -467,6 +467,10 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
+        <input id="addDateDebut" class="inpt mt-2" type="date" />
+        <div class="mt-2 text-[10px] font-semibold" style="color:var(--muted)">
+          Date de début optionnelle. Si vide, le système prendra la première activité trouvée.
+        </div>
         <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
           style="background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.35);color:#075985">
           AJOUTER
@@ -671,7 +675,7 @@
 
     function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
     function getEmpById(empId){
-      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:""};
+      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:"",dateDebut:""};
     }
 
     function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
@@ -739,18 +743,23 @@
         const nom=normName(document.getElementById("addNom").value);
         const prenom=normName(document.getElementById("addPrenom").value);
         const poste=(document.getElementById("addPoste").value||"").trim().toUpperCase();
+        const dateDebut=(document.getElementById("addDateDebut").value||"").trim();
+
         if(!nom||!prenom||!poste){ addMsg.textContent="⚠️ Remplis NOM, Prénom et Poste."; return; }
         const id=makeEmpId(nom,prenom);
         if(equipe.some(e=>empIdOf(e)===id)){ addMsg.textContent="⚠️ Déjà existant."; return; }
+
         addMsg.textContent="Ajout…";
         const next = equipe.slice();
-        next.push({nom,prenom,poste});
+        next.push({nom,prenom,poste,dateDebut:dateDebut||""});
+
         try{
           await saveEquipeToDB(next);
           setEquipe(next);
           addMsg.textContent="✅ Ajouté.";
           document.getElementById("addNom").value="";
           document.getElementById("addPrenom").value="";
+          document.getElementById("addDateDebut").value="";
           closeStaffAdmin();
           updateDashboard();
         }catch(e){
@@ -1002,12 +1011,14 @@
       updateDashboard();
     }
 
-    const monthDataCache=new Map();
-    const monthRCMapCache=new Map();
+    const monthDataCache = new Map();
+    const monthRCMapCache = new Map();
+    const empStartMapCache = new Map();
 
     function clearMonthCache(){
       monthDataCache.clear();
       monthRCMapCache.clear();
+      empStartMapCache.clear();
     }
 
     function getDatesInMonth(seedISO){
@@ -1065,8 +1076,62 @@
       return pack;
     }
 
+    function hasAnyEmpActivity(mergedEntry){
+      if(!mergedEntry) return false;
+      const hp = safeTime(mergedEntry.hP) || "";
+      const ha = safeTime(mergedEntry.hA) || "";
+      const off = mergedEntry.off === true;
+      return !!(hp || ha || off);
+    }
+
+    function getConfiguredEmpStart(emp){
+      const d = String(emp?.dateDebut || "").trim();
+      return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+    }
+
+    async function getEmpStartMapForYear(year){
+      if(empStartMapCache.has(year)) return empStartMapCache.get(year);
+
+      const currentMk = monthKeyFromISO(todayISO());
+      const startMap = {};
+      equipe.forEach(emp => {
+        const configured = getConfiguredEmpStart(emp);
+        startMap[empIdOf(emp)] = configured || null;
+      });
+
+      for(let i=1;i<=12;i++){
+        const mk = `${year}-${String(i).padStart(2,"0")}`;
+        if(mk > currentMk) break;
+
+        const md = await getMonthData(mk);
+        const { dates, presByDay, punchByDay } = md;
+
+        for(const dayISO of dates){
+          if(dayISO > todayISO()) continue;
+
+          const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+
+          equipe.forEach(emp=>{
+            const id = empIdOf(emp);
+            if(startMap[id]) return;
+
+            const e = merged[id] || null;
+            if(hasAnyEmpActivity(e)){
+              startMap[id] = dayISO;
+            }
+          });
+        }
+      }
+
+      empStartMapCache.set(year, startMap);
+      return startMap;
+    }
+
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
+
+      const year = mk.slice(0,4);
+      const startMap = await getEmpStartMapForYear(year);
 
       const md = await getMonthData(mk);
       const {dates,presByDay,punchByDay} = md;
@@ -1082,18 +1147,29 @@
 
       const firstDay = mk + "-01";
       const wkStart  = weekStartMondayISO(firstDay);
+
       if(wkStart < firstDay){
         const ctxDates = [];
         let d = wkStart;
-        while(d < firstDay){ ctxDates.push(d); d = addDaysISO(d,1); }
+        while(d < firstDay){
+          ctxDates.push(d);
+          d = addDaysISO(d,1);
+        }
 
         const ctx = await batchFetchPresPunch(ctxDates);
+
         ctxDates.forEach(dayISO=>{
-          if(dayISO > today || isExcluded(dayISO)) return;
+          if(dayISO > today) return;
+          if(isExcluded(dayISO)) return;
+
           const merged = mergeDay(ctx.presByDay[dayISO]||{}, ctx.punchByDay[dayISO]||{});
+
           equipe.forEach(emp=>{
             const id = empIdOf(emp);
-            const e  = merged[id] || null;
+            const start = startMap[id];
+            if(!start || dayISO < start) return;
+
+            const e = merged[id] || null;
             if(e && e.off) classifyOffDay(id, dayISO, weekRC);
           });
         });
@@ -1107,19 +1183,25 @@
 
         equipe.forEach(emp=>{
           const id = empIdOf(emp);
-          const e = merged[id] || null;
+          const start = startMap[id];
 
+          if(!start || dayISO < start) return;
+
+          const e = merged[id] || null;
           const ha = safeTime(e?.hA);
+
           if(ha) return;
+
           if(e && e.off){
             rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC);
             return;
           }
+
           rcByEmpDay[id][dayISO] = "C";
         });
       });
 
-      const out = { rcByEmpDay };
+      const out = { rcByEmpDay, startMap };
       monthRCMapCache.set(mk, out);
       return out;
     }
@@ -1278,7 +1360,7 @@
       const stats={};
       equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
 
-      const {rcByEmpDay} = await getMonthRCMap(mk);
+      const {rcByEmpDay, startMap} = await getMonthRCMap(mk);
       const dailyLates=[],dailyPresence=[],labels=[];
 
       dates.forEach(dayISO=>{
@@ -1290,6 +1372,9 @@
         let tL=0,tP=0;
 
         Object.keys(stats).forEach(id=>{
+          const start = startMap[id];
+          if(!start || dayISO < start) return;
+
           const e=merged[id]||null;
           const hp = safeTime(e?.hP) || "";
           const ha = safeTime(e?.hA) || "";
@@ -1301,8 +1386,9 @@
             tL+=diff; tP++;
             return;
           }
-          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
-          stats[id][rc]++;
+
+          const rc = rcByEmpDay[id]?.[dayISO];
+          if(rc) stats[id][rc]++;
         });
 
         dailyLates.push(tL);
@@ -1364,6 +1450,9 @@
     }
 
     async function buildMonthlySummary(mk){
+      const year = mk.slice(0,4);
+      const startMap = await getEmpStartMapForYear(year);
+
       const md = await getMonthData(mk);
       const {dates,presByDay,punchByDay}=md;
       const {rcByEmpDay} = await getMonthRCMap(mk);
@@ -1382,6 +1471,9 @@
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
 
         Object.keys(out).forEach(id=>{
+          const start = startMap[id];
+          if(!start || dayISO < start) return;
+
           const e = merged[id] || null;
           const hp = safeTime(e?.hP) || "";
           const ha = safeTime(e?.hA) || "";
@@ -1392,7 +1484,9 @@
             return;
           }
 
-          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
+          const rc = rcByEmpDay[id]?.[dayISO];
+          if(!rc) return;
+
           if(rc==="R") out[id].R++;
           else out[id].C++;
         });
@@ -1627,7 +1721,7 @@
       }
 
       const {dates,presByDay,punchByDay}=md;
-      const {rcByEmpDay} = await getMonthRCMap(mk);
+      const {rcByEmpDay, startMap} = await getMonthRCMap(mk);
       const today=todayISO();
 
       const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
@@ -1637,6 +1731,12 @@
       dates.slice().reverse().forEach(dayISO=>{
         if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:rgba(3,105,161,.40)"); return; }
         if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:rgba(3,105,161,.50)"); return; }
+
+        const empStart = startMap[empId];
+        if(!empStart || dayISO < empStart){
+          html += rowHistory(dayISO, "Non commencé", "", "", "", "color:rgba(3,105,161,.45)");
+          return;
+        }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
@@ -1655,8 +1755,12 @@
           return;
         }
 
-        const rc = (rcByEmpDay[empId] && rcByEmpDay[empId][dayISO]) ? rcByEmpDay[empId][dayISO] : "C";
-        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(3,105,161,.72)", rc);
+        const rc = rcByEmpDay[empId]?.[dayISO];
+        if(rc){
+          html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(3,105,161,.72)", rc);
+        }else{
+          html += rowHistory(dayISO, "—", hp, ha, "", "color:rgba(3,105,161,.45)");
+        }
       });
 
       document.getElementById('modalList').innerHTML=html||'<p class="text-center py-10" style="color:rgba(3,105,161,.50);font-weight:800">Aucune donnée</p>';
