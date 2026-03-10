@@ -673,7 +673,19 @@
       return "C";
     }
 
-    function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
+function empIdOf(emp){
+  const nom = String(emp?.nom || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  const prenom = String(emp?.prenom || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  return `${nom}_${prenom}`;
+}
     function getEmpById(empId){
       return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:"",dateDebut:""};
     }
