@@ -254,43 +254,45 @@
     .chip-c  { background: var(--chip-c-bg);  border-color: var(--chip-c-bdr);  color: var(--chip-c-fg); }
 
     /* ─── Table R/C ─── */
-    .rc-table { width: 100%; border-collapse: collapse; }
+    .rc-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;   /* répartition fixe = pas de débordement */
+    }
     .rc-table th, .rc-table td {
       border: 1px solid rgba(30,64,175,.07);
-      padding: 10px 12px;
-      font-size: 12px;
+      padding: 8px 5px;
+      font-size: 11px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* Colonne Employé autorisée à wrapper */
+    .rc-table td.col-emp {
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.25;
     }
     .rc-table th {
       background: rgba(255,255,255,.55);
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: .12em;
-      font-size: 10px;
+      letter-spacing: .08em;
+      font-size: 9px;
       color: var(--muted2);
+      padding: 7px 5px;
     }
     .rc-table tbody tr:nth-child(odd)  { background: rgba(255,255,255,.22); }
     .rc-table tbody tr:hover           { background: rgba(245,158,11,.05); transition: background .2s ease; }
     .muted-dash { opacity: .38; }
-
-    /* ─── Table R/C mobile ─── */
-    @media (max-width: 480px) {
-      .rc-table th, .rc-table td { padding: 7px 8px; font-size: 11px; }
-      .rc-table th { font-size: 9px; }
-    }
-
-    /* ─── Scroll wrapper pour les tableaux ─── */
-    .rc-scroll-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 8px;
-      /* indicateur visuel de défilement */
-      background:
-        linear-gradient(to right,  rgba(255,255,255,1) 0px, transparent 20px) left,
-        linear-gradient(to left,   rgba(255,255,255,1) 0px, transparent 20px) right;
-      background-repeat: no-repeat;
-      background-size: 20px 100%;
-      background-attachment: local, local;
+    /* Badge poste dans cellule nom */
+    .rc-poste-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted2);
+      letter-spacing: .04em;
+      margin-top: 1px;
     }
 
     /* ─── Drawers ─── */
@@ -1476,29 +1478,36 @@
     /* ══════════════════════════════════ TABLE R/C ══════════════════════════════════ */
 
     function makeTable(rows, colR, colC){
-      return `<div class="rc-scroll-wrap mt-4">
-        <table class="rc-table" style="min-width:480px;width:100%">
+      return `<div class="mt-4">
+        <table class="rc-table">
+          <colgroup>
+            <col style="width:44%">
+            <col style="width:14%">
+            <col style="width:9%">
+            <col style="width:9%">
+            <col style="width:24%">
+          </colgroup>
           <thead><tr>
-            <th style="text-align:left;min-width:100px">Employé</th>
-            <th style="text-align:left;min-width:72px">Poste</th>
-            <th style="text-align:center;min-width:54px">Présents</th>
-            <th style="text-align:center;min-width:36px">${esc(colR)}</th>
-            <th style="text-align:center;min-width:36px">${esc(colC)}</th>
-            <th style="text-align:center;min-width:54px">Retard</th>
+            <th style="text-align:left">Employé</th>
+            <th style="text-align:center">Prés.</th>
+            <th style="text-align:center">${esc(colR)}</th>
+            <th style="text-align:center">${esc(colC)}</th>
+            <th style="text-align:center">Retard</th>
           </tr></thead>
           <tbody>
             ${rows.map(r=>{
               const late=Number(r.lateMin)||0;
               return `<tr>
-                <td style="font-weight:900;white-space:normal;max-width:110px;word-break:break-word">
-                  ${esc(r.nom)}<br><span style="opacity:.50;font-weight:700;font-size:10px">${esc(titleCase(r.prenom))}</span>
+                <td class="col-emp">
+                  <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span><br>
+                  <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744">${esc(titleCase(r.prenom))}</span>
+                  <br><span class="rc-poste-badge">${esc((r.poste||"").toLowerCase())}</span>
                 </td>
-                <td style="font-weight:800;font-size:11px;color:var(--muted2)">${esc(r.poste)}</td>
                 <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
                 <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
                 <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
                 <td style="text-align:center;font-weight:900;color:var(--crit)">
-                  ${late ? esc(late)+'m' : '<span class="muted-dash">—</span>'}
+                  ${late ? `<span style="font-size:10px">${esc(late)}m</span>` : '<span class="muted-dash">—</span>'}
                 </td>
               </tr>`;
             }).join("")}
