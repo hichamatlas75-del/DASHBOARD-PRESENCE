@@ -431,13 +431,20 @@
     </div>
     <div id="syncSummary" class="glass-card rounded-xl p-3 mb-4 text-[11px] font-semibold" style="color:var(--muted2)">Prêt à synchroniser.</div>
     <div class="sync-log" id="syncLog"><span class="log-info">En attente du lancement…</span></div>
-    <div class="flex gap-3 mt-4">
-      <button id="btnSyncRun" onclick="syncCtoConges()"
-        class="flex-1 py-3 rounded-2xl font-extrabold text-[12px] btn-action btn-sky"
-        style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">
-        ▶ Lancer la sync
-      </button>
-      <button onclick="closeSyncModal()" class="px-5 py-3 rounded-2xl font-extrabold text-[12px] btn-action btn-neutral"
+    <div class="flex flex-col gap-2 mt-4">
+      <div class="flex gap-2">
+        <button id="btnSyncRun" onclick="syncCtoConges(false)"
+          class="flex-1 py-3 rounded-2xl font-extrabold text-[12px] btn-action btn-sky"
+          style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">
+          ▶ Sync ce mois
+        </button>
+        <button id="btnSyncYear" onclick="syncCtoConges(true)"
+          class="flex-1 py-3 rounded-2xl font-extrabold text-[12px] btn-action"
+          style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
+          ▶▶ Sync toute l'année
+        </button>
+      </div>
+      <button onclick="closeSyncModal()" class="w-full py-2.5 rounded-2xl font-extrabold text-[12px] btn-action btn-neutral"
         style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">Fermer</button>
     </div>
     <p class="mt-3 text-[10px] font-semibold leading-snug" style="color:var(--muted3)">
@@ -747,24 +754,39 @@ function groupConsecutiveDays(sortedDays){
 
 function openSyncModal(){
   const mk=monthKeyFromISO(dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO())));
-  document.getElementById('syncSummary').textContent=`Mois sélectionné : ${mk}. Prêt à synchroniser les jours C.`;
-  document.getElementById('syncLog').innerHTML='<span class="log-info">Cliquer sur "Lancer la sync"…</span>';
+  const year=mk.slice(0,4);
+  document.getElementById('syncSummary').textContent=`Mois : ${mk} · Année : ${year}. Choisis le périmètre.`;
+  document.getElementById('syncLog').innerHTML='<span class="log-info">Cliquer sur un bouton pour lancer…</span>';
   document.getElementById('btnSyncRun').disabled=false;
+  document.getElementById('btnSyncYear').disabled=false;
   document.getElementById('syncModal').classList.add('open');
 }
 function closeSyncModal(){ document.getElementById('syncModal').classList.remove('open'); }
 function syncLog(msg,cls='log-info'){ const el=document.getElementById('syncLog'); el.innerHTML+=`<div class="${cls}">${msg}</div>`; el.scrollTop=el.scrollHeight; }
 
-async function syncCtoConges(){
-  const btn=document.getElementById('btnSyncRun'); btn.disabled=true;
+async function syncCtoConges(allYear=false){
+  const btnM=document.getElementById('btnSyncRun');
+  const btnY=document.getElementById('btnSyncYear');
+  btnM.disabled=true; btnY.disabled=true;
   document.getElementById('syncLog').innerHTML='';
-  const mk=monthKeyFromISO(dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO())));
-  syncLog(`📅 Mois : ${mk}`);
-  syncLog('🔄 Calcul R/C map…');
-  const md=await getMonthData(mk);
-  if(md.anyFail){ syncLog('❌ Réseau instable, abandon.','log-err'); btn.disabled=false; return; }
-  const {rcByEmpDay}=await getMonthRCMap(mk);
-  syncLog('✅ R/C map calculé.','log-ok');
+
+  const currentMk=monthKeyFromISO(dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO())));
+  const year=currentMk.slice(0,4);
+
+  // Construire la liste des mois à traiter
+  let months=[];
+  if(allYear){
+    const todayMk=monthKeyFromISO(todayISO());
+    for(let i=1;i<=12;i++){
+      const mk=`${year}-${String(i).padStart(2,"0")}`;
+      if(mk>todayMk) break;
+      months.push(mk);
+    }
+    syncLog(`📅 Année complète : ${year} (${months.length} mois)`);
+  }else{
+    months=[currentMk];
+    syncLog(`📅 Mois : ${currentMk}`);
+  }
   syncLog('🔄 Chargement CIN…');
   const cinMap=await buildEmpCinMap();
   syncLog(`✅ ${Object.keys(cinMap).length} employés mappés.`,'log-ok');
@@ -774,36 +796,44 @@ async function syncCtoConges(){
 
   let totalPeriods=0,skipped=0,written=0,noCin=0;
   const writes=[];
-  Object.entries(rcByEmpDay).forEach(([empId,days])=>{
-    const cDays=Object.entries(days).filter(([d,v])=>v==='C').map(([d])=>d).sort();
-    if(!cDays.length) return;
-    const cinInfo=cinMap[empId];
-    if(!cinInfo||!cinInfo.cin){ syncLog(`⚠ ${empId} : pas de CIN, ignoré.`,'log-warn'); noCin++; return; }
-    const periods=groupConsecutiveDays(cDays); totalPeriods+=periods.length;
-    periods.forEach(p=>{
-      const existing=cgDash.allFlat().filter(c=>c.empId===empId&&c.dateDebut===p.dateDebut&&c.dateFin===p.dateFin);
-      if(existing.length){ syncLog(`⏭ ${empId} ${p.dateDebut}→${p.dateFin} : déjà existant.`,'log-info'); skipped++; return; }
-      writes.push({ cin:cinInfo.cin, label:`${empId} ${p.dateDebut}→${p.dateFin} (${p.jours}j)`,
-        conge:{ type:'C (auto)',dateDebut:p.dateDebut,dateFin:p.dateFin,jours:p.jours,
-          statut:'approuvé',note:`Sync auto R/C — ${mk}`,
-          empId,empNom:cinInfo.nom,empPrenom:cinInfo.prenom,empDept:cinInfo.dept,
-          _autoSync:true,createdAt:Date.now() }
+
+  for(const mk of months){
+    syncLog(`🔄 Calcul R/C — ${mk}…`);
+    const md=await getMonthData(mk);
+    if(md.anyFail){ syncLog(`⚠ ${mk} : données incomplètes, mois ignoré.`,'log-warn'); continue; }
+    const {rcByEmpDay}=await getMonthRCMap(mk);
+
+    Object.entries(rcByEmpDay).forEach(([empId,days])=>{
+      const cDays=Object.entries(days).filter(([d,v])=>v==='C').map(([d])=>d).sort();
+      if(!cDays.length) return;
+      const cinInfo=cinMap[empId];
+      if(!cinInfo||!cinInfo.cin){ if(!allYear) syncLog(`⚠ ${empId} : pas de CIN, ignoré.`,'log-warn'); noCin++; return; }
+      const periods=groupConsecutiveDays(cDays); totalPeriods+=periods.length;
+      periods.forEach(p=>{
+        const existing=cgDash.allFlat().filter(c=>c.empId===empId&&c.dateDebut===p.dateDebut&&c.dateFin===p.dateFin);
+        if(existing.length){ skipped++; return; }
+        writes.push({ cin:cinInfo.cin, label:`${empId} ${p.dateDebut}→${p.dateFin} (${p.jours}j)`,
+          conge:{ type:'C (auto)',dateDebut:p.dateDebut,dateFin:p.dateFin,jours:p.jours,
+            statut:'approuvé',note:`Sync auto R/C — ${mk}`,
+            empId,empNom:cinInfo.nom,empPrenom:cinInfo.prenom,empDept:cinInfo.dept,
+            _autoSync:true,createdAt:Date.now() }
+        });
       });
     });
-  });
+  }
 
   syncLog(`─────────────────────────────`);
-  syncLog(`Périodes C : ${totalPeriods}`);
-  syncLog(`Déjà en base : ${skipped}`,'log-info');
-  syncLog(`Sans CIN : ${noCin}`,noCin?'log-warn':'log-info');
+  syncLog(`Périodes C trouvées : ${totalPeriods}`);
+  syncLog(`Déjà en base (ignorées) : ${skipped}`,'log-info');
+  if(noCin) syncLog(`Sans CIN (ignorés) : ${noCin}`,'log-warn');
   syncLog(`À écrire : ${writes.length}`,writes.length?'log-warn':'log-ok');
 
   if(!writes.length){
     syncLog('✅ Déjà à jour — rien à écrire.','log-ok');
     document.getElementById('syncSummary').textContent='✅ Déjà à jour — aucun congé à ajouter.';
-    btn.disabled=false; return;
+    btnM.disabled=false; btnY.disabled=false; return;
   }
-  syncLog('⬆ Écriture…');
+  syncLog('⬆ Écriture dans conges/…');
   for(const w of writes){
     try{ await database.ref(`${CONGES_PATH}/${w.cin}`).push(w.conge); syncLog(`✅ ${w.label}`,'log-ok'); written++; }
     catch(e){ syncLog(`❌ ${w.label} : ${e.message}`,'log-err'); }
@@ -813,7 +843,7 @@ async function syncCtoConges(){
   document.getElementById('syncSummary').textContent=`✅ Sync terminée — ${written} ajoutés, ${skipped} ignorés.`;
   await cgDash.load(); cgDash._updateActiveBadge();
   if(currentMode==='conges') await cgDash.renderView();
-  btn.disabled=false;
+  btnM.disabled=false; btnY.disabled=false;
 }
 
 // ─── Google Sheets ────────────────────────────────────────────────────────────
