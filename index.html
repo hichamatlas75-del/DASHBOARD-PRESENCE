@@ -12,56 +12,42 @@
 
   <style>
     :root {
-      /* Palette */
       --bg-deep:   #dbeafe;
       --bg-base:   #eff6ff;
-
       --surface:        rgba(255,255,255,.68);
       --surface2:       rgba(255,255,255,.90);
       --surface-soft:   rgba(255,255,255,.50);
-
       --stroke:         rgba(30,64,175,.09);
       --stroke-med:     rgba(30,64,175,.15);
       --stroke-strong:  rgba(30,64,175,.22);
-
       --text:    #1e3a5f;
       --muted:   #1d4ed8;
       --muted2:  rgba(29,78,216,.70);
       --muted3:  rgba(29,78,216,.50);
-
-      /* Accent amber — le vrai or du nom original */
       --accent:    #f59e0b;
       --accentBg:  rgba(245,158,11,.10);
       --accentBdr: rgba(245,158,11,.30);
-
-      /* Statuts */
       --ok:      #059669;
       --amber:   #b45309;
       --crit:    #dc2626;
       --okBg:    rgba(5,150,105,.08);
       --amberBg: rgba(180,83,9,.10);
       --critBg:  rgba(220,38,38,.08);
-
-      /* Chip R/C/P */
       --chip-p-bg:  rgba(5,150,105,.12);
       --chip-p-fg:  #065f46;
       --chip-p-bdr: rgba(5,150,105,.28);
-
       --chip-r-bg:  rgba(99,102,241,.10);
       --chip-r-fg:  #3730a3;
       --chip-r-bdr: rgba(99,102,241,.25);
-
       --chip-c-bg:  rgba(245,158,11,.12);
       --chip-c-fg:  #92400e;
       --chip-c-bdr: rgba(245,158,11,.28);
-
       --shadow-card: 0 8px 28px rgba(30,64,175,.08), 0 2px 8px rgba(30,64,175,.04);
       --shadow-lg:   0 20px 60px rgba(30,64,175,.12), 0 4px 16px rgba(30,64,175,.06);
     }
 
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
-
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     body {
@@ -76,12 +62,10 @@
 
     body::before, body::after { display: none; }
 
-    /* ─── Scrollbar ─── */
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(30,64,175,.18); border-radius: 999px; }
 
-    /* ─── Glass card ─── */
     .glass-card {
       background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);
       border: 1px solid var(--stroke-med);
@@ -90,7 +74,6 @@
       -webkit-backdrop-filter: blur(14px);
     }
 
-    /* ─── Typographie ─── */
     .hTitle {
       font-family: "DM Serif Display", Georgia, serif;
       letter-spacing: -.02em;
@@ -106,7 +89,6 @@
       color: var(--muted2);
     }
 
-    /* ─── Accent bar — maintenant visible ─── */
     .accent-bar {
       height: 2px;
       width: 100%;
@@ -115,7 +97,6 @@
       opacity: .80;
     }
 
-    /* Variante bleue pour les sections génériques */
     .accent-bar-blue {
       height: 2px;
       width: 100%;
@@ -123,7 +104,6 @@
       border-radius: 999px;
     }
 
-    /* ─── Boutons de mode ─── */
     .view-btn {
       color: var(--muted3);
       border: 1px solid transparent;
@@ -141,7 +121,6 @@
       box-shadow: inset 0 0 0 1px rgba(245,158,11,.12), 0 2px 8px rgba(245,158,11,.10);
     }
 
-    /* ─── Inputs ─── */
     .inpt {
       width: 100%;
       background: rgba(255,255,255,.88);
@@ -162,7 +141,6 @@
       box-shadow: 0 0 0 3px rgba(245,158,11,.12);
     }
 
-    /* ─── Bouton login ─── */
     .btn-login {
       width: 100%;
       border-radius: 14px;
@@ -184,7 +162,6 @@
     }
     .btn-login:active { transform: translateY(0); }
 
-    /* ─── Boutons actions génériques ─── */
     .btn-action {
       transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
       cursor: pointer;
@@ -200,7 +177,6 @@
     .btn-neutral:hover { box-shadow: 0 4px 12px rgba(30,64,175,.10)  !important; }
     .btn-amber:hover   { box-shadow: 0 4px 14px rgba(245,158,11,.18) !important; }
 
-    /* ─── Spinner ─── */
     .spin {
       width: 28px; height: 28px;
       border-radius: 999px;
@@ -211,7 +187,6 @@
     }
     @keyframes sp { to { transform: rotate(360deg); } }
 
-    /* ─── Staff cards ─── */
     .staff-card {
       border-left-width: 3px;
       transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
@@ -223,7 +198,6 @@
     .staff-card:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,64,175,.12); }
     .staff-card:active { transform: scale(.990); }
 
-    /* Shimmer sur hover */
     .staff-card::after {
       content: "";
       position: absolute;
@@ -267,7 +241,6 @@
       opacity: .62;
     }
 
-    /* ─── Chips ─── */
     .chip {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 4px 10px; border-radius: 999px;
@@ -300,11 +273,31 @@
     .rc-table tbody tr:hover           { background: rgba(245,158,11,.05); transition: background .2s ease; }
     .muted-dash { opacity: .38; }
 
+    /* ─── Table R/C mobile ─── */
+    @media (max-width: 480px) {
+      .rc-table th, .rc-table td { padding: 7px 8px; font-size: 11px; }
+      .rc-table th { font-size: 9px; }
+    }
+
+    /* ─── Scroll wrapper pour les tableaux ─── */
+    .rc-scroll-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 8px;
+      /* indicateur visuel de défilement */
+      background:
+        linear-gradient(to right,  rgba(255,255,255,1) 0px, transparent 20px) left,
+        linear-gradient(to left,   rgba(255,255,255,1) 0px, transparent 20px) right;
+      background-repeat: no-repeat;
+      background-size: 20px 100%;
+      background-attachment: local, local;
+    }
+
     /* ─── Drawers ─── */
     .drawer {
       border: 1px solid var(--stroke-med);
       border-radius: 22px;
-      overflow: hidden;
+      overflow: clip;           /* clip = visuel seulement, laisse défiler les enfants */
       background: linear-gradient(160deg, rgba(255,255,255,.86), rgba(255,255,255,.66));
     }
     .drawer summary {
@@ -346,7 +339,6 @@
       margin: 0 auto 16px auto;
     }
 
-    /* ─── Animations d'entrée page ─── */
     @keyframes fadeSlideUp {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -359,7 +351,6 @@
     .anim-in-3 { animation-delay: .20s; }
     .anim-in-4 { animation-delay: .28s; }
 
-    /* ─── Badge dot sync ─── */
     .sync-dot {
       display: inline-block;
       width: 6px; height: 6px; border-radius: 999px;
@@ -661,7 +652,6 @@
     /* ─── FIX : safeTime accepte HH:MM:SS ─── */
     function safeTime(t){
       const s = String(t ?? "").trim();
-      // Tronque les secondes si présentes (format HH:MM:SS depuis pointage)
       const core = s.replace(/^(\d{1,2}:\d{2}):\d{2}$/, '$1');
       if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(core)) return "";
       const [h, m] = core.split(':');
@@ -803,7 +793,6 @@
       }
     }
 
-    /* ─── Modals avec animation de fermeture ─── */
     function openStaffAdmin(){
       const m=document.getElementById("staffAdminModal");
       m.classList.remove("hidden","modal-closing");
@@ -1384,7 +1373,6 @@
 
       let html='<div class="space-y-6">';
 
-      /* Top retardataires */
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
           <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires</div>
@@ -1408,7 +1396,6 @@
       }
       html+=`</div>`;
 
-      /* Les plus exemplaires */
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
           <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus exemplaires</div>
@@ -1486,6 +1473,40 @@
       return totalsByEmp;
     }
 
+    /* ══════════════════════════════════ TABLE R/C ══════════════════════════════════ */
+
+    function makeTable(rows, colR, colC){
+      return `<div class="rc-scroll-wrap mt-4">
+        <table class="rc-table" style="min-width:480px;width:100%">
+          <thead><tr>
+            <th style="text-align:left;min-width:100px">Employé</th>
+            <th style="text-align:left;min-width:72px">Poste</th>
+            <th style="text-align:center;min-width:54px">Présents</th>
+            <th style="text-align:center;min-width:36px">${esc(colR)}</th>
+            <th style="text-align:center;min-width:36px">${esc(colC)}</th>
+            <th style="text-align:center;min-width:54px">Retard</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r=>{
+              const late=Number(r.lateMin)||0;
+              return `<tr>
+                <td style="font-weight:900;white-space:normal;max-width:110px;word-break:break-word">
+                  ${esc(r.nom)}<br><span style="opacity:.50;font-weight:700;font-size:10px">${esc(titleCase(r.prenom))}</span>
+                </td>
+                <td style="font-weight:800;font-size:11px;color:var(--muted2)">${esc(r.poste)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--crit)">
+                  ${late ? esc(late)+'m' : '<span class="muted-dash">—</span>'}
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>`;
+    }
+
     async function renderRCView(){
       const mk=monthKeyFromISO(dateInput.value);
       const year=dateInput.value.slice(0,4);
@@ -1509,36 +1530,6 @@
       const yearRows=Object.values(yearSummary).sort(sortFn);
       let yP=0,yR=0,yC=0,yL=0;
       yearRows.forEach(r=>{ yP+=r.present; yR+=r.R; yC+=r.C; yL+=r.lateMin; });
-
-      function makeTable(rows, colR, colC){
-        return `<div class="overflow-x-auto mt-4">
-          <table class="rc-table">
-            <thead><tr>
-              <th style="text-align:left">Employé</th>
-              <th style="text-align:left">Poste</th>
-              <th style="text-align:center">Présents</th>
-              <th style="text-align:center">${esc(colR)}</th>
-              <th style="text-align:center">${esc(colC)}</th>
-              <th style="text-align:center">Retard</th>
-            </tr></thead>
-            <tbody>
-              ${rows.map(r=>{
-                const late=Number(r.lateMin)||0;
-                return `<tr>
-                  <td style="font-weight:900">${esc(r.nom)} <span style="opacity:.50;font-weight:700;font-size:11px">${esc(titleCase(r.prenom))}</span></td>
-                  <td style="font-weight:800;font-size:11px;color:var(--muted2)">${esc(r.poste)}</td>
-                  <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
-                  <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
-                  <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
-                  <td style="text-align:center;font-weight:900;color:var(--crit)">
-                    ${late ? esc(late)+'m' : '<span class="muted-dash">—</span>'}
-                  </td>
-                </tr>`;
-              }).join("")}
-            </tbody>
-          </table>
-        </div>`;
-      }
 
       const html=`<div class="space-y-4">
         <details class="drawer" open>
