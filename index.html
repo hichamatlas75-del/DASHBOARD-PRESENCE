@@ -585,6 +585,7 @@ function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.re
 // ═════════════════════════════════════════════════════════════════════════════
 const cgDash = {
   _data:null, _byEmpId:null, filter:'all',
+  _rcSolde:{},   // ✅ { empId: C_annuel } alimenté depuis buildYearSummaryOptimized
 
   async load(){
     try{
@@ -613,11 +614,11 @@ const cgDash = {
     return this.allFlat().filter(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=today&&(c.dateFin||'')>=today).length;
   },
   soldeRestant(empId){
-    const year=todayISO().slice(0,4);
-    const used=(this._byEmpId&&this._byEmpId[empId]||[])
-      .filter(c=>c.statut==='approuvé'&&c.type==='Congé payé'&&(c.dateDebut||'').startsWith(year))
-      .reduce((s,c)=>s+(Number(c.jours)||0),0);
-    return Math.max(0,18-used);
+    // ✅ Solde = 18 − C annuel (même source que le tableau R/C)
+    const cAnnuel = this._rcSolde[empId] ?? null;
+    if(cAnnuel !== null) return Math.max(0, 18 - cAnnuel);
+    // Fallback si R/C pas encore chargé
+    return 18;
   },
 
   setFilter(f){
@@ -1108,6 +1109,14 @@ async function updateDashboard(){
   if(currentMode==="conges"){
     detachRealtime();
     document.getElementById('dashBody').innerHTML=loadingCard("Chargement des congés…");
+    // ✅ Charger le year summary pour avoir les C à jour avant d'afficher les soldes
+    const year=seedISO.slice(0,4);
+    const mk=mkSeed;
+    try{
+      const ms=await buildMonthlySummary(mk);
+      const ys=await buildYearSummaryOptimized(year,{[mk]:ms});
+      Object.values(ys).forEach(s=>{ cgDash._rcSolde[s.empId]=Number(s.C)||0; });
+    }catch(e){}
     await cgDash.load(); cgDash._updateActiveBadge(); await cgDash.renderView();
     return;
   }
@@ -1236,6 +1245,9 @@ async function renderRCView(){
   if(md.anyFail){document.getElementById('dashBody').innerHTML=errorCard("Réseau instable.");return;}
   const monthSummary=await buildMonthlySummary(mk);
   const yearSummary=await buildYearSummaryOptimized(year,{[mk]:monthSummary});
+
+  // ✅ Alimenter le solde CP depuis les C annuels du tableau R/C
+  Object.values(yearSummary).forEach(s=>{ cgDash._rcSolde[s.empId]=Number(s.C)||0; });
   const sortFn=(a,b)=>{ if(a.poste!==b.poste)return POSTES_ORDER.indexOf(a.poste)-POSTES_ORDER.indexOf(b.poste); return(a.nom+a.prenom).localeCompare(b.nom+b.prenom); };
   const monthRows=Object.values(monthSummary).sort(sortFn);
   let mP=0,mR=0,mC=0,mL=0; monthRows.forEach(r=>{mP+=r.present;mR+=r.R;mC+=r.C;mL+=r.lateMin;});
