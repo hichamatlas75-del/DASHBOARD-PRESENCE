@@ -804,7 +804,10 @@ async function syncCtoConges(allYear=false){
     const {rcByEmpDay}=await getMonthRCMap(mk);
 
     Object.entries(rcByEmpDay).forEach(([empId,days])=>{
-      const cDays=Object.entries(days).filter(([d,v])=>v==='C').map(([d])=>d).sort();
+      // ✅ Exactement les mêmes C que le tableau R/C
+      const cDays=Object.entries(days)
+        .filter(([d,v])=>v==='C')
+        .map(([d])=>d).sort();
       if(!cDays.length) return;
       const cinInfo=cinMap[empId];
       if(!cinInfo||!cinInfo.cin){ if(!allYear) syncLog(`⚠ ${empId} : pas de CIN, ignoré.`,'log-warn'); noCin++; return; }
@@ -813,7 +816,7 @@ async function syncCtoConges(allYear=false){
         const existing=cgDash.allFlat().filter(c=>c.empId===empId&&c.dateDebut===p.dateDebut&&c.dateFin===p.dateFin);
         if(existing.length){ skipped++; return; }
         writes.push({ cin:cinInfo.cin, label:`${empId} ${p.dateDebut}→${p.dateFin} (${p.jours}j)`,
-          conge:{ type:'C (auto)',dateDebut:p.dateDebut,dateFin:p.dateFin,jours:p.jours,
+          conge:{ type:'Congé payé',dateDebut:p.dateDebut,dateFin:p.dateFin,jours:p.jours,
             statut:'approuvé',note:`Sync auto R/C — ${mk}`,
             empId,empNom:cinInfo.nom,empPrenom:cinInfo.prenom,empDept:cinInfo.dept,
             _autoSync:true,createdAt:Date.now() }
