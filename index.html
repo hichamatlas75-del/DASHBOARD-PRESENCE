@@ -1,1420 +1,637 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <title>Direction Hub • Grey Corner</title>
+<html lang="fr">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />  
+  <title>Direction Hub • Grey Corner</title>    
+  <script src="https://cdn.tailwindcss.com"></script>    
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">    
+  <style>  
+    :root {  
+      --bg-deep:   #dbeafe;  
+      --bg-base:   #eff6ff;  
+      --surface:        rgba(255,255,255,.68);  
+      --surface2:       rgba(255,255,255,.90);  
+      --surface-soft:   rgba(255,255,255,.50);  
+      --stroke:         rgba(30,64,175,.09);  
+      --stroke-med:     rgba(30,64,175,.15);  
+      --stroke-strong:  rgba(30,64,175,.22);  
+      --text:    #1e3a5f;  
+      --muted:   #1d4ed8;  
+      --muted2:  rgba(29,78,216,.70);  
+      --muted3:  rgba(29,78,216,.50);  
+      --accent:    #f59e0b;  
+      --accentBg:  rgba(245,158,11,.10);  
+      --accentBdr: rgba(245,158,11,.30);  
+      --ok:      #059669;  
+      --amber:   #b45309;  
+      --crit:    #dc2626;  
+      --sky:     #0284c7;  
+      --skyBg:   rgba(2,132,199,.08);  
+      --skyBdr:  rgba(2,132,199,.25);  
+      --okBg:    rgba(5,150,105,.08);  
+      --amberBg: rgba(180,83,9,.10);  
+      --critBg:  rgba(220,38,38,.08);  
+      --chip-p-bg:  rgba(5,150,105,.12);  --chip-p-fg:  #065f46;  --chip-p-bdr: rgba(5,150,105,.28);  
+      --chip-r-bg:  rgba(99,102,241,.10); --chip-r-fg:  #3730a3;  --chip-r-bdr: rgba(99,102,241,.25);  
+      --chip-c-bg:  rgba(245,158,11,.12); --chip-c-fg:  #92400e;  --chip-c-bdr: rgba(245,158,11,.28);  
+      --chip-sky-bg: rgba(2,132,199,.12); --chip-sky-fg: #0c4a6e; --chip-sky-bdr: rgba(2,132,199,.28);  
+      --shadow-card: 0 8px 28px rgba(30,64,175,.08), 0 2px 8px rgba(30,64,175,.04);  
+      --shadow-lg:   0 20px 60px rgba(30,64,175,.12), 0 4px 16px rgba(30,64,175,.06);  
+    }  
+    *, *::before, *::after { box-sizing: border-box; }  
+    html, body { height: 100%; }  
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }  
+    body {  
+      margin: 0; min-height: 100dvh; background: #f5f9fe; color: var(--text);  
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;  
+      -webkit-tap-highlight-color: transparent; overflow-x: hidden;  
+    }  
+    ::-webkit-scrollbar { width: 3px; height: 3px; }  
+    ::-webkit-scrollbar-thumb { background: rgba(30,64,175,.18); border-radius: 999px; }  
+  
+    .glass-card {  
+      background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);  
+      border: 1px solid var(--stroke-med);  
+      box-shadow: var(--shadow-card);  
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);  
+    }  
+    .hTitle { font-family: "DM Serif Display", Georgia, serif; letter-spacing: -.02em; color: #0f2744; font-weight: 400; }  
+    .smallCaps { font-weight: 800; text-transform: uppercase; letter-spacing: .13em; font-size: 10px; color: var(--muted2); }  
+    .accent-bar { height: 2px; width: 100%; background: linear-gradient(90deg, var(--accent) 0%, rgba(245,158,11,0) 100%); border-radius: 999px; opacity: .80; }  
+    .accent-bar-blue { height: 2px; width: 100%; background: linear-gradient(90deg, rgba(29,78,216,.55) 0%, rgba(29,78,216,0) 100%); border-radius: 999px; }  
+    .accent-bar-sky { height: 2px; width: 100%; background: linear-gradient(90deg, rgba(2,132,199,.65) 0%, rgba(2,132,199,0) 100%); border-radius: 999px; }  
+  
+    .view-btn {  
+      color: var(--muted3); border: 1px solid transparent;  
+      transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;  
+      background: transparent;  
+    }  
+    .view-btn:hover:not(.active):not(.active-sky) { background: rgba(29,78,216,.06); color: var(--muted); }  
+    .view-btn.active {  
+      background: rgba(245,158,11,.14); color: #92400e;  
+      border-color: rgba(245,158,11,.38);  
+      box-shadow: inset 0 0 0 1px rgba(245,158,11,.12), 0 2px 8px rgba(245,158,11,.10);  
+    }  
+    .view-btn.active-sky {  
+      background: var(--skyBg); color: var(--sky);  
+      border-color: var(--skyBdr);  
+      box-shadow: inset 0 0 0 1px rgba(2,132,199,.10), 0 2px 8px rgba(2,132,199,.10);  
+    }  
+  
+    .inpt {  
+      width: 100%; background: rgba(255,255,255,.88); border: 1px solid var(--stroke-med);  
+      border-radius: 14px; padding: 11px 14px; color: var(--text);  
+      font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 12px;  
+      outline: none; transition: border-color .2s ease, box-shadow .2s ease;  
+    }  
+    .inpt:focus { border-color: rgba(245,158,11,.55); box-shadow: 0 0 0 3px rgba(245,158,11,.12); }  
+  
+    .btn-login {  
+      width: 100%; border-radius: 14px; padding: 12px 14px; font-size: 11px; font-weight: 900;  
+      letter-spacing: .12em; text-transform: uppercase;  
+      background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.10));  
+      color: #78350f; border: 1px solid rgba(245,158,11,.38);  
+      transition: transform .15s ease, box-shadow .2s ease; cursor: pointer;  
+    }  
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,.18); }  
+  
+    .btn-action { transition: transform .15s ease, box-shadow .2s ease; cursor: pointer; }  
+    .btn-action:hover { transform: translateY(-1px); }  
+  
+    .spin { width: 28px; height: 28px; border-radius: 999px; border: 3px solid rgba(30,64,175,.10); border-top-color: var(--accent); animation: sp .85s linear infinite; }  
+    @keyframes sp { to { transform: rotate(360deg); } }  
+  
+    .staff-card {  
+      border-left-width: 3px; transition: transform .18s ease, box-shadow .18s ease;  
+      cursor: pointer; position: relative; overflow: hidden;  
+      background: linear-gradient(160deg, rgba(255,255,255,.90), rgba(255,255,255,.72));  
+    }  
+    .staff-card:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,64,175,.12); }  
+  
+    .status-dot { position: absolute; top: 10px; right: 10px; width: 7px; height: 7px; border-radius: 999px; box-shadow: 0 0 0 5px rgba(255,255,255,.35); }  
+    .arrive-time { position: absolute; bottom: 12px; right: 12px; font-family: "DM Serif Display", serif; font-size: 14px; color: rgba(15,39,68,.72); }  
+  
+    .status-green  { border-left-color: var(--ok) !important; background: var(--okBg); }  
+    .status-orange { border-left-color: var(--amber) !important; background: var(--amberBg); }  
+    .status-red    { border-left-color: var(--crit) !important; background: var(--critBg); }  
+    .status-flash  { border-left-color: var(--crit) !important; background: var(--critBg); animation: flash-red 1s infinite; }  
+    @keyframes flash-red { 50% { border-left-width: 5px; } }  
+    .status-off { border-left-color: rgba(148,163,184,.45) !important; background: rgba(255,255,255,.32); opacity: .62; }  
+    .status-conge { border-left-color: var(--sky) !important; background: var(--skyBg); }  
+  
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--stroke-med); font-weight: 900; font-size: 11px; background: rgba(255,255,255,.70); }  
+    .chip-p   { background: var(--chip-p-bg); color: var(--chip-p-fg); border-color: var(--chip-p-bdr); }  
+    .chip-c   { background: var(--chip-c-bg); color: var(--chip-c-fg); border-color: var(--chip-c-bdr); }  
+    .chip-sky { background: var(--chip-sky-bg); color: var(--chip-sky-fg); border-color: var(--chip-sky-bdr); }  
+  
+    .rc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }  
+    .rc-table th, .rc-table td { border: 1px solid rgba(30,64,175,.07); padding: 8px 5px; font-size: 11px; }  
+    .rc-table th { background: rgba(255,255,255,.55); font-weight: 900; text-transform: uppercase; font-size: 9px; color: var(--muted2); }  
+  
+    .drawer { border: 1px solid var(--stroke-med); border-radius: 22px; overflow: clip; background: linear-gradient(160deg, rgba(255,255,255,.86), rgba(255,255,255,.66)); }  
+    .drawer summary { list-style: none; cursor: pointer; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; }  
+    .drawer[open] .chev { transform: rotate(180deg); }  
+    .drawer .body { padding: 0 18px 18px 18px; }  
+  
+    .modal-active  { display: flex !important; animation: slideUp .32s cubic-bezier(0,.1,.2,1); }  
+    .modal-closing { animation: slideDown .26s forwards; }  
+    @keyframes slideUp   { from { transform: translateY(100%); opacity: .5; } to { transform: translateY(0); opacity: 1; } }  
+    @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }  
+    .modal-overlay { background: rgba(10,30,65,.32); backdrop-filter: blur(12px); }  
+    .modal-sheet { background: linear-gradient(160deg, rgba(255,255,255,.97), rgba(239,246,255,.94)); border: 1px solid var(--stroke-med); box-shadow: var(--shadow-lg); }  
+    .handle { width: 38px; height: 4px; background: rgba(30,64,175,.16); border-radius: 999px; margin: 0 auto 16px auto; }  
+  
+    .sync-modal { position: fixed; inset: 0; z-index: 60; background: rgba(10,30,65,.35); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; padding: 16px; }  
+    .sync-modal.open { display: flex; }  
+    .sync-panel { background: white; border-radius: 24px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); }  
+    .sync-log { font-family: monospace; font-size: 11px; overflow-y: auto; background: rgba(30,64,175,.04); border-radius: 12px; padding: 12px; max-height: 200px; }  
+  
+    .mini-solde { height: 4px; border-radius: 999px; background: rgba(30,64,175,.08); overflow: hidden; margin-top: 6px; }  
+    .mini-solde-fill { height: 4px; border-radius: 999px; }  
+    .conge-row { border: 1px solid var(--stroke-med); border-radius: 16px; padding: 14px; background: white; margin-bottom: 10px; cursor: pointer; transition: transform 0.2s; }  
+    .conge-row:hover { transform: scale(1.01); }
+  </style>  
+</head>  
+<body class="antialiased pb-12">  
+<div class="max-w-md mx-auto px-4 pt-[max(20px,env(safe-area-inset-top))]">  
+    <div id="loginWrap" class="glass-card rounded-3xl p-6 mb-6">  
+      <div class="flex items-start justify-between mb-5">  
+        <div>  
+          <div class="smallCaps mb-1">Accès sécurisé</div>  
+          <h1 class="hTitle text-4xl">Connexion</h1>  
+        </div>  
+        <div class="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-50 border border-amber-200 text-xl">🏠</div>  
+      </div>  
+      <div class="space-y-3">  
+        <input id="loginEmail" class="inpt" type="email" placeholder="Email"/>  
+        <input id="loginPass"  class="inpt" type="password" placeholder="Mot de passe"/>  
+        <button id="btnLogin" class="btn-login mt-1">Se connecter →</button>  
+        <div id="loginMsg" class="text-[11px] font-extrabold text-red-600"></div>  
+      </div>  
+    </div>    
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div id="appWrap" class="hidden">  
+      <header class="glass-card rounded-3xl p-5 flex justify-between items-start mb-5">  
+        <div>  
+          <div class="smallCaps mb-1">Direction</div>  
+          <h1 class="hTitle text-4xl">RH Supervision</h1>  
+          <div class="mt-3 space-y-1">  
+            <div class="smallCaps">Rôle : <span id="roleLabel" class="text-slate-900">—</span></div>  
+            <div id="syncLine" class="text-[10px] font-bold text-blue-800">Sync : en attente…</div>  
+          </div>  
+        </div>  
+        <div class="flex flex-col items-end gap-2">  
+          <button id="btnLogout" class="btn-action bg-white/60 border border-slate-200 px-4 py-2 rounded-2xl text-[11px] font-extrabold">Déco.</button>  
+          <div id="congeActiveBadge" class="hidden px-3 py-1 rounded-full text-[10px] font-extrabold bg-sky-50 border border-sky-200 text-sky-700">☀️ <span id="congeActiveCount">0</span> en congé</div>  
+        </div>  
+      </header>  
 
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <div class="glass-card p-1.5 rounded-2xl mb-4">  
+        <div class="flex gap-1">  
+          <button onclick="switchMode('day',this)"    class="view-btn active flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase">Jour</button>  
+          <button onclick="switchMode('report',this)" class="view-btn flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase">Bilan</button>  
+          <button onclick="switchMode('rc',this)"     class="view-btn flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase">R/C</button>  
+          <button onclick="switchMode('conges',this)" class="view-btn flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase">☀️ Congés</button>  
+        </div>  
+      </div>  
 
-  <style>
-    :root {
-      --bg-deep:   #dbeafe;
-      --bg-base:   #eff6ff;
-      --surface:        rgba(255,255,255,.68);
-      --surface2:       rgba(255,255,255,.90);
-      --surface-soft:   rgba(255,255,255,.50);
-      --stroke:         rgba(30,64,175,.09);
-      --stroke-med:     rgba(30,64,175,.15);
-      --stroke-strong:  rgba(30,64,175,.22);
-      --text:    #1e3a5f;
-      --muted:   #1d4ed8;
-      --muted2:  rgba(29,78,216,.70);
-      --muted3:  rgba(29,78,216,.50);
-      --accent:    #f59e0b;
-      --accentBg:  rgba(245,158,11,.10);
-      --accentBdr: rgba(245,158,11,.30);
-      --ok:      #059669;
-      --amber:   #b45309;
-      --crit:    #dc2626;
-      --sky:     #0284c7;
-      --skyBg:   rgba(2,132,199,.08);
-      --skyBdr:  rgba(2,132,199,.25);
-      --okBg:    rgba(5,150,105,.08);
-      --amberBg: rgba(180,83,9,.10);
-      --critBg:  rgba(220,38,38,.08);
-      --chip-p-bg:  rgba(5,150,105,.12);  --chip-p-fg:  #065f46;  --chip-p-bdr: rgba(5,150,105,.28);
-      --chip-r-bg:  rgba(99,102,241,.10); --chip-r-fg:  #3730a3;  --chip-r-bdr: rgba(99,102,241,.25);
-      --chip-c-bg:  rgba(245,158,11,.12); --chip-c-fg:  #92400e;  --chip-c-bdr: rgba(245,158,11,.28);
-      --chip-sky-bg: rgba(2,132,199,.12); --chip-sky-fg: #0c4a6e; --chip-sky-bdr: rgba(2,132,199,.28);
-      --shadow-card: 0 8px 28px rgba(30,64,175,.08), 0 2px 8px rgba(30,64,175,.04);
-      --shadow-lg:   0 20px 60px rgba(30,64,175,.12), 0 4px 16px rgba(30,64,175,.06);
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; }
-    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-    body {
-      margin: 0; min-height: 100dvh; background: #f5f9fe; color: var(--text);
-      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-      -webkit-tap-highlight-color: transparent; overflow-x: hidden;
-    }
-    body::before, body::after { display: none; }
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(30,64,175,.18); border-radius: 999px; }
+      <div id="dayPickWrap" class="glass-card rounded-2xl p-4 mb-4">  
+        <div class="smallCaps mb-2">Choix du jour</div>  
+        <input type="date" id="dayPicker" class="inpt"/>  
+      </div>  
 
-    .glass-card {
-      background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);
-      border: 1px solid var(--stroke-med);
-      box-shadow: var(--shadow-card);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    }
-    .hTitle { font-family: "DM Serif Display", Georgia, serif; letter-spacing: -.02em; color: #0f2744; font-weight: 400; }
-    .smallCaps { font-weight: 800; text-transform: uppercase; letter-spacing: .13em; font-size: 10px; color: var(--muted2); }
-    .accent-bar { height: 2px; width: 100%; background: linear-gradient(90deg, var(--accent) 0%, rgba(245,158,11,0) 100%); border-radius: 999px; opacity: .80; }
-    .accent-bar-blue { height: 2px; width: 100%; background: linear-gradient(90deg, rgba(29,78,216,.55) 0%, rgba(29,78,216,0) 100%); border-radius: 999px; }
-    .accent-bar-sky { height: 2px; width: 100%; background: linear-gradient(90deg, rgba(2,132,199,.65) 0%, rgba(2,132,199,0) 100%); border-radius: 999px; }
+      <div id="monthPickWrap" class="glass-card rounded-2xl p-4 mb-4 hidden">  
+        <div class="smallCaps mb-2">Choix du mois</div>  
+        <input type="month" id="monthPicker" class="inpt">  
+        <input type="date" id="dashDate" class="hidden">  
+      </div>  
 
-    .view-btn {
-      color: var(--muted3); border: 1px solid transparent;
-      transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
-      background: transparent;
-    }
-    .view-btn:hover:not(.active):not(.active-sky) { background: rgba(29,78,216,.06); color: var(--muted); }
-    .view-btn.active {
-      background: rgba(245,158,11,.14); color: #92400e;
-      border-color: rgba(245,158,11,.38);
-      box-shadow: inset 0 0 0 1px rgba(245,158,11,.12), 0 2px 8px rgba(245,158,11,.10);
-    }
-    /* ✅ Onglet Congés */
-    .view-btn.active-sky {
-      background: var(--skyBg); color: var(--sky);
-      border-color: var(--skyBdr);
-      box-shadow: inset 0 0 0 1px rgba(2,132,199,.10), 0 2px 8px rgba(2,132,199,.10);
-    }
+      <div id="congesFilterWrap" class="glass-card rounded-2xl p-4 mb-4 hidden">  
+        <div class="smallCaps mb-2">Filtre</div>  
+        <div class="flex flex-wrap gap-2">  
+          <button onclick="cgDash.setFilter('all')" id="cgf_all" class="px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-sky-100 border border-sky-300 text-sky-700">Tous</button>  
+          <button onclick="cgDash.setFilter('actif')" id="cgf_actif" class="px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white/50 border border-slate-200">En cours</button>  
+          <button onclick="cgDash.setFilter('en_attente')" id="cgf_en_attente" class="px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white/50 border border-slate-200">Attente</button>  
+        </div>  
+      </div>  
 
-    .inpt {
-      width: 100%; background: rgba(255,255,255,.88); border: 1px solid var(--stroke-med);
-      border-radius: 14px; padding: 11px 14px; color: var(--text);
-      font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 12px;
-      outline: none; color-scheme: light; transition: border-color .2s ease, box-shadow .2s ease;
-    }
-    .inpt::placeholder { color: var(--muted3); font-weight: 600; }
-    .inpt:focus { border-color: rgba(245,158,11,.55); box-shadow: 0 0 0 3px rgba(245,158,11,.12); }
+      <div id="exportsWrap" class="glass-card rounded-2xl p-4 mb-4">  
+        <div class="flex items-start justify-between gap-3">  
+          <div class="flex-1">  
+            <div class="smallCaps">Période</div>  
+            <div id="periodLabel" class="hTitle text-2xl mt-1">—</div>  
+          </div>  
+          <div class="flex flex-col gap-2">  
+            <button onclick="exportCSV_RC_Month()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold bg-amber-50 border border-amber-200 text-amber-900">Mois</button>  
+            <button onclick="exportYear_ToSheets()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold bg-blue-50 border border-blue-200 text-blue-700">↗ Sheets</button>  
+          </div>  
+        </div>  
+      </div>  
 
-    .btn-login {
-      width: 100%; border-radius: 14px; padding: 12px 14px; font-size: 11px; font-weight: 900;
-      letter-spacing: .12em; text-transform: uppercase;
-      background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.10));
-      color: #78350f; border: 1px solid rgba(245,158,11,.38);
-      transition: transform .15s ease, box-shadow .2s ease, background .2s ease; cursor: pointer;
-    }
-    .btn-login:hover { background: linear-gradient(135deg, rgba(245,158,11,.26), rgba(245,158,11,.16)); box-shadow: 0 4px 14px rgba(245,158,11,.18); transform: translateY(-1px); }
-    .btn-login:active { transform: translateY(0); }
+      <div id="chartContainer" class="glass-card rounded-3xl p-5 mb-5 hidden">  
+        <div class="h-[170px] w-full"><canvas id="trendsChart"></canvas></div>  
+      </div>  
 
-    .btn-action { transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; cursor: pointer; }
-    .btn-action:hover { transform: translateY(-1px); }
-    .btn-action:active { transform: translateY(0); box-shadow: none; }
-    .btn-sheets:hover { box-shadow: 0 4px 14px rgba(66,133,244,.18) !important; }
-    .btn-danger:hover  { box-shadow: 0 4px 14px rgba(220,38,38,.14)  !important; }
-    .btn-neutral:hover { box-shadow: 0 4px 12px rgba(30,64,175,.10)  !important; }
-    .btn-amber:hover   { box-shadow: 0 4px 14px rgba(245,158,11,.18) !important; }
-    .btn-sky:hover     { box-shadow: 0 4px 14px rgba(2,132,199,.18)  !important; }
+      <div id="dashBody" class="space-y-6"></div>  
 
-    .spin { width: 28px; height: 28px; border-radius: 999px; border: 3px solid rgba(30,64,175,.10); border-top-color: var(--accent); animation: sp .85s linear infinite; flex-shrink: 0; }
-    @keyframes sp { to { transform: rotate(360deg); } }
-
-    .staff-card {
-      border-left-width: 3px; transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
-      cursor: pointer; position: relative; overflow: hidden;
-      background: linear-gradient(160deg, rgba(255,255,255,.90), rgba(255,255,255,.72));
-    }
-    .staff-card:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,64,175,.12); }
-    .staff-card:active { transform: scale(.990); }
-    .staff-card::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.18) 50%, rgba(255,255,255,.0) 100%);
-      opacity: 0; transition: opacity .25s ease;
-    }
-    .staff-card:hover::after { opacity: 1; }
-
-    .status-dot { position: absolute; top: 10px; right: 10px; width: 7px; height: 7px; border-radius: 999px; box-shadow: 0 0 0 5px rgba(255,255,255,.35); }
-    .arrive-time { position: absolute; bottom: 12px; right: 12px; font-family: "DM Serif Display", serif; font-size: 14px; color: rgba(15,39,68,.72); letter-spacing: .01em; }
-
-    .status-green  { border-left-color: var(--ok)   !important; background: var(--okBg); }
-    .status-orange { border-left-color: var(--amber) !important; background: var(--amberBg); }
-    .status-red    { border-left-color: var(--crit)  !important; background: var(--critBg); }
-    .status-flash  { border-left-color: var(--crit) !important; background: var(--critBg); animation: flash-red 1s infinite; }
-    @keyframes flash-red {
-      0%  { box-shadow: inset 0 0 0px rgba(220,38,38,0); }
-      50% { box-shadow: inset 0 0 20px rgba(220,38,38,.10); border-left-width: 5px; }
-      100%{ box-shadow: inset 0 0 0px rgba(220,38,38,0); }
-    }
-    .status-off { border-left-color: rgba(148,163,184,.45) !important; background: rgba(255,255,255,.32); opacity: .62; }
-    /* ✅ Congé card */
-    .status-conge { border-left-color: var(--sky) !important; background: var(--skyBg); }
-
-    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--stroke-med); font-weight: 900; font-size: 11px; background: rgba(255,255,255,.70); color: var(--text); }
-    .chip-p   { background: var(--chip-p-bg);   border-color: var(--chip-p-bdr);   color: var(--chip-p-fg); }
-    .chip-r   { background: var(--chip-r-bg);   border-color: var(--chip-r-bdr);   color: var(--chip-r-fg); }
-    .chip-c   { background: var(--chip-c-bg);   border-color: var(--chip-c-bdr);   color: var(--chip-c-fg); }
-    .chip-sky { background: var(--chip-sky-bg); border-color: var(--chip-sky-bdr); color: var(--chip-sky-fg); }
-
-    .rc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .rc-table th, .rc-table td { border: 1px solid rgba(30,64,175,.07); padding: 8px 5px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rc-table td.col-emp { white-space: normal; word-break: break-word; line-height: 1.25; }
-    .rc-table th { background: rgba(255,255,255,.55); font-weight: 900; text-transform: uppercase; letter-spacing: .08em; font-size: 9px; color: var(--muted2); padding: 7px 5px; }
-    .rc-table tbody tr:nth-child(odd) { background: rgba(255,255,255,.22); }
-    .rc-table tbody tr:hover { background: rgba(245,158,11,.05); transition: background .2s ease; }
-    .muted-dash { opacity: .38; }
-    .rc-poste-badge { display: inline-block; font-size: 9px; font-weight: 700; color: var(--muted2); letter-spacing: .04em; margin-top: 1px; }
-
-    .drawer { border: 1px solid var(--stroke-med); border-radius: 22px; overflow: clip; background: linear-gradient(160deg, rgba(255,255,255,.86), rgba(255,255,255,.66)); }
-    .drawer summary { list-style: none; cursor: pointer; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: background .2s ease; }
-    .drawer summary:hover { background: rgba(245,158,11,.04); }
-    .drawer summary::-webkit-details-marker { display: none; }
-    .drawer .chev { transition: transform .22s ease; opacity: .65; color: var(--accent); font-size: 13px; }
-    .drawer[open] .chev { transform: rotate(180deg); }
-    .drawer .body { padding: 0 18px 18px 18px; }
-
-    .modal-active  { display: flex !important; animation: slideUp .32s cubic-bezier(0,.1,.2,1); }
-    .modal-closing { animation: slideDown .26s cubic-bezier(.4,0,1,1) forwards; }
-    @keyframes slideUp   { from { transform: translateY(100%); opacity: .5; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
-    .modal-overlay { background: rgba(10,30,65,.32); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-    .modal-sheet { background: linear-gradient(160deg, rgba(255,255,255,.97), rgba(239,246,255,.94)); border: 1px solid var(--stroke-med); box-shadow: var(--shadow-lg); }
-    .handle { width: 38px; height: 4px; background: rgba(30,64,175,.16); border-radius: 999px; margin: 0 auto 16px auto; }
-
-    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .anim-in { animation: fadeSlideUp .45s cubic-bezier(0,.1,.2,1) both; }
-    .anim-in-1 { animation-delay: .05s; } .anim-in-2 { animation-delay: .12s; }
-    .anim-in-3 { animation-delay: .20s; } .anim-in-4 { animation-delay: .28s; }
-
-    .sync-dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--ok); margin-right: 5px; animation: pulse-dot 2s ease infinite; vertical-align: middle; }
-    @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.8); } }
-
-    /* ✅ Sync modal */
-    .sync-modal { position: fixed; inset: 0; z-index: 60; background: rgba(10,30,65,.35); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; padding: 16px; }
-    .sync-modal.open { display: flex; animation: fadeSlideUp .3s ease both; }
-    .sync-panel { background: linear-gradient(160deg, rgba(255,255,255,.98), rgba(239,246,255,.95)); border: 1px solid var(--skyBdr); border-radius: 24px; width: 100%; max-width: 480px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
-    .sync-log { font-family: monospace; font-size: 11px; line-height: 1.8; overflow-y: auto; background: rgba(30,64,175,.04); border: 1px solid var(--stroke); border-radius: 12px; padding: 12px; max-height: 260px; color: var(--text); }
-    .log-ok   { color: var(--ok); font-weight: 700; }
-    .log-warn { color: var(--amber); font-weight: 700; }
-    .log-err  { color: var(--crit); font-weight: 700; }
-    .log-info { color: var(--muted3); }
-
-    /* ✅ Solde bar */
-    .mini-solde { height: 4px; border-radius: 999px; background: rgba(30,64,175,.08); overflow: hidden; margin-top: 6px; }
-    .mini-solde-fill { height: 4px; border-radius: 999px; }
-
-    /* ✅ Congé row card */
-    .conge-row { border: 1px solid var(--skyBdr); border-radius: 16px; padding: 14px; background: var(--skyBg); margin-bottom: 10px; }
-    .conge-row.pending { border-color: var(--accentBdr); background: var(--accentBg); }
-    .conge-row.past { border-color: var(--stroke); background: rgba(255,255,255,.30); opacity: .70; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .staff-card, .view-btn, .btn-action, .btn-login { transition: none; }
-      .anim-in { animation: none; }
-    }
-  </style>
-</head>
-
-<body class="antialiased pb-12">
-<div class="max-w-md mx-auto px-4 pt-[max(20px,env(safe-area-inset-top))] relative z-10">
-
-  <!-- LOGIN -->
-  <div id="loginWrap" class="glass-card rounded-3xl p-6 mb-6 anim-in">
-    <div class="flex items-start justify-between gap-3 mb-5">
-      <div>
-        <div class="smallCaps mb-1">Accès sécurisé</div>
-        <h1 class="hTitle text-4xl leading-tight">Connexion</h1>
-        <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
-      </div>
-      <div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:var(--accentBg);border:1px solid var(--accentBdr)">
-        <span style="font-size:18px">🏠</span>
-      </div>
-    </div>
-    <div class="space-y-3">
-      <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username"/>
-      <input id="loginPass"  class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password"/>
-      <button id="btnLogin" class="btn-login mt-1">Se connecter →</button>
-      <div id="loginMsg" class="text-[11px] font-extrabold pt-1" style="color:var(--crit)"></div>
-    </div>
-  </div>
-
-  <!-- APP -->
-  <div id="appWrap" class="hidden">
-
-    <!-- Header -->
-    <header class="glass-card rounded-3xl p-5 flex justify-between items-start mb-5 anim-in">
-      <div>
-        <div class="smallCaps mb-1">Direction</div>
-        <h1 class="hTitle text-4xl leading-tight">RH Supervision</h1>
-        <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
-        <div class="mt-3 space-y-1">
-          <div class="smallCaps">Connecté : <span id="roleLabel" style="color:#0f2744;font-size:11px">—</span></div>
-          <div id="syncLine" class="text-[10px] font-bold" style="color:var(--muted2)">Sync : en attente…</div>
-        </div>
-      </div>
-      <div class="flex flex-col items-end gap-2">
-        <button id="btnLogout" class="btn-action btn-neutral px-4 py-2 rounded-2xl text-[11px] font-extrabold"
-          style="background:rgba(255,255,255,.60);border:1px solid var(--stroke-med);color:var(--text)">Déco.</button>
-        <!-- ✅ Badge congés actifs -->
-        <div id="congeActiveBadge" class="hidden px-3 py-1 rounded-full text-[10px] font-extrabold"
-          style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">
-          ☀️ <span id="congeActiveCount">0</span> en congé
-        </div>
-      </div>
-    </header>
-
-    <!-- Onglets -->
-    <div class="glass-card p-1.5 rounded-2xl mb-4 anim-in anim-in-1">
-      <div class="flex gap-1">
-        <button onclick="switchMode('day',this)"    class="view-btn active flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-        <button onclick="switchMode('report',this)" class="view-btn       flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
-        <button onclick="switchMode('rc',this)"     class="view-btn       flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase tracking-wider">R/C</button>
-        <!-- ✅ Onglet Congés -->
-        <button onclick="switchMode('conges',this)" class="view-btn       flex-1 py-2.5 text-[10px] font-extrabold rounded-xl uppercase tracking-wider">☀️ Congés</button>
+      <div class="glass-card rounded-2xl p-4 mt-5">  
+        <div class="smallCaps mb-2">Equipe</div>  
+        <div class="grid grid-cols-2 gap-2">  
+          <button id="btnOpenStaffAdmin" class="btn-action bg-white/60 border border-slate-200 py-3 rounded-2xl font-extrabold text-[12px]">Gérer équipe</button>  
+          <button id="btnExportEquipe" class="btn-action bg-amber-50 border border-amber-200 py-3 rounded-2xl font-extrabold text-[12px]">Export JSON</button>  
+        </div>  
       </div>
     </div>
-
-    <!-- Choix du jour -->
-    <div id="dayPickWrap" class="glass-card rounded-2xl p-4 mb-4 anim-in anim-in-2">
-      <div class="smallCaps mb-2">Choix du jour</div>
-      <div class="accent-bar mb-3"></div>
-      <input type="date" id="dayPicker" class="inpt"/>
-      <p class="mt-2 text-[10px] font-semibold" style="color:var(--muted3)">Temps réel uniquement aujourd'hui — les jours précédents sont en lecture seule.</p>
-    </div>
-
-    <!-- Choix du mois -->
-    <div id="monthPickWrap" class="glass-card rounded-2xl p-4 mb-4 hidden anim-in anim-in-2">
-      <div class="smallCaps mb-2">Choix du mois</div>
-      <div class="accent-bar mb-3"></div>
-      <input type="month" id="monthPicker" class="inpt">
-      <input type="date"  id="dashDate"    class="hidden">
-    </div>
-
-    <!-- ✅ Filtres congés -->
-    <div id="congesFilterWrap" class="glass-card rounded-2xl p-4 mb-4 hidden anim-in anim-in-2">
-      <div class="smallCaps mb-2">Filtrer les congés</div>
-      <div class="accent-bar-sky mb-3"></div>
-      <div class="flex flex-wrap gap-2">
-        <button onclick="cgDash.setFilter('all')"        id="cgf_all"        class="px-3 py-1.5 rounded-full text-[11px] font-extrabold" style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">Tous</button>
-        <button onclick="cgDash.setFilter('actif')"      id="cgf_actif"      class="px-3 py-1.5 rounded-full text-[11px] font-extrabold" style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--muted3)">En cours</button>
-        <button onclick="cgDash.setFilter('upcoming')"   id="cgf_upcoming"   class="px-3 py-1.5 rounded-full text-[11px] font-extrabold" style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--muted3)">À venir</button>
-        <button onclick="cgDash.setFilter('en_attente')" id="cgf_en_attente" class="px-3 py-1.5 rounded-full text-[11px] font-extrabold" style="background:var(--accentBg);border:1px solid var(--accentBdr);color:#78350f">En attente</button>
-        <button onclick="cgDash.setFilter('passe')"      id="cgf_passe"      class="px-3 py-1.5 rounded-full text-[11px] font-extrabold" style="background:rgba(255,255,255,.40);border:1px solid var(--stroke);color:var(--muted3)">Passés</button>
-      </div>
-    </div>
-
-    <!-- Exports & Période -->
-    <div id="exportsWrap" class="glass-card rounded-2xl p-4 mb-4 anim-in anim-in-3">
-      <div class="flex items-start justify-between gap-3">
-        <div class="flex-1 min-w-0">
-          <div class="smallCaps">Période</div>
-          <div id="periodLabel" class="hTitle text-2xl leading-tight mt-1 truncate">—</div>
-          <p class="text-[9px] font-bold mt-2 leading-relaxed" style="color:var(--muted3)">
-            R = 1er OFF semaine · C = OFF supp + absences · Janvier 2026 exclu · Exception : SALIL/BENKHADA pas de R
-          </p>
-        </div>
-        <div class="flex flex-col gap-2 shrink-0">
-          <button onclick="exportCSV_RC_Month()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold"
-            style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">Export Mois</button>
-          <button onclick="exportCSV_RC_Year()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold"
-            style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">Export Année</button>
-          <button onclick="exportYear_ToSheets()" class="btn-action btn-sheets px-3 py-2 rounded-xl text-[11px] font-extrabold"
-            style="background:rgba(66,133,244,.13);border:1px solid rgba(66,133,244,.32);color:#1d4ed8">↗ Sheets</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Graphique -->
-    <div id="chartContainer" class="glass-card rounded-3xl p-5 mb-5 hidden anim-in anim-in-4">
-      <div class="smallCaps mb-3">Tendances du mois</div>
-      <div class="accent-bar mb-4"></div>
-      <div class="h-[170px] w-full"><canvas id="trendsChart"></canvas></div>
-    </div>
-
-    <div id="dashBody" class="space-y-6 anim-in anim-in-4"></div>
-
-    <!-- Outils équipe -->
-    <div class="glass-card rounded-2xl p-4 mt-5 anim-in anim-in-4">
-      <div class="smallCaps mb-2">Collaborateurs</div>
-      <div class="accent-bar-blue mb-3"></div>
-      <div class="grid grid-cols-2 gap-2">
-        <button id="btnOpenStaffAdmin" class="btn-action btn-neutral px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">Gérer équipe</button>
-        <button id="btnExportEquipe" class="btn-action px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.30);color:#78350f">Export JSON</button>
-      </div>
-      <p id="teamPermHint" class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted3)">
-        Stocké dans Firebase: <b>settings/equipe</b>.
-      </p>
-    </div>
-
-  </div><!-- /appWrap -->
-</div><!-- /container -->
-
-<!-- MODAL HISTORIQUE -->
-<div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">
-  <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-12 shadow-2xl max-h-[82vh] flex flex-col" onclick="event.stopPropagation()">
-    <div class="handle"></div>
-    <div class="flex items-center gap-3 mb-5">
-      <div>
-        <div class="smallCaps">Historique</div>
-        <h2 id="modalTitle" class="hTitle text-3xl leading-tight mt-1">—</h2>
-      </div>
-      <button onclick="closeModal()" class="ml-auto px-3 py-2 rounded-xl text-[11px] font-extrabold btn-action btn-neutral"
-        style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
-    </div>
-    <div id="modalList" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
-  </div>
 </div>
 
-<!-- MODAL ADMIN -->
-<div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">
-  <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-    <div class="handle"></div>
-    <div class="flex items-start justify-between gap-3 mb-5">
-      <div>
-        <div class="smallCaps">Administration</div>
-        <h2 class="hTitle text-3xl leading-tight mt-1">Gérer l'équipe</h2>
-        <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
-      </div>
-      <button onclick="closeStaffAdmin()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold mt-1"
-        style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">Fermer</button>
+<div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">  
+  <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-12 max-h-[82vh] flex flex-col" onclick="event.stopPropagation()">  
+    <div class="handle"></div>  
+    <div class="flex items-center justify-between mb-5">  
+      <div><div class="smallCaps">Historique</div><h2 id="modalTitle" class="hTitle text-3xl">—</h2></div>  
+      <button onclick="closeModal()" class="px-3 py-2 rounded-xl text-[11px] font-extrabold bg-slate-100">✕</button>  
+    </div>  
+    <div id="modalList" class="space-y-2 overflow-y-auto flex-1"></div>  
+  </div>  
+</div>  
+
+<div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">  
+  <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-10 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">  
+    <div class="handle"></div>  
+    <div class="flex justify-between items-start mb-5">  
+        <h2 class="hTitle text-3xl">Gérer l'équipe</h2>  
+        <button onclick="closeStaffAdmin()" class="bg-slate-100 px-3 py-2 rounded-xl text-[11px] font-extrabold">Fermer</button>  
+    </div>  
+    <div class="space-y-4">
+        <div class="p-4 rounded-2xl border border-slate-200 bg-white/30">
+            <div class="smallCaps mb-3">Ajouter</div>
+            <div class="grid grid-cols-2 gap-2">
+                <input id="addNom" class="inpt" placeholder="NOM"/>
+                <input id="addPrenom" class="inpt" placeholder="Prénom"/>
+            </div>
+            <select id="addPoste" class="inpt mt-2">
+                <option value="SERVICE">SERVICE</option><option value="BAR">BAR</option>
+                <option value="CUISINE">CUISINE</option><option value="CAISSE">CAISSE</option>
+                <option value="MENAGE">MENAGE</option>
+            </select>
+            <button id="btnAddStaff" class="w-full mt-3 py-3 rounded-2xl bg-amber-100 text-amber-900 font-extrabold text-xs">AJOUTER</button>
+            <div id="addMsg" class="mt-2 text-[10px] text-center font-bold"></div>
+        </div>
+        <div class="p-4 rounded-2xl border border-slate-200 bg-white/20">
+            <div class="smallCaps mb-3">Supprimer</div>
+            <select id="delPosteSelect" class="inpt"><option value="">-- Poste --</option><option value="SERVICE">SERVICE</option><option value="BAR">BAR</option><option value="CUISINE">CUISINE</option><option value="CAISSE">CAISSE</option><option value="MENAGE">MENAGE</option></select>
+            <select id="delEmpSelect" class="inpt mt-2"><option value="">Choisir...</option></select>
+            <button id="btnDeleteStaff" class="w-full mt-3 py-3 rounded-2xl bg-red-50 text-red-600 font-extrabold text-xs">SUPPRIMER</button>
+            <div id="delAnyMsg" class="mt-2 text-[10px] text-center font-bold"></div>
+        </div>
     </div>
-    <div class="rounded-2xl border p-4 mb-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.30)">
-      <div class="flex items-center gap-2 mb-3">
-        <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]" style="background:var(--accentBg);border:1px solid var(--accentBdr)">＋</div>
-        <div class="smallCaps">Ajouter collaborateur</div>
-      </div>
-      <div class="grid grid-cols-2 gap-2">
-        <input id="addNom"    class="inpt" placeholder="NOM (ex: ELALAMI)"/>
-        <input id="addPrenom" class="inpt" placeholder="Prénom (ex: HASSAN)"/>
-      </div>
-      <select id="addPoste" class="inpt mt-2">
-        <option value="SERVICE">SERVICE</option><option value="BAR">BAR</option>
-        <option value="CUISINE">CUISINE</option><option value="CAISSE">CAISSE</option>
-        <option value="MENAGE">MENAGE</option><option value="ECONOMAT">ECONOMAT</option>
-      </select>
-      <input id="addDateDebut" class="inpt mt-2" type="date"/>
-      <p class="mt-2 text-[10px] font-semibold" style="color:var(--muted3)">Date de début optionnelle. Si vide, première activité détectée automatiquement.</p>
-      <button id="btnAddStaff" class="btn-action btn-amber mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-        style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">AJOUTER</button>
-      <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
-    </div>
-    <div class="rounded-2xl border p-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.20)">
-      <div class="flex items-center gap-2 mb-3">
-        <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.20)">✕</div>
-        <div class="smallCaps">Supprimer collaborateur</div>
-      </div>
-      <select id="delPosteSelect" class="inpt"><option value="">-- Choisir poste --</option>
-        <option value="SERVICE">SERVICE</option><option value="BAR">BAR</option>
-        <option value="CUISINE">CUISINE</option><option value="CAISSE">CAISSE</option>
-        <option value="MENAGE">MENAGE</option><option value="ECONOMAT">ECONOMAT</option>
-      </select>
-      <select id="delEmpSelect" class="inpt mt-2"><option value="">Choisir poste d'abord</option></select>
-      <button id="btnDeleteStaff" class="btn-action btn-danger mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-        style="background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.30);color:#dc2626">SUPPRIMER</button>
-      <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
-    </div>
-    <p class="mt-4 text-[10px] font-semibold leading-relaxed" style="color:var(--muted3)">
-      PERMISSION_DENIED → vérifier les rules Firebase pour <b>settings/equipe</b>.
-    </p>
-  </div>
-</div>
+  </div>  
+</div>  
 
-<!-- ✅ SYNC MODAL -->
-<div id="syncModal" class="sync-modal" onclick="closeSyncModal()">
-  <div class="sync-panel p-6" onclick="event.stopPropagation()">
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <div class="smallCaps" style="color:var(--sky)">Synchronisation</div>
-        <div class="hTitle text-2xl mt-1">C → Congés Firebase</div>
-      </div>
-      <button onclick="closeSyncModal()" class="w-9 h-9 rounded-full flex items-center justify-center btn-action btn-neutral"
-        style="background:rgba(255,255,255,.60);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
-    </div>
-    <div id="syncSummary" class="glass-card rounded-xl p-3 mb-4 text-[11px] font-semibold" style="color:var(--muted2)">Prêt à synchroniser.</div>
-    <div class="sync-log" id="syncLog"><span class="log-info">En attente du lancement…</span></div>
-    <div class="flex flex-col gap-2 mt-4">
-      <div class="flex gap-2">
-        <button id="btnSyncRun" onclick="syncCtoConges(false)"
-          class="flex-1 py-3 rounded-2xl font-extrabold text-[12px] btn-action btn-sky"
-          style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">
-          ▶ Sync ce mois
-        </button>
-        <button id="btnSyncYear" onclick="syncCtoConges(true)"
-          class="flex-1 py-3 rounded-2xl font-extrabold text-[12px] btn-action"
-          style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
-          ▶▶ Sync toute l'année
-        </button>
-      </div>
-      <button onclick="closeSyncModal()" class="w-full py-2.5 rounded-2xl font-extrabold text-[12px] btn-action btn-neutral"
-        style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">Fermer</button>
-    </div>
-    <p class="mt-3 text-[10px] font-semibold leading-snug" style="color:var(--muted3)">
-      ⚠️ Anti-doublon actif — vérifie d'abord si un congé identique existe déjà.<br>
-      Uniquement les jours <b style="color:var(--amber)">C</b> du mois sélectionné → <code>conges/</code>
-    </p>
-  </div>
-</div>
+<div id="syncModal" class="sync-modal" onclick="closeSyncModal()">  
+  <div class="sync-panel p-6" onclick="event.stopPropagation()">  
+    <h3 class="hTitle text-2xl mb-4">Synchronisation</h3>  
+    <div id="syncSummary" class="text-xs font-bold text-slate-500 mb-4">Prêt.</div>  
+    <div class="sync-log mb-4" id="syncLog"></div>  
+    <div class="flex flex-col gap-2">  
+        <button id="btnSyncRun" onclick="syncCtoConges(false)" class="py-3 rounded-2xl bg-sky-100 text-sky-800 font-extrabold text-xs">Sync ce mois</button>  
+        <button onclick="syncCtoConges(true)" class="py-3 rounded-2xl bg-amber-100 text-amber-800 font-extrabold text-xs">Sync toute l'année</button>  
+        <button onclick="closeSyncModal()" class="py-2 text-xs font-bold text-slate-400">Fermer</button>  
+    </div>  
+  </div>  
+</div>  
 
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
 
-<script>
-const firebaseConfig = {
-  apiKey:"AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",
-  authDomain:"grey-corner-presence.firebaseapp.com",
-  databaseURL:"https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:"grey-corner-presence",
-  storageBucket:"grey-corner-presence.firebasestorage.app",
-  messagingSenderId:"730206093359",
-  appId:"1:730206093359:web:59e3c145120807f29e46da",
-  measurementId:"G-4HCKPGNED7"
-};
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const auth     = firebase.auth();
+<script>  
+const firebaseConfig = {  
+  apiKey:"AIzaSyC5al_6xWbJC8S0FAvaEnRmx9BvYtGgnAM",  
+  authDomain:"grey-corner-presence.firebaseapp.com",  
+  databaseURL:"https://grey-corner-presence-default-rtdb.europe-west1.firebasedatabase.app",  
+  projectId:"grey-corner-presence",  
+  storageBucket:"grey-corner-presence.firebasestorage.app",  
+  messagingSenderId:"730206093359",  
+  appId:"1:730206093359:web:59e3c145120807f29e46da"
+};  
+firebase.initializeApp(firebaseConfig);  
+const database = firebase.database();  
+const auth = firebase.auth();  
+  
+const dateInput = document.getElementById('dashDate');  
+const monthPicker = document.getElementById('monthPicker');  
+const dayPicker = document.getElementById('dayPicker');  
+const dayPickWrap = document.getElementById('dayPickWrap');  
+const monthPickWrap = document.getElementById('monthPickWrap');  
+const loginWrap = document.getElementById("loginWrap");  
+const appWrap = document.getElementById("appWrap");  
+const roleLabel = document.getElementById("roleLabel");  
+const syncLine = document.getElementById("syncLine");  
+const periodLabel = document.getElementById("periodLabel");  
+  
+let currentMode = 'day', myChart = null, role = null;  
+let activePresRef = null, activePunchRef = null;  
+let presCache = {}, punchCache = {};  
+let midnightTimer = null, sheetsSyncRunning = false;  
+  
+const EQUIPE_PATH = "settings/equipe";  
+const CONGES_PATH = "conges";  
+const EMP_PATH    = "rh_data/employees";  
 
-const dateInput     = document.getElementById('dashDate');
-const monthPicker   = document.getElementById('monthPicker');
-const dayPicker     = document.getElementById('dayPicker');
-const dayPickWrap   = document.getElementById('dayPickWrap');
-const monthPickWrap = document.getElementById('monthPickWrap');
-const loginWrap     = document.getElementById("loginWrap");
-const appWrap       = document.getElementById("appWrap");
-const roleLabel     = document.getElementById("roleLabel");
-const syncLine      = document.getElementById("syncLine");
-const periodLabel   = document.getElementById("periodLabel");
+// Données par défaut
+let equipe=[  
+  {nom:'BOUCHNAK',prenom:'NAOUAL',poste:'CUISINE'},{nom:'ALAOUI',prenom:'LAZIZ',poste:'SERVICE'},  
+  {nom:'BELQASSE',prenom:'KHAOULA',poste:'CUISINE'},{nom:'BENKHADA',prenom:'ABDESLAM',poste:'CAISSE'},  
+  {nom:'BOURAHMA',prenom:'ANAS',poste:'CUISINE'},{nom:'CHKAIRI',prenom:'YOUSSEF',poste:'BAR'},  
+  {nom:'ELKOBBI',prenom:'MOSTAFA',poste:'BAR'},{nom:'ELGORRAMY',prenom:'ANISSA',poste:'MENAGE'},  
+  {nom:'ELGORRAMY',prenom:'SOUAD',poste:'MENAGE'},{nom:'ELMCHAOURI',prenom:'SOUAD',poste:'MENAGE'},  
+  {nom:'ENNHAILI',prenom:'SOUMIA',poste:'ECONOMAT'},{nom:'FILALI',prenom:'ABDERAFI',poste:'BAR'},  
+  {nom:'HATTAF',prenom:'MOHAMED',poste:'SERVICE'},{nom:'HIDARA',prenom:'YOUSSEF',poste:'SERVICE'},  
+  {nom:'IDRISSI',prenom:'SAAD',poste:'CUISINE'},{nom:'KAFOUNI',prenom:'ZAKARIAE',poste:'SERVICE'},  
+  {nom:'KHALOUQ',prenom:'RACHID',poste:'BAR'},{nom:'LEMSSIEH',prenom:'JAWAD',poste:'CUISINE'},  
+  {nom:'MAJDOUB',prenom:'JIHANE',poste:'CUISINE'},{nom:'MOHSINE',prenom:'YOUNESS',poste:'SERVICE'},  
+  {nom:'MOUJAHID',prenom:'IMANE',poste:'CUISINE'},{nom:'SALIL',prenom:'HOUDA',poste:'CAISSE'},  
+  {nom:'SBAI',prenom:'HAKIMA',poste:'MENAGE'},{nom:'ZAIR',prenom:'FATIMA',poste:'CUISINE'}  
+];  
 
-let currentMode = 'day', myChart = null, role = null;
-let activePresRef = null, activePunchRef = null;
-let presCache = {}, punchCache = {};
-let midnightTimer = null, sheetsSyncRunning = false;
-
-const EQUIPE_PATH = "settings/equipe";
-const CONGES_PATH = "conges";
-const EMP_PATH    = "rh_data/employees";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function esc(s){
-  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+// Helpers
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s){ return esc(s); }
-
-function safeTime(t){
-  const s=String(t??"").trim();
-  const core=s.replace(/^(\d{1,2}:\d{2}):\d{2}$/,'$1');
-  if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(core)) return "";
-  const [h,m]=core.split(':'); return h.padStart(2,'0')+":"+m;
-}
-
-let equipe=[
-  {nom:'BOUCHNAK',prenom:'NAOUAL',poste:'CUISINE'},{nom:'ALAOUI',prenom:'LAZIZ',poste:'SERVICE'},
-  {nom:'BELQASSE',prenom:'KHAOULA',poste:'CUISINE'},{nom:'BENKHADA',prenom:'ABDESLAM',poste:'CAISSE'},
-  {nom:'BOURAHMA',prenom:'ANAS',poste:'CUISINE'},{nom:'CHKAIRI',prenom:'YOUSSEF',poste:'BAR'},
-  {nom:'ELKOBBI',prenom:'MOSTAFA',poste:'BAR'},{nom:'ELGORRAMY',prenom:'ANISSA',poste:'MENAGE'},
-  {nom:'ELGORRAMY',prenom:'SOUAD',poste:'MENAGE'},{nom:'ELMCHAOURI',prenom:'SOUAD',poste:'MENAGE'},
-  {nom:'ENNHAILI',prenom:'SOUMIA',poste:'ECONOMAT'},{nom:'FILALI',prenom:'ABDERAFI',poste:'BAR'},
-  {nom:'HATTAF',prenom:'MOHAMED',poste:'SERVICE'},{nom:'HIDARA',prenom:'YOUSSEF',poste:'SERVICE'},
-  {nom:'IDRISSI',prenom:'SAAD',poste:'CUISINE'},{nom:'KAFOUNI',prenom:'ZAKARIAE',poste:'SERVICE'},
-  {nom:'KHALOUQ',prenom:'RACHID',poste:'BAR'},{nom:'LEMSSIEH',prenom:'JAWAD',poste:'CUISINE'},
-  {nom:'MAJDOUB',prenom:'JIHANE',poste:'CUISINE'},{nom:'MOHSINE',prenom:'YOUNESS',poste:'SERVICE'},
-  {nom:'MOUJAHID',prenom:'IMANE',poste:'CUISINE'},{nom:'SALIL',prenom:'HOUDA',poste:'CAISSE'},
-  {nom:'SBAI',prenom:'HAKIMA',poste:'MENAGE'},{nom:'ZAIR',prenom:'FATIMA',poste:'CUISINE'}
-];
-function setEquipe(next){ equipe=Array.isArray(next)?next.slice():[]; clearMonthCache(); }
-
-const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL","ELMCHAOURI_SOUAD","SBAI_HAKIMA"]);
-const noReposIds = new Set(["SALIL_HOUDA","BENKHADA_ABDESLAM"]);
-const EXCL_START="2026-01-01", EXCL_END="2026-01-31";
-function isExcluded(d){ return d>=EXCL_START&&d<=EXCL_END; }
-
-function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
-function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
-function addDaysISO(iso,delta){
-  const {y,m,d}=parseISO(iso); const t=Date.UTC(y,m-1,d)+delta*86400000; const dt=new Date(t);
-  return toISO(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());
-}
-function weekStartMondayISO(iso){
-  const {y,m,d}=parseISO(iso); const dt=new Date(Date.UTC(y,m-1,d)); const dow=dt.getUTCDay();
-  return addDaysISO(iso,-(dow===0?6:dow-1));
-}
-function todayISO(){
-  return new Intl.DateTimeFormat('fr-CA',{timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-}
-function fmtFR(iso){ if(!iso||!iso.includes("-"))return iso||""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
+function titleCase(s){ const t=String(s||"").toLowerCase(); return t?t.charAt(0).toUpperCase()+t.slice(1):""; }
+function empIdOf(emp){ return `${String(emp?.nom||"").trim().toUpperCase().replace(/\s+/g,"_")}_${String(emp?.prenom||"").trim().toUpperCase().replace(/\s+/g,"_")}`; }
+function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' '); }
+function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
+function todayISO(){ return new Intl.DateTimeFormat('fr-CA',{timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
 function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
 function isoFromMonthKey(mk){ return mk+"-01"; }
-function titleCase(s){ const t=String(s||"").toLowerCase(); return t?t.charAt(0).toUpperCase()+t.slice(1):""; }
+function fmtFR(iso){ if(!iso)return ""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
+function safeTime(t){ const s=String(t??"").trim(); return /^([01]?\d|2[0-3]):[0-5]\d$/.test(s.slice(0,5)) ? s.slice(0,5) : ""; }
+function addDaysISO(iso,delta){ const d=new Date(iso); d.setUTCDate(d.getUTCDate()+delta); return d.toISOString().split('T')[0]; }
 
-function getTimeDiff(a,p,id){
-  if(!a) return 0; if(id&&haOnlyIds.has(id)) return 0; if(!p) return 0;
-  const [ha,ma]=a.split(':').map(Number),[hp,mp]=p.split(':').map(Number);
-  const d=(ha*60+ma)-(hp*60+mp); return d>0?d:0;
-}
-function diffFromEntry(entry,empId){ return entry?getTimeDiff(entry.hA,entry.hP,empId):0; }
+function getTimeDiff(a,p,id){  
+  if(!a || !p) return 0;  
+  const [ha,ma]=a.split(':').map(Number),[hp,mp]=p.split(':').map(Number);  
+  const d=(ha*60+ma)-(hp*60+mp); return d>0?d:0;  
+}  
+function diffFromEntry(entry,empId){ return entry ? getTimeDiff(entry.hA, entry.hP, empId) : 0; }  
 
-function getStatusClass(diff,isOff,hasArrived,isConge){
-  if(isConge) return 'status-conge';
-  if(hasArrived){ if(diff<=0)return'status-green'; if(diff<30)return'status-orange'; if(diff<60)return'status-red'; return'status-flash'; }
-  if(isOff) return 'status-off'; return '';
-}
-function getDotColor(diff,isOff,hasArrived,isConge){
-  if(isConge) return 'var(--sky)';
-  if(hasArrived){ if(diff<=0)return'var(--ok)'; if(diff<30)return'var(--amber)'; return'var(--crit)'; }
-  if(isOff) return 'rgba(148,163,184,.65)'; return 'rgba(255,255,255,.22)';
-}
+function getStatusClass(diff,isOff,hasArrived,isConge){  
+  if(isConge) return 'status-conge';  
+  if(hasArrived){ if(diff<=0)return'status-green'; if(diff<30)return'status-orange'; return'status-red'; }  
+  if(isOff) return 'status-off'; return '';  
+}  
+function getDotColor(diff,isOff,hasArrived,isConge){  
+  if(isConge) return 'var(--sky)';  
+  if(hasArrived){ if(diff<=0)return'var(--ok)'; if(diff<30)return'var(--amber)'; return'var(--crit)'; }  
+  if(isOff) return '#cbd5e1'; return 'transparent';  
+}  
 
-function classifyOffDay(empId,dayISO,weekRC){
-  if(noReposIds.has(empId)) return "C";
-  const wk=weekStartMondayISO(dayISO); weekRC[wk]||={}; weekRC[wk][empId]||=0;
-  if(weekRC[wk][empId]===0){ weekRC[wk][empId]=1; return "R"; } return "C";
-}
+// OBJET CONGÉS (CORRIGÉ)
+const cgDash = {  
+  _data:null, _byEmpId:null, filter:'all', _rcSolde:{},  
+  
+  async load(){  
+    try{  
+      const snap=await database.ref(CONGES_PATH).once('value');  
+      const val=snap.val()||{}; this._data={}; this._byEmpId={};  
+      Object.entries(val).forEach(([cin,cinConges])=>{  
+        const list=Object.entries(cinConges||{}).map(([id,c])=>({id,cin,...c}));  
+        list.forEach(c=>{ const eid=c.empId; if(eid){this._byEmpId[eid]=this._byEmpId[eid]||[];this._byEmpId[eid].push(c);} });  
+      });  
+    }catch(e){ this._data={}; this._byEmpId={}; }  
+  },  
 
-function empIdOf(emp){
-  const nom=String(emp?.nom||"").trim().toUpperCase().replace(/\s+/g,"_");
-  const prenom=String(emp?.prenom||"").trim().toUpperCase().replace(/\s+/g,"_");
-  return `${nom}_${prenom}`;
-}
-function getEmpById(empId){ return equipe.find(e=>empIdOf(e)===empId)||{nom:empId,prenom:"",poste:"",dateDebut:""}; }
-function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
-function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
+  allFlat(){ return this._byEmpId ? Object.values(this._byEmpId).flat() : []; },
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ✅ CONGÉS DASHBOARD
-// ═════════════════════════════════════════════════════════════════════════════
-const cgDash = {
-  _data:null, _byEmpId:null, filter:'all',
-  _rcSolde:{},   // ✅ { empId: C_annuel } alimenté depuis buildYearSummaryOptimized
-
-  async load(){
-    try{
-      const snap=await database.ref(CONGES_PATH).once('value');
-      const val=snap.val()||{}; this._data={}; this._byEmpId={};
-      Object.entries(val).forEach(([cin,cinConges])=>{
-        const list=Object.entries(cinConges||{}).map(([id,c])=>({id,cin,...c}));
-        this._data[cin]=list;
-        list.forEach(c=>{ const eid=c.empId||''; if(eid){this._byEmpId[eid]=this._byEmpId[eid]||[];this._byEmpId[eid].push(c);} });
-      });
-    }catch(e){ this._data={}; this._byEmpId={}; }
-    return this;
+  isOnConge(empId,dateISO){  
+    if(!this._byEmpId || !this._byEmpId[empId]) return false;  
+    return this._byEmpId[empId].some(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=dateISO&&(c.dateFin||'')>=dateISO);  
   },
 
-  isOnConge(empId,dateISO){
-    if(!this._byEmpId) return false;
-    return (this._byEmpId[empId]||[]).some(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=dateISO&&(c.dateFin||'')>=dateISO);
-  },
-  getActiveConge(empId,dateISO){
-    if(!this._byEmpId) return null;
-    return (this._byEmpId[empId]||[]).find(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=dateISO&&(c.dateFin||'')>=dateISO)||null;
-  },
-  allFlat(){ return this._data?Object.values(this._data).flat():[]; },
-  countActiveToday(){
-    const today=todayISO();
-    return this.allFlat().filter(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=today&&(c.dateFin||'')>=today).length;
-  },
-  soldeRestant(empId){
-    // ✅ Solde = 18 − C annuel (même source que le tableau R/C)
-    const cAnnuel = this._rcSolde[empId] ?? null;
-    if(cAnnuel !== null) return Math.max(0, 18 - cAnnuel);
-    // Fallback si R/C pas encore chargé
-    return 18;
+  getActiveConge(empId,dateISO){  
+    return (this._byEmpId?.[empId]||[]).find(c=>c.statut==='approuvé'&&(c.dateDebut||'')<=dateISO&&(c.dateFin||'')>=dateISO)||null;  
   },
 
-  setFilter(f){
-    this.filter=f;
-    ['all','actif','upcoming','en_attente','passe'].forEach(k=>{
-      const btn=document.getElementById('cgf_'+k); if(!btn) return;
-      if(k===f){btn.style.background='var(--skyBg)';btn.style.borderColor='var(--skyBdr)';btn.style.color='var(--sky)';}
-      else{btn.style.background='rgba(255,255,255,.40)';btn.style.borderColor='rgba(30,64,175,.12)';btn.style.color='var(--muted3)';}
-    });
-    this.renderView();
-  },
+  soldeRestant(empId){ return Math.max(0, 18 - (this._rcSolde[empId] || 0)); },
 
-  async renderView(){
-    if(!this._data) await this.load();
-    const today=todayISO(); const all=this.allFlat();
-    const year=today.slice(0,4);
+  setFilter(f){ this.filter=f; this.renderView(); },
 
-    const ac=all.filter(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today).length;
-    const up=all.filter(c=>c.statut==='approuvé'&&c.dateDebut>today).length;
-    const pe=all.filter(c=>c.statut==='en_attente').length;
-
-    const summary=`<div class="glass-card rounded-2xl p-4 flex gap-3 flex-wrap mb-4">
-      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--skyBg);border:1px solid var(--skyBdr)">
-        <div class="hTitle text-3xl" style="color:var(--sky)">${ac}</div><div class="smallCaps mt-1">En cours</div>
-      </div>
-      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--okBg);border:1px solid rgba(5,150,105,.20)">
-        <div class="hTitle text-3xl" style="color:var(--ok)">${up}</div><div class="smallCaps mt-1">À venir</div>
-      </div>
-      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--accentBg);border:1px solid var(--accentBdr)">
-        <div class="hTitle text-3xl" style="color:var(--amber)">${pe}</div><div class="smallCaps mt-1">En attente</div>
-      </div>
-      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:rgba(255,255,255,.50);border:1px solid var(--stroke-med)">
-        <div class="hTitle text-3xl" style="color:var(--muted2)">${all.length}</div><div class="smallCaps mt-1">Total</div>
-      </div>
-    </div>`;
-
-    // ✅ Grouper par empId — une seule carte par employé
-    const byEmp={};
-    all.forEach(c=>{
-      const key=c.empId||c.cin||'?';
-      if(!byEmp[key]){
-        byEmp[key]={
-          empId:c.empId||'',
-          empNom:c.empNom||'',
-          empPrenom:c.empPrenom||'',
-          empDept:c.empDept||'',
-          cin:c.cin||'',
-          totalJours:0,
-          entries:[]
-        };
-      }
-      byEmp[key].totalJours+=(Number(c.jours)||0);
-      byEmp[key].entries.push(c);
+  async renderView(){  
+    if(!this._data) await this.load();  
+    const today = todayISO(); 
+    const all = this.allFlat();  
+    const year = today.slice(0,4);  
+  
+    const ac = all.filter(c => c.statut === 'approuvé' && c.dateDebut <= today && c.dateFin >= today).length;  
+    const up = all.filter(c => c.statut === 'approuvé' && c.dateDebut > today).length;  
+    const pe = all.filter(c => c.statut === 'en_attente').length;  
+  
+    const summary = `<div class="glass-card rounded-2xl p-4 flex gap-3 flex-wrap mb-4">  
+      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--skyBg);border:1px solid var(--skyBdr)">  
+        <div class="hTitle text-3xl" style="color:var(--sky)">${ac}</div><div class="smallCaps mt-1">En cours</div>  
+      </div>  
+      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--okBg);border:1px solid rgba(5,150,105,.20)">  
+        <div class="hTitle text-3xl" style="color:var(--ok)">${up}</div><div class="smallCaps mt-1">À venir</div>  
+      </div>  
+      <div class="flex-1 min-w-[72px] text-center rounded-xl p-3" style="background:var(--accentBg);border:1px solid var(--accentBdr)">  
+        <div class="hTitle text-3xl" style="color:var(--amber)">${pe}</div><div class="smallCaps mt-1">Attente</div>  
+      </div>  
+    </div>`;  
+  
+    // ✅ CORRECTION : Utilisation de la liste complète 'equipe'
+    let displayList = equipe.map(emp => {
+      const id = empIdOf(emp);
+      const empEntries = all.filter(c => c.empId === id);
+      const totalJours = empEntries.reduce((acc, c) => acc + (Number(c.jours) || 0), 0);
+      return { ...emp, empId: id, entries: empEntries, totalJours };
     });
 
-    // Filtrer selon le filtre actif
-    let empKeys=Object.keys(byEmp);
-    if(this.filter==='actif'){
-      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today));
-    }else if(this.filter==='upcoming'){
-      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='approuvé'&&c.dateDebut>today));
-    }else if(this.filter==='en_attente'){
-      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='en_attente'));
-    }else if(this.filter==='passe'){
-      empKeys=empKeys.filter(k=>byEmp[k].entries.every(c=>c.dateFin<today));
+    if(this.filter === 'actif'){  
+      displayList = displayList.filter(e => e.entries.some(c => c.statut === 'approuvé' && c.dateDebut <= today && c.dateFin >= today));  
+    } else if(this.filter === 'en_attente'){  
+      displayList = displayList.filter(e => e.entries.some(c => c.statut === 'en_attente'));  
     }
 
-    // Trier par nom
-    empKeys.sort((a,b)=>{
-      const A=byEmp[a].empNom+byEmp[a].empPrenom;
-      const B=byEmp[b].empNom+byEmp[b].empPrenom;
-      return A.localeCompare(B);
-    });
+    displayList.sort((a,b) => (a.nom + a.prenom).localeCompare(b.nom + b.prenom));
 
-    if(!empKeys.length){
-      document.getElementById('dashBody').innerHTML=summary+`<div class="glass-card rounded-2xl p-8 text-center" style="color:var(--muted3)"><div class="text-4xl mb-3">☀️</div><div class="text-[12px] font-extrabold">Aucun congé dans ce filtre.</div></div>`;
-      this._updateActiveBadge(); return;
-    }
-
-    const cards=empKeys.map(k=>{
-      const emp=byEmp[k];
-      const empName=emp.empNom&&emp.empPrenom
-        ?`${emp.empNom} ${titleCase(emp.empPrenom)}`
-        :emp.empNom||emp.cin||'—';
-
-      const isActive=emp.entries.some(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today);
-      const isUpcoming=emp.entries.some(c=>c.statut==='approuvé'&&c.dateDebut>today);
-      const isPending=emp.entries.some(c=>c.statut==='en_attente');
-
-      const statusBadge=isActive
-        ?`<span class="chip chip-sky text-[10px]">☀️ EN COURS</span>`
-        :isUpcoming?`<span class="chip chip-p text-[10px]">→ À VENIR</span>`
-        :isPending?`<span class="chip chip-c text-[10px]">⏳ EN ATTENTE</span>`
-        :`<span class="chip text-[10px]" style="opacity:.6">✓ PASSÉ</span>`;
-
-      const solde=this.soldeRestant(emp.empId);
-      const soldePct=Math.round((solde/18)*100);
-      const soldeColor=solde>8?'var(--ok)':solde>4?'var(--amber)':'var(--crit)';
-      const rowClass=isActive?'':'past';
-
-      return `<div class="conge-row ${isActive?'':''}">
-        <div class="flex items-start justify-between gap-2 flex-wrap mb-3">
-          <div>
-            <div class="text-[14px] font-extrabold" style="color:#0f2744">${esc(empName)}</div>
-            ${emp.empDept?`<div class="smallCaps" style="font-size:9px;margin-top:2px">${esc(emp.empDept)}</div>`:''}
-          </div>
-          ${statusBadge}
-        </div>
-
-        <div class="flex items-center justify-between py-2 px-3 rounded-xl mb-2"
-          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke)">
-          <span class="text-[11px] font-bold" style="color:var(--muted2)">
-            Congé pris — ${esc(year)}
-          </span>
-          <span class="text-[13px] font-extrabold" style="color:var(--sky)">${esc(emp.totalJours)}j</span>
-        </div>
-
-        <div class="mt-2">
-          <div class="flex justify-between text-[9px] font-extrabold mb-1" style="color:var(--muted2)">
-            <span>SOLDE CP</span>
-            <span style="color:${soldeColor}">${solde}j / 18j</span>
-          </div>
-          <div class="mini-solde">
-            <div class="mini-solde-fill" style="width:${Math.min(100,soldePct)}%;background:${soldeColor}"></div>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-
-    document.getElementById('dashBody').innerHTML=summary+`<div class="space-y-3">${cards}</div>`;
-    this._updateActiveBadge();
+    const cards = displayList.map(emp => {  
+      const isActive = emp.entries.some(c => c.statut === 'approuvé' && c.dateDebut <= today && c.dateFin >= today);  
+      const isUpcoming = emp.entries.some(c => c.statut === 'approuvé' && c.dateDebut > today);  
+      const isPending = emp.entries.some(c => c.statut === 'en_attente');  
+  
+      const badge = isActive ? `<span class="chip chip-sky text-[10px]">☀️ EN COURS</span>`  
+        : isUpcoming ? `<span class="chip chip-p text-[10px]">→ À VENIR</span>`  
+        : isPending ? `<span class="chip chip-c text-[10px]">⏳ ATTENTE</span>`  
+        : `<span class="chip text-[10px]" style="opacity:.5">✓ OK</span>`;  
+  
+      const solde = this.soldeRestant(emp.empId);  
+      const soldePct = Math.round((solde / 18) * 100);  
+      const soldeColor = solde > 8 ? 'var(--ok)' : solde > 4 ? 'var(--amber)' : 'var(--crit)';  
+  
+      return `<div class="conge-row" onclick="openHistory('${escAttr(emp.nom)}','${escAttr(emp.prenom)}')">  
+        <div class="flex items-start justify-between gap-2 mb-3">  
+          <div>  
+            <div class="text-[14px] font-extrabold" style="color:#0f2744">${esc(emp.nom)} ${esc(titleCase(emp.prenom))}</div>  
+            <div class="smallCaps" style="font-size:9px">${esc(emp.poste)}</div>  
+          </div>  
+          ${badge}  
+        </div>  
+        <div class="flex items-center justify-between py-2 px-3 rounded-xl mb-2 bg-slate-50 border border-slate-100">  
+          <span class="text-[11px] font-bold text-slate-500">Pris (${year})</span>  
+          <span class="text-[13px] font-extrabold text-sky-600">${emp.totalJours}j</span>  
+        </div>  
+        <div class="mt-2">  
+          <div class="flex justify-between text-[9px] font-extrabold mb-1">  
+            <span class="text-slate-400">SOLDE RESTANT</span>  
+            <span style="color:${soldeColor}">${solde}j / 18j</span>  
+          </div>  
+          <div class="mini-solde"><div class="mini-solde-fill" style="width:${Math.min(100, soldePct)}%;background:${soldeColor}"></div></div>  
+        </div>  
+      </div>`;  
+    }).join('');  
+  
+    document.getElementById('dashBody').innerHTML = summary + `<div class="space-y-3">${cards}</div>`;  
+    this._updateActiveBadge();  
   },
 
-  _updateActiveBadge(){
-    const n=this.countActiveToday();
-    const badge=document.getElementById('congeActiveBadge');
-    const countEl=document.getElementById('congeActiveCount');
-    if(n>0){countEl.textContent=n;badge.classList.remove('hidden');}
-    else badge.classList.add('hidden');
-  }
+  _updateActiveBadge(){  
+    const today = todayISO();
+    const n = this.allFlat().filter(c => c.statut === 'approuvé' && c.dateDebut <= today && c.dateFin >= today).length;
+    const badge = document.getElementById('congeActiveBadge');  
+    if(n>0){ document.getElementById('congeActiveCount').textContent=n; badge.classList.remove('hidden'); }  
+    else badge.classList.add('hidden');  
+  }  
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ✅ SYNC C → conges/ Firebase
-// ═════════════════════════════════════════════════════════════════════════════
-let _empCinMap=null;
-async function buildEmpCinMap(){
-  if(_empCinMap) return _empCinMap;
-  try{
-    const snap=await database.ref(EMP_PATH).once('value');
-    const emps=snap.val()||{}; _empCinMap={};
-    Object.entries(emps).forEach(([cin,e])=>{
-      if(!e.name) return;
-      const nom   =e._nom   ||e.name.trim().toUpperCase().split(/\s+/).slice(0,-1).join('_')||e.name.trim().toUpperCase();
-      const prenom=e._prenom||e.name.trim().toUpperCase().split(/\s+/).pop()||'';
-      const empId =prenom?`${nom}_${prenom}`:nom;
-      _empCinMap[empId]={cin,nom,prenom,dept:e.dept||''};
-    });
-    equipe.forEach(e=>{ const id=empIdOf(e); if(!_empCinMap[id])_empCinMap[id]={cin:null,nom:e.nom,prenom:e.prenom,dept:e.poste}; });
-  }catch(err){
-    _empCinMap={};
-    equipe.forEach(e=>{ _empCinMap[empIdOf(e)]={cin:null,nom:e.nom,prenom:e.prenom,dept:e.poste}; });
-  }
-  return _empCinMap;
-}
-
-function groupConsecutiveDays(sortedDays){
-  if(!sortedDays.length) return [];
-  const periods=[]; let start=sortedDays[0],prev=sortedDays[0];
-  for(let i=1;i<sortedDays.length;i++){
-    if(sortedDays[i]===addDaysISO(prev,1)){ prev=sortedDays[i]; }
-    else{ periods.push({dateDebut:start,dateFin:prev,jours:Math.round((new Date(prev)-new Date(start))/86400000)+1}); start=sortedDays[i];prev=sortedDays[i]; }
-  }
-  periods.push({dateDebut:start,dateFin:prev,jours:Math.round((new Date(prev)-new Date(start))/86400000)+1});
-  return periods;
-}
-
-function openSyncModal(){
-  const mk=monthKeyFromISO(dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO())));
-  const year=mk.slice(0,4);
-  document.getElementById('syncSummary').textContent=`Mois : ${mk} · Année : ${year}. Choisis le périmètre.`;
-  document.getElementById('syncLog').innerHTML='<span class="log-info">Cliquer sur un bouton pour lancer…</span>';
-  document.getElementById('btnSyncRun').disabled=false;
-  document.getElementById('btnSyncYear').disabled=false;
-  document.getElementById('syncModal').classList.add('open');
-}
-function closeSyncModal(){ document.getElementById('syncModal').classList.remove('open'); }
-function syncLog(msg,cls='log-info'){ const el=document.getElementById('syncLog'); el.innerHTML+=`<div class="${cls}">${msg}</div>`; el.scrollTop=el.scrollHeight; }
-
-async function syncCtoConges(allYear=false){
-  const btnM=document.getElementById('btnSyncRun');
-  const btnY=document.getElementById('btnSyncYear');
-  btnM.disabled=true; btnY.disabled=true;
-  document.getElementById('syncLog').innerHTML='';
-
-  const currentMk=monthKeyFromISO(dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO())));
-  const year=currentMk.slice(0,4);
-
-  // Construire la liste des mois à traiter
-  let months=[];
-  if(allYear){
-    const todayMk=monthKeyFromISO(todayISO());
-    for(let i=1;i<=12;i++){
-      const mk=`${year}-${String(i).padStart(2,"0")}`;
-      if(mk>todayMk) break;
-      months.push(mk);
-    }
-    syncLog(`📅 Année complète : ${year} (${months.length} mois)`);
-  }else{
-    months=[currentMk];
-    syncLog(`📅 Mois : ${currentMk}`);
-  }
-  syncLog('🔄 Chargement CIN…');
-  const cinMap=await buildEmpCinMap();
-  syncLog(`✅ ${Object.keys(cinMap).length} employés mappés.`,'log-ok');
-  syncLog('🔄 Chargement congés existants…');
-  await cgDash.load();
-  syncLog('✅ Congés chargés.','log-ok');
-
-  let totalPeriods=0,skipped=0,written=0,noCin=0;
-  const writes=[];
-
-  for(const mk of months){
-    syncLog(`🔄 Calcul R/C — ${mk}…`);
-    const md=await getMonthData(mk);
-    if(md.anyFail){ syncLog(`⚠ ${mk} : données incomplètes, mois ignoré.`,'log-warn'); continue; }
-    const {rcByEmpDay}=await getMonthRCMap(mk);
-
-    Object.entries(rcByEmpDay).forEach(([empId,days])=>{
-      // ✅ Exactement les mêmes C que le tableau R/C
-      const cDays=Object.entries(days)
-        .filter(([d,v])=>v==='C')
-        .map(([d])=>d).sort();
-      if(!cDays.length) return;
-      const cinInfo=cinMap[empId];
-      if(!cinInfo||!cinInfo.cin){ if(!allYear) syncLog(`⚠ ${empId} : pas de CIN, ignoré.`,'log-warn'); noCin++; return; }
-      const periods=groupConsecutiveDays(cDays); totalPeriods+=periods.length;
-      periods.forEach(p=>{
-        const existing=cgDash.allFlat().filter(c=>c.empId===empId&&c.dateDebut===p.dateDebut&&c.dateFin===p.dateFin);
-        if(existing.length){ skipped++; return; }
-        writes.push({ cin:cinInfo.cin, label:`${empId} ${p.dateDebut}→${p.dateFin} (${p.jours}j)`,
-          conge:{ type:'Congé payé',dateDebut:p.dateDebut,dateFin:p.dateFin,jours:p.jours,
-            statut:'approuvé',note:`Sync auto R/C — ${mk}`,
-            empId,empNom:cinInfo.nom,empPrenom:cinInfo.prenom,empDept:cinInfo.dept,
-            _autoSync:true,createdAt:Date.now() }
-        });
-      });
-    });
-  }
-
-  syncLog(`─────────────────────────────`);
-  syncLog(`Périodes C trouvées : ${totalPeriods}`);
-  syncLog(`Déjà en base (ignorées) : ${skipped}`,'log-info');
-  if(noCin) syncLog(`Sans CIN (ignorés) : ${noCin}`,'log-warn');
-  syncLog(`À écrire : ${writes.length}`,writes.length?'log-warn':'log-ok');
-
-  if(!writes.length){
-    syncLog('✅ Déjà à jour — rien à écrire.','log-ok');
-    document.getElementById('syncSummary').textContent='✅ Déjà à jour — aucun congé à ajouter.';
-    btnM.disabled=false; btnY.disabled=false; return;
-  }
-  syncLog('⬆ Écriture dans conges/…');
-  for(const w of writes){
-    try{ await database.ref(`${CONGES_PATH}/${w.cin}`).push(w.conge); syncLog(`✅ ${w.label}`,'log-ok'); written++; }
-    catch(e){ syncLog(`❌ ${w.label} : ${e.message}`,'log-err'); }
-  }
-  syncLog(`─────────────────────────────`);
-  syncLog(`✅ ${written} période(s) écrite(s).`,'log-ok');
-  document.getElementById('syncSummary').textContent=`✅ Sync terminée — ${written} ajoutés, ${skipped} ignorés.`;
-  await cgDash.load(); cgDash._updateActiveBadge();
-  if(currentMode==='conges') await cgDash.renderView();
-  btnM.disabled=false; btnY.disabled=false;
-}
-
-// ─── Google Sheets ────────────────────────────────────────────────────────────
-const SHEETS_WEBHOOK_URL="https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
-const SHEETS_SECRET="GC_SECRET_2026";
-
-async function exportYear_ToSheets(){
-  if(sheetsSyncRunning) return; sheetsSyncRunning=true;
-  try{
-    const year=dateInput.value.slice(0,4); const currentMk=monthKeyFromISO(todayISO()); const totalsByEmp={};
-    equipe.forEach(emp=>{ const id=empIdOf(emp); totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0}; });
-    syncLine.textContent="Sheets : calcul…";
-    for(let i=1;i<=12;i++){
-      const mk=`${year}-${String(i).padStart(2,"0")}`; if(mk>currentMk) break;
-      const summary=await buildMonthlySummary(mk);
-      Object.values(summary).forEach(s=>{
-        if(!totalsByEmp[s.empId]) totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0};
-        totalsByEmp[s.empId].present+=Number(s.present)||0; totalsByEmp[s.empId].R+=Number(s.R)||0;
-        totalsByEmp[s.empId].C+=Number(s.C)||0; totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;
-      });
-    }
-    const rows=Object.values(totalsByEmp).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-      .map(t=>({year,employe:`${t.nom} ${titleCase(t.prenom)}`.trim(),poste:t.poste,presents:t.present,repos:t.R,conge:t.C,retard:t.lateMin}));
-    syncLine.textContent="Sheets : envoi…";
-    const res=await fetch(SHEETS_WEBHOOK_URL,{method:"POST",body:JSON.stringify({year,rows,secret:SHEETS_SECRET})});
-    const raw=await res.text(); let json;
-    try{ json=JSON.parse(raw); }catch(_){ throw new Error("Réponse non JSON : "+raw.slice(0,300)); }
-    if(json.ok){ syncLine.innerHTML=`<span class="sync-dot"></span>Sheets mis à jour — ${json.written||0} lignes (${year})`; }
-    else syncLine.textContent=`⚠️ Sheets erreur : ${json.error||"inconnue"}`;
-  }catch(err){ syncLine.textContent=`⚠️ Sheets : ${err.message||"connexion échouée"}`; }
-  finally{ sheetsSyncRunning=false; }
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-async function loadEquipeFromDB(){ const snap=await database.ref(EQUIPE_PATH).once("value"); const arr=snap.val(); return (Array.isArray(arr)&&arr.length)?arr:equipe; }
-async function saveEquipeToDB(list){
-  try{ await database.ref(EQUIPE_PATH).set(list); document.getElementById("teamPermHint").innerHTML=`Stocké dans Firebase: <b>settings/equipe</b> ✅`; return true; }
-  catch(e){ document.getElementById("teamPermHint").innerHTML=`<span style="color:var(--crit);font-weight:900">⚠️ PERMISSION_DENIED</span>`; throw e; }
-}
-
-function openStaffAdmin(){ const m=document.getElementById("staffAdminModal"); m.classList.remove("hidden","modal-closing"); m.classList.add("modal-active"); }
-function closeStaffAdmin(){ const m=document.getElementById("staffAdminModal"); m.classList.remove("modal-active"); m.classList.add("modal-closing"); setTimeout(()=>{ m.classList.remove("modal-closing"); m.classList.add("hidden"); },260); }
-function closeModal(){ const m=document.getElementById('historyModal'); m.classList.remove("modal-active"); m.classList.add("modal-closing"); setTimeout(()=>{ m.classList.remove("modal-closing"); m.classList.add("hidden"); },260); }
-
-async function exportEquipeJSON(){ let list=equipe; try{ list=await loadEquipeFromDB(); }catch(e){} const blob=new Blob([JSON.stringify(list,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`GC_EQUIPE_${todayISO()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-function fillDelEmpSelectByPoste(poste){ const sel=document.getElementById("delEmpSelect"); if(!sel)return; if(!poste){sel.innerHTML=`<option value="">Choisir poste d'abord</option>`;return;} const list=equipe.filter(e=>e.poste===poste).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom)); sel.innerHTML=list.length?list.map(e=>`<option value="${escAttr(empIdOf(e))}">${esc(e.nom)} ${esc(titleCase(e.prenom))}</option>`).join(""):`<option value="">Aucun collaborateur</option>`; }
-
-async function initStaffAdminUI(){
-  document.getElementById("btnOpenStaffAdmin").onclick=()=>openStaffAdmin();
-  document.getElementById("btnExportEquipe").onclick=()=>exportEquipeJSON();
-  const posteSelect=document.getElementById("delPosteSelect");
-  posteSelect.onchange=()=>fillDelEmpSelectByPoste(posteSelect.value); fillDelEmpSelectByPoste("");
-
-  document.getElementById("btnAddStaff").onclick=async()=>{
-    const addMsg=document.getElementById("addMsg"); addMsg.textContent="";
-    const nom=normName(document.getElementById("addNom").value); const prenom=normName(document.getElementById("addPrenom").value);
-    const poste=(document.getElementById("addPoste").value||"").trim().toUpperCase(); const dateDebut=(document.getElementById("addDateDebut").value||"").trim();
-    if(!nom||!prenom||!poste){addMsg.textContent="⚠️ Remplis NOM, Prénom et Poste.";return;}
-    const id=makeEmpId(nom,prenom); if(equipe.some(e=>empIdOf(e)===id)){addMsg.textContent="⚠️ Déjà existant.";return;}
-    addMsg.textContent="Ajout…"; const next=equipe.slice(); next.push({nom,prenom,poste,dateDebut:dateDebut||""});
-    try{ await saveEquipeToDB(next); setEquipe(next); addMsg.textContent="✅ Ajouté."; document.getElementById("addNom").value=""; document.getElementById("addPrenom").value=""; document.getElementById("addDateDebut").value=""; closeStaffAdmin(); updateDashboard(); }
-    catch(e){ addMsg.textContent="⚠️ Erreur : "+(e?.message||"Permission denied"); }
-  };
-  document.getElementById("btnDeleteStaff").onclick=async()=>{
-    const delMsg=document.getElementById("delAnyMsg"); delMsg.textContent="";
-    const empId=document.getElementById("delEmpSelect").value; if(!empId){delMsg.textContent="⚠️ Choisis un collaborateur.";return;}
-    if(!confirm(`Confirmer suppression de ${empId} ?`)) return; delMsg.textContent="Suppression…";
-    const next=equipe.filter(e=>empIdOf(e)!==empId);
-    try{ await saveEquipeToDB(next); setEquipe(next); delMsg.textContent="✅ Supprimé."; fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value||""); closeStaffAdmin(); updateDashboard(); }
-    catch(e){ delMsg.textContent="⚠️ Erreur : "+(e?.message||"Permission denied"); }
-  };
-}
-
-async function fetchRole(uid){ const s=await database.ref("users/"+uid).once("value"); return s.val()||null; }
-function showLoginUI(msg){ detachRealtime(); role=null; if(midnightTimer){clearInterval(midnightTimer);midnightTimer=null;} appWrap.classList.add("hidden"); loginWrap.classList.remove("hidden"); document.getElementById("loginMsg").textContent=msg||""; }
-function showAppUI(){ loginWrap.classList.add("hidden"); appWrap.classList.remove("hidden"); roleLabel.textContent=role||"—"; syncLine.innerHTML="Sync : en attente…"; }
-
-document.getElementById("btnLogin").onclick=async()=>{
-  const email=(document.getElementById("loginEmail").value||"").trim();
-  const pass=(document.getElementById("loginPass").value||"").trim();
-  document.getElementById("loginMsg").textContent="";
-  try{ await auth.signInWithEmailAndPassword(email,pass); }
-  catch(e){ showLoginUI("Identifiants invalides."); }
-};
-document.getElementById("btnLogout").onclick=async()=>{ if(midnightTimer){clearInterval(midnightTimer);midnightTimer=null;} try{await auth.signOut();}catch(e){} location.reload(); };
-auth.onAuthStateChanged(async(user)=>{
-  if(!user){showLoginUI("");return;}
-  try{ role=await fetchRole(user.uid); if(role!=="gerant"){await auth.signOut();showLoginUI("Accès refusé.");return;} }
-  catch(e){ try{await auth.signOut();}catch(_){} showLoginUI("Erreur d'accès."); return; }
-  showAppUI(); bootDashboard();
-});
-
-// ─── Realtime ────────────────────────────────────────────────────────────────
-function detachRealtime(){
-  try{ if(activePresRef){activePresRef.off();activePresRef=null;} if(activePunchRef){activePunchRef.off();activePunchRef=null;} }catch(e){}
-  presCache={}; punchCache={};
-}
-function mergeDay(pres,punches){
-  const merged=JSON.parse(JSON.stringify(pres||{})); const p=punches||{};
-  Object.keys(p).forEach(empId=>{ merged[empId]||={}; const pe=p[empId]||{}; if(pe.hA)merged[empId].hA=pe.hA; if(merged[empId].hA&&merged[empId].off===true)merged[empId].off=false; });
-  return merged;
-}
-function mergedDayData(){ return mergeDay(presCache||{},punchCache||{}); }
-function setSyncOK(){ const now=new Date(); syncLine.innerHTML=`<span class="sync-dot"></span>Temps réel ✅ (${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')})`; }
-function setSyncWaiting(){ syncLine.textContent="Sync : connexion…"; }
-function setSyncStatic(d){ syncLine.textContent=`Lecture (${fmtFR(d)})`; }
-function setSyncError(){   syncLine.textContent="Sync : erreur réseau ⚠️"; }
-
-function attachRealtimeForDate(dayISO,realtime){
-  detachRealtime();
-  if(realtime) setSyncWaiting(); else setSyncStatic(dayISO);
-  activePresRef=database.ref('presences/'+dayISO);
-  activePresRef.on('value',(snap)=>{ presCache=snap.val()||{}; if(currentMode==="day")renderDayView(mergedDayData()); if(realtime)setSyncOK(); },()=>setSyncError());
-  activePunchRef=database.ref('punches/'+dayISO);
-  activePunchRef.on('value',(snap)=>{ punchCache=snap.val()||{}; if(currentMode==="day")renderDayView(mergedDayData()); if(realtime)setSyncOK(); },()=>setSyncError());
-}
-
-// ─── Mode switch ──────────────────────────────────────────────────────────────
-function switchMode(mode,btn){
-  currentMode=mode;
-  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active','active-sky'));
-  btn.classList.add(mode==='conges'?'active-sky':'active');
-  document.getElementById('chartContainer').classList.toggle('hidden',mode!=='report');
-  dayPickWrap.classList.toggle('hidden',mode!=='day');
-  monthPickWrap.classList.toggle('hidden',mode==='day'||mode==='conges');
-  document.getElementById('congesFilterWrap').classList.toggle('hidden',mode!=='conges');
-  document.getElementById('exportsWrap').classList.toggle('hidden',mode==='conges');
-  updateDashboard();
-}
-
-// ─── Cache ────────────────────────────────────────────────────────────────────
-const monthDataCache=new Map(), monthRCMapCache=new Map(), empStartMapCache=new Map();
-function clearMonthCache(){ monthDataCache.clear(); monthRCMapCache.clear(); empStartMapCache.clear(); }
-function getDatesInMonth(seedISO){ const {y,m}=parseISO(seedISO); const dates=[]; let t=Date.UTC(y,m-1,1); while(true){ const dt=new Date(t); if(dt.getUTCMonth()!==(m-1))break; dates.push(toISO(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate())); t+=86400000; } return dates; }
-function getDatesInMonthKey(mk){ return getDatesInMonth(mk+"-01"); }
-function errorCard(text){ return `<div class="glass-card p-5 rounded-2xl" style="border-color:rgba(248,113,113,.28);background:rgba(248,113,113,.06)"><div class="text-[11px] font-extrabold" style="color:rgba(220,38,38,.90)">${esc(text)}</div></div>`; }
-
-async function batchFetchPresPunch(dates){
-  try{
-    const [presRes,punchRes]=await Promise.all([
-      Promise.allSettled(dates.map(d=>database.ref('presences/'+d).once('value'))),
-      Promise.allSettled(dates.map(d=>database.ref('punches/'+d).once('value')))
-    ]);
-    const presByDay={},punchByDay={};
-    dates.forEach((d,i)=>{ presByDay[d]=(presRes[i].status==="fulfilled"?(presRes[i].value.val()||{}):{});punchByDay[d]=(punchRes[i].status==="fulfilled"?(punchRes[i].value.val()||{}):{});});
-    return {presByDay,punchByDay,anyFail:presRes.some(r=>r.status==="rejected")||punchRes.some(r=>r.status==="rejected")};
-  }catch(e){ return {presByDay:{},punchByDay:{},anyFail:true}; }
-}
-async function getMonthData(mk){
-  if(monthDataCache.has(mk)) return monthDataCache.get(mk);
-  const dates=getDatesInMonthKey(mk); const pack={monthKey:mk,dates,presByDay:{},punchByDay:{},anyFail:false};
-  const res=await batchFetchPresPunch(dates); pack.presByDay=res.presByDay||{}; pack.punchByDay=res.punchByDay||{}; pack.anyFail=!!res.anyFail;
-  monthDataCache.set(mk,pack); return pack;
-}
-
-function hasAnyEmpActivity(e){ if(!e)return false; return !!(safeTime(e.hP)||safeTime(e.hA)||e.off===true); }
-function getConfiguredEmpStart(emp){ const d=String(emp?.dateDebut||"").trim(); return /^\d{4}-\d{2}-\d{2}$/.test(d)?d:""; }
-
-async function getEmpStartMapForYear(year){
-  if(empStartMapCache.has(year)) return empStartMapCache.get(year);
-  const currentMk=monthKeyFromISO(todayISO()); const startMap={};
-  equipe.forEach(emp=>{ const configured=getConfiguredEmpStart(emp); startMap[empIdOf(emp)]=configured||null; });
-  for(let i=1;i<=12;i++){
-    const mk=`${year}-${String(i).padStart(2,"0")}`; if(mk>currentMk) break;
-    const md=await getMonthData(mk); const {dates,presByDay,punchByDay}=md;
-    for(const dayISO of dates){
-      if(dayISO>todayISO()) continue;
-      const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-      equipe.forEach(emp=>{ const id=empIdOf(emp); if(startMap[id])return; if(hasAnyEmpActivity(merged[id]||null))startMap[id]=dayISO; });
-    }
-  }
-  empStartMapCache.set(year,startMap); return startMap;
+// Logique R/C & Sync
+async function getMonthData(mk){  
+  const dates=[]; let t=new Date(mk+"-01"); const m=t.getMonth(); 
+  while(t.getMonth()===m){ dates.push(t.toISOString().split('T')[0]); t.setDate(t.getDate()+1); }
+  const res = {presByDay:{}, punchByDay:{}, dates};
+  await Promise.all(dates.map(async d => {
+    const [pres, punch] = await Promise.all([database.ref('presences/'+d).once('value'), database.ref('punches/'+d).once('value')]);
+    res.presByDay[d] = pres.val()||{}; res.punchByDay[d] = punch.val()||{};
+  }));
+  return res;
 }
 
 async function getMonthRCMap(mk){
-  if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
-  const year=mk.slice(0,4); const startMap=await getEmpStartMapForYear(year);
-  const md=await getMonthData(mk); const {dates,presByDay,punchByDay}=md; const today=todayISO();
-  const rcByEmpDay={}; equipe.forEach(emp=>{rcByEmpDay[empIdOf(emp)]={};});
-  const weekRC={};
-  const firstDay=mk+"-01"; const wkStart=weekStartMondayISO(firstDay);
-  if(wkStart<firstDay){
-    const ctxDates=[]; let d=wkStart; while(d<firstDay){ctxDates.push(d);d=addDaysISO(d,1);}
-    const ctx=await batchFetchPresPunch(ctxDates);
-    ctxDates.forEach(dayISO=>{
-      if(dayISO>today||isExcluded(dayISO)) return;
-      const merged=mergeDay(ctx.presByDay[dayISO]||{},ctx.punchByDay[dayISO]||{});
-      equipe.forEach(emp=>{ const id=empIdOf(emp); const start=startMap[id]; if(!start||dayISO<start)return; const e=merged[id]||null; if(e&&e.off)classifyOffDay(id,dayISO,weekRC); });
+    const data = await getMonthData(mk);
+    const rcByEmpDay = {}; equipe.forEach(e => {
+        const id = empIdOf(e); rcByEmpDay[id] = {};
+        data.dates.forEach(d => {
+            const p = data.presByDay[d][id]; const pn = data.punchByDay[d][id];
+            if(p?.hA || pn?.hA) return;
+            if(p?.off) rcByEmpDay[id][d] = "R";
+            else rcByEmpDay[id][d] = "C";
+        });
     });
-  }
-  dates.forEach(dayISO=>{
-    if(dayISO>today||isExcluded(dayISO)) return;
-    const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-    equipe.forEach(emp=>{
-      const id=empIdOf(emp); const start=startMap[id]; if(!start||dayISO<start) return;
-      const e=merged[id]||null; const ha=safeTime(e?.hA); if(ha) return;
-      if(e&&e.off){ rcByEmpDay[id][dayISO]=classifyOffDay(id,dayISO,weekRC); return; }
-      rcByEmpDay[id][dayISO]="C";
-    });
-  });
-  const out={rcByEmpDay,startMap}; monthRCMapCache.set(mk,out); return out;
-}
-
-const POSTES_ORDER=['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
-
-// ─── Day view ─────────────────────────────────────────────────────────────────
-function renderDayView(data){
-  const container=document.getElementById('dashBody');
-  const dayISO=currentDayForDayMode();
-  const groups={}; equipe.forEach(e=>(groups[e.poste]||=[]).push(e));
-  let html='';
-  POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
-    html+=`<div class="mb-6"><div class="flex items-center gap-3 mb-3"><div class="smallCaps">${esc(poste)}</div><div class="accent-bar" style="flex:1"></div></div><div class="grid grid-cols-2 gap-3">`;
-    groups[poste].slice().sort((a,b)=>{ const A=empIdOf(a),B=empIdOf(b); if(A==="BOUCHNAK_NAOUAL")return-1; if(B==="BOUCHNAK_NAOUAL")return 1; return(a.nom+a.prenom).localeCompare(b.nom+b.prenom); }).forEach(emp=>{
-      const id=empIdOf(emp); const d=data[id]||{};
-      const hp=safeTime(d.hP)||""; const ha=safeTime(d.hA)||"";
-      const diff=diffFromEntry({hA:ha,hP:hp},id);
-      // ✅ Vérifier congé approuvé aujourd'hui
-      const activeConge=cgDash.getActiveConge(id,dayISO); const isConge=!!activeConge&&!ha;
-      const sClass=getStatusClass(diff,!!d.off,!!ha,isConge); const dot=getDotColor(diff,!!d.off,!!ha,isConge);
-      let statusText='Attente',statusColor='color:var(--muted3)';
-      if(isConge){ statusText='☀️ CONGÉ'; statusColor='color:var(--sky)'; }
-      else if(ha){ if(hp){if(diff>0){statusText=`+${diff} min`;statusColor='color:var(--crit)';}else{statusText="À l'heure";statusColor='color:var(--ok)';}}else{statusText="OK";statusColor='color:var(--ok)';} }
-      else if(d.off){ statusText="OFF"; statusColor='color:rgba(148,163,184,.80)'; }
-      html+=`<button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between" style="min-height:7rem">
-        <span class="status-dot" style="background:${escAttr(dot)}"></span>
-        ${ha?`<div class="arrive-time">${esc(ha)}</div>`:''}
-        ${isConge&&activeConge?`<div style="position:absolute;bottom:10px;right:10px;font-size:10px;font-weight:900;color:var(--sky)">${esc(activeConge.dateFin)}</div>`:''}
-        <div>
-          <p class="text-[11px] font-extrabold uppercase truncate pr-4" style="color:#0f2744">${esc(emp.nom)}</p>
-          <p class="text-[10px] font-semibold mt-0.5" style="color:var(--muted3)">${esc(titleCase(emp.prenom))}</p>
-        </div>
-        <p class="text-[11px] font-extrabold mt-2" style="${escAttr(statusColor)}">${esc(statusText)}</p>
-      </button>`;
-    });
-    html+=`</div></div>`;
-  });
-  container.innerHTML=html;
-  container.querySelectorAll('[data-empid]').forEach(btn=>{ btn.addEventListener('click',()=>{ const emp=getEmpById(btn.dataset.empid); openHistory(emp.nom,emp.prenom); }); });
-}
-
-function renderChart(labels,lates,presences){
-  const ctx=document.getElementById('trendsChart').getContext('2d');
-  if(myChart) myChart.destroy();
-  myChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:"Retards",data:lates,borderColor:'rgba(245,158,11,.95)',backgroundColor:'rgba(245,158,11,.08)',tension:.38,borderWidth:2.5,pointRadius:0,fill:true},
-    {label:"Présences",data:presences,borderColor:'rgba(5,150,105,.90)',backgroundColor:'rgba(5,150,105,.08)',tension:.38,borderWidth:2,pointRadius:0,fill:false}
-  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true,backgroundColor:'rgba(255,255,255,.96)',titleColor:'#0f2744',bodyColor:'#1e3a5f',borderColor:'rgba(245,158,11,.35)',borderWidth:1,padding:10,cornerRadius:10}},scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:8,weight:'600'},color:'var(--muted2)'}}}}});
-}
-function loadingCard(t){ return `<div class="glass-card p-6 rounded-2xl flex items-center justify-center gap-3"><div class="spin"></div><div class="text-[11px] font-extrabold" style="color:var(--muted2)">${esc(t)}</div></div>`; }
-function currentDayForDayMode(){ return dayPicker.value||todayISO(); }
-
-async function updateDashboard(){
-  if(role!=="gerant") return;
-  const seedISO=dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO()));
-  const mkSeed=monthKeyFromISO(seedISO);
-  periodLabel.textContent=`${mkSeed} · ${seedISO.slice(0,4)}`;
-
-  if(currentMode==="conges"){
-    detachRealtime();
-    document.getElementById('dashBody').innerHTML=loadingCard("Chargement des congés…");
-    // ✅ Charger le year summary pour avoir les C à jour avant d'afficher les soldes
-    const year=seedISO.slice(0,4);
-    const mk=mkSeed;
-    try{
-      const ms=await buildMonthlySummary(mk);
-      const ys=await buildYearSummaryOptimized(year,{[mk]:ms});
-      Object.values(ys).forEach(s=>{ cgDash._rcSolde[s.empId]=Number(s.C)||0; });
-    }catch(e){}
-    await cgDash.load(); cgDash._updateActiveBadge(); await cgDash.renderView();
-    return;
-  }
-  if(currentMode==="day"){
-    const dayISO=currentDayForDayMode(); const realtime=(dayISO===todayISO());
-    attachRealtimeForDate(dayISO,realtime); renderDayView(mergedDayData()); return;
-  }
-  detachRealtime();
-  document.getElementById('dashBody').innerHTML=loadingCard(currentMode==="report"?"Chargement du bilan…":"Chargement des tableaux R/C…");
-  if(currentMode==="report") await renderReportView(); else await renderRCView();
-}
-
-async function renderReportView(){
-  const mk=monthKeyFromISO(dateInput.value); const md=await getMonthData(mk);
-  if(md.anyFail){document.getElementById('dashBody').innerHTML=errorCard("Réseau instable : certaines journées manquantes.");return;}
-  const {dates,presByDay,punchByDay}=md; const today=todayISO();
-  const stats={}; equipe.forEach(e=>{const id=empIdOf(e);stats[id]={info:e,present:0,lateMin:0,R:0,C:0};});
-  const {rcByEmpDay,startMap}=await getMonthRCMap(mk);
-  const dailyLates=[],dailyPresence=[],labels=[];
-  dates.forEach(dayISO=>{
-    labels.push(dayISO.split('-')[2]);
-    if(dayISO>today||isExcluded(dayISO)){dailyLates.push(0);dailyPresence.push(0);return;}
-    const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]); let tL=0,tP=0;
-    Object.keys(stats).forEach(id=>{
-      const start=startMap[id]; if(!start||dayISO<start) return;
-      const e=merged[id]||null; const hp=safeTime(e?.hP)||""; const ha=safeTime(e?.hA)||"";
-      if(ha){const diff=diffFromEntry({hA:ha,hP:hp},id);stats[id].present++;stats[id].lateMin+=diff;tL+=diff;tP++;return;}
-      const rc=rcByEmpDay[id]?.[dayISO]; if(rc) stats[id][rc]++;
-    });
-    dailyLates.push(tL); dailyPresence.push(tP);
-  });
-  renderChart(labels,dailyLates,dailyPresence);
-  const lateList=Object.values(stats).filter(s=>s.lateMin>0).sort((a,b)=>b.lateMin-a.lateMin);
-  const goodList=Object.values(stats).filter(s=>s.lateMin===0&&s.present>0).sort((a,b)=>b.present-a.present);
-  const maxLate=lateList.length?lateList[0].lateMin:0;
-  let html='<div class="space-y-6">';
-  html+=`<div><div class="flex items-center gap-3 mb-3"><div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires</div><div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(220,38,38,.40),transparent)"></div></div>`;
-  if(!lateList.length){html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucun retard enregistré 🎉</div>`;}
-  else lateList.slice(0,6).forEach(s=>{const pct=maxLate?Math.max(6,Math.round((s.lateMin/maxLate)*100)):0;html+=`<div class="glass-card p-4 rounded-2xl mb-3"><div class="flex justify-between items-center"><span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span><span class="text-[12px] font-extrabold" style="color:var(--crit)">${esc(s.lateMin)} min</span></div><div style="height:5px;border-radius:999px;background:rgba(245,158,11,.10);margin-top:10px;overflow:hidden"><div style="height:5px;width:${escAttr(pct)}%;background:linear-gradient(90deg,rgba(220,38,38,.65),rgba(220,38,38,.35));border-radius:999px"></div></div></div>`;});
-  html+=`</div><div><div class="flex items-center gap-3 mb-3"><div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus exemplaires</div><div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(5,150,105,.40),transparent)"></div></div>`;
-  if(!goodList.length){html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucune présence "OK" trouvée</div>`;}
-  else goodList.slice(0,6).forEach(s=>{html+=`<div class="glass-card p-4 rounded-2xl mb-3 flex justify-between items-center"><span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span><span class="text-[12px] font-extrabold" style="color:var(--ok)">${esc(s.present)} j ✓</span></div>`;});
-  html+='</div></div>'; document.getElementById('dashBody').innerHTML=html;
+    return {rcByEmpDay, dates:data.dates};
 }
 
 async function buildMonthlySummary(mk){
-  const year=mk.slice(0,4); const startMap=await getEmpStartMapForYear(year);
-  const md=await getMonthData(mk); const {dates,presByDay,punchByDay}=md;
-  const {rcByEmpDay}=await getMonthRCMap(mk); const today=todayISO(); const out={};
-  equipe.forEach(emp=>{const id=empIdOf(emp);out[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};});
-  dates.forEach(dayISO=>{
-    if(dayISO>today||isExcluded(dayISO)) return;
-    const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
-    Object.keys(out).forEach(id=>{
-      const start=startMap[id]; if(!start||dayISO<start) return;
-      const e=merged[id]||null; const hp=safeTime(e?.hP)||""; const ha=safeTime(e?.hA)||"";
-      if(ha){out[id].present++;out[id].lateMin+=diffFromEntry({hA:ha,hP:hp},id);return;}
-      const rc=rcByEmpDay[id]?.[dayISO]; if(!rc) return;
-      if(rc==="R") out[id].R++; else out[id].C++;
+    const {rcByEmpDay, dates} = await getMonthRCMap(mk);
+    const summary = {}; equipe.forEach(e => {
+        const id = empIdOf(e); summary[id] = { ...e, empId:id, present:0, R:0, C:0, lateMin:0 };
+        dates.forEach(d => {
+            if(rcByEmpDay[id][d] === "R") summary[id].R++;
+            else if(rcByEmpDay[id][d] === "C") summary[id].C++;
+            else summary[id].present++;
+        });
     });
-  });
-  return out;
+    return summary;
 }
 
-async function buildYearSummaryOptimized(year,monthPrefetch){
-  const currentMk=monthKeyFromISO(todayISO()); const totalsByEmp={};
-  equipe.forEach(emp=>{const id=empIdOf(emp);totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};});
-  for(let i=1;i<=12;i++){
-    const mk=`${year}-${String(i).padStart(2,"0")}`; if(mk>currentMk) break;
-    const month=(monthPrefetch&&monthPrefetch[mk])?monthPrefetch[mk]:await buildMonthlySummary(mk);
-    Object.values(month).forEach(s=>{
-      if(!totalsByEmp[s.empId]) totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0};
-      totalsByEmp[s.empId].present+=Number(s.present)||0;totalsByEmp[s.empId].R+=Number(s.R)||0;totalsByEmp[s.empId].C+=Number(s.C)||0;totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;
-    });
-  }
-  return totalsByEmp;
+// UI & Navigation
+function switchMode(mode, btn){
+    currentMode = mode;
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active', 'active-sky'));
+    btn.classList.add(mode==='conges' ? 'active-sky' : 'active');
+    dayPickWrap.classList.toggle('hidden', mode!=='day');
+    monthPickWrap.classList.toggle('hidden', mode==='day' || mode==='conges');
+    document.getElementById('congesFilterWrap').classList.toggle('hidden', mode!=='conges');
+    updateDashboard();
 }
 
-// ─── Table R/C ────────────────────────────────────────────────────────────────
-function makeTable(rows,colR,colC,showSolde=false){
-  return `<div class="mt-4">
-    <table class="rc-table">
-      <colgroup>
-        <col style="width:${showSolde?'38%':'44%'}">
-        <col style="width:${showSolde?'11%':'14%'}">
-        <col style="width:9%"><col style="width:9%">
-        ${showSolde?'<col style="width:10%">':''}
-        <col style="width:${showSolde?'23%':'24%'}">
-      </colgroup>
-      <thead><tr>
-        <th style="text-align:left">Employé</th>
-        <th style="text-align:center">Prés.</th>
-        <th style="text-align:center">${esc(colR)}</th>
-        <th style="text-align:center">${esc(colC)}</th>
-        ${showSolde?`<th style="text-align:center;color:var(--sky)">CP</th>`:''}
-        <th style="text-align:center">Retard</th>
-      </tr></thead>
-      <tbody>
-        ${rows.map(r=>{
-          const late=Number(r.lateMin)||0;
-          const solde=cgDash.soldeRestant(r.empId);
-          const sc=solde>8?'var(--ok)':solde>4?'var(--amber)':'var(--crit)';
-          return `<tr>
-            <td class="col-emp">
-              <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span><br>
-              <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744">${esc(titleCase(r.prenom))}</span>
-              <br><span class="rc-poste-badge">${esc((r.poste||"").toLowerCase())}</span>
-            </td>
-            <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
-            <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
-            <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
-            ${showSolde?`<td style="text-align:center;font-weight:900;color:${sc}">${esc(solde)}j</td>`:''}
-            <td style="text-align:center;font-weight:900;color:var(--crit)">
-              ${late?`<span style="font-size:10px">${esc(late)}m</span>`:'<span class="muted-dash">—</span>'}
-            </td>
-          </tr>`;
-        }).join("")}
-      </tbody>
-    </table>
-  </div>`;
+async function updateDashboard(){
+    const body = document.getElementById('dashBody');
+    if(currentMode === 'conges'){
+        body.innerHTML = '<div class="text-center py-10"><div class="spin mx-auto"></div></div>';
+        const mk = monthKeyFromISO(todayISO());
+        const summary = await buildMonthlySummary(mk);
+        Object.values(summary).forEach(s => cgDash._rcSolde[s.empId] = s.C);
+        await cgDash.renderView();
+    } else if(currentMode === 'day'){
+        const d = dayPicker.value || todayISO();
+        const [pres, punch] = await Promise.all([database.ref('presences/'+d).once('value'), database.ref('punches/'+d).once('value')]);
+        const data = pres.val()||{}; const pn = punch.val()||{};
+        let html = '<div class="grid grid-cols-2 gap-3">';
+        equipe.forEach(e => {
+            const id = empIdOf(e); const entry = data[id] || {}; const pEntry = pn[id] || {};
+            const ha = safeTime(entry.hA || pEntry.hA); const hp = safeTime(entry.hP || pEntry.hP);
+            const isC = cgDash.isOnConge(id, d);
+            const diff = ha && hp ? diffFromEntry({hA:ha, hP:hp}) : 0;
+            const sClass = getStatusClass(diff, !!entry.off, !!ha, isC);
+            html += `<div class="staff-card ${sClass} p-4 rounded-2xl glass-card" onclick="openHistory('${e.nom}','${e.prenom}')">
+                <span class="status-dot" style="background:${getDotColor(diff, !!entry.off, !!ha, isC)}"></span>
+                <div class="text-xs font-bold">${e.nom}</div>
+                <div class="text-[10px] opacity-60">${titleCase(e.prenom)}</div>
+                <div class="text-[10px] mt-2 font-black">${ha || (isC ? 'CONGÉ' : entry.off ? 'OFF' : '—')}</div>
+            </div>`;
+        });
+        body.innerHTML = html + '</div>';
+    } else if(currentMode === 'rc'){
+        body.innerHTML = '<div class="text-center py-10"><div class="spin mx-auto"></div></div>';
+        const summary = await buildMonthlySummary(monthPicker.value);
+        let html = '<table class="rc-table bg-white/50 rounded-xl overflow-hidden"><thead><tr><th>Nom</th><th>P</th><th>R</th><th>C</th></tr></thead><tbody>';
+        Object.values(summary).forEach(s => {
+            html += `<tr><td>${s.nom}</td><td class="text-center font-bold">${s.present}</td><td class="text-center">${s.R}</td><td class="text-center text-amber-600 font-bold">${s.C}</td></tr>`;
+        });
+        body.innerHTML = html + '</tbody></table>';
+    }
 }
 
-async function renderRCView(){
-  const mk=monthKeyFromISO(dateInput.value); const year=dateInput.value.slice(0,4);
-  const md=await getMonthData(mk);
-  if(md.anyFail){document.getElementById('dashBody').innerHTML=errorCard("Réseau instable.");return;}
-  const monthSummary=await buildMonthlySummary(mk);
-  const yearSummary=await buildYearSummaryOptimized(year,{[mk]:monthSummary});
-
-  // ✅ Alimenter le solde CP depuis les C annuels du tableau R/C
-  Object.values(yearSummary).forEach(s=>{ cgDash._rcSolde[s.empId]=Number(s.C)||0; });
-  const sortFn=(a,b)=>{ if(a.poste!==b.poste)return POSTES_ORDER.indexOf(a.poste)-POSTES_ORDER.indexOf(b.poste); return(a.nom+a.prenom).localeCompare(b.nom+b.prenom); };
-  const monthRows=Object.values(monthSummary).sort(sortFn);
-  let mP=0,mR=0,mC=0,mL=0; monthRows.forEach(r=>{mP+=r.present;mR+=r.R;mC+=r.C;mL+=r.lateMin;});
-  const yearRows=Object.values(yearSummary).sort(sortFn);
-  let yP=0,yR=0,yC=0,yL=0; yearRows.forEach(r=>{yP+=r.present;yR+=r.R;yC+=r.C;yL+=r.lateMin;});
-
-  // ✅ Bouton sync
-  const syncBtn=`<button onclick="openSyncModal()" class="btn-action btn-sky px-3 py-1.5 rounded-xl text-[11px] font-extrabold" style="background:var(--skyBg);border:1px solid var(--skyBdr);color:var(--sky)">⚡ Sync C → Congés</button>`;
-
-  const html=`<div class="space-y-4">
-    <details class="drawer" open>
-      <summary>
-        <div>
-          <div class="smallCaps">Tableau Mois</div>
-          <div class="hTitle text-xl mt-1">${esc(mk)} <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">· ${esc(mP)} prés · R ${esc(mR)} · C ${esc(mC)} · ${esc(mL)} min</span></div>
-        </div>
-        <div class="flex items-center gap-2">${syncBtn}<div class="chev">▾</div></div>
-      </summary>
-      <div class="body">${makeTable(monthRows,'R','C',false)}</div>
-    </details>
-    <details class="drawer">
-      <summary>
-        <div>
-          <div class="smallCaps">Tableau Année (cumul)</div>
-          <div class="hTitle text-xl mt-1">${esc(year)} <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">· ${esc(yP)} prés · Repos ${esc(yR)} · Congé ${esc(yC)} · ${esc(yL)} min</span></div>
-        </div>
-        <div class="chev">▾</div>
-      </summary>
-      <div class="body">
-        ${makeTable(yearRows,'Repos','Congé',true)}
-        <p class="mt-3 text-[10px] font-semibold" style="color:var(--muted3)">CP = solde congés payés restants (18j/an)</p>
-      </div>
-    </details>
-    <p class="text-[10px] font-semibold" style="color:var(--muted3)">
-      R = 1er OFF semaine (sauf SALIL/BENKHADA) · C = OFF supp + absences · ⚡ Sync C → push les C dans conges/
-    </p>
-  </div>`;
-  document.getElementById('dashBody').innerHTML=html;
+// Modal Historique
+async function openHistory(nom, prenom){
+    const modal = document.getElementById('historyModal');
+    document.getElementById('modalTitle').textContent = nom + " " + titleCase(prenom);
+    modal.classList.add('modal-active');
 }
 
-// ─── Historique ───────────────────────────────────────────────────────────────
-function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
-  const rcTxt=rc?` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>`:"";
-  return `<div class="p-4 rounded-2xl" style="background:rgba(255,255,255,.50);border:1px solid var(--stroke-med)">
-    <div class="flex justify-between items-center">
-      <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
-      <span class="text-[11px] font-extrabold" style="${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
-    </div>
-    <div class="mt-3 grid grid-cols-3 gap-2">
-      <div class="text-[10px] font-bold" style="color:var(--muted3)">HP <span style="color:#0f2744;font-weight:900">${esc(hp||"—")}</span></div>
-      <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha||"—")}</span></div>
-      <div class="text-[10px] font-bold" style="color:var(--muted3)">Ret <span style="color:#0f2744;font-weight:900">${esc(retard||"—")}</span></div>
-    </div>
-  </div>`;
-}
+function closeModal(){ document.getElementById('historyModal').classList.add('modal-closing'); setTimeout(()=> {
+    document.getElementById('historyModal').classList.remove('modal-active', 'modal-closing');
+}, 300); }
 
-async function openHistory(nom,prenom){
-  const modal=document.getElementById('historyModal');
-  modal.classList.remove("hidden","modal-closing"); modal.classList.add('modal-active');
-  document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
-  document.getElementById('modalList').innerHTML=loadingCard("Chargement historique…");
-  const mk=monthKeyFromISO(dateInput.value); const md=await getMonthData(mk);
-  if(md.anyFail){document.getElementById('modalList').innerHTML=errorCard("Réseau instable.");return;}
-  const {dates,presByDay,punchByDay}=md; const {rcByEmpDay,startMap}=await getMonthRCMap(mk); const today=todayISO();
-  const emp=equipe.find(e=>e.nom===nom&&e.prenom===prenom); const empId=emp?empIdOf(emp):(nom+"_"+prenom);
-  let html="";
-  dates.slice().reverse().forEach(dayISO=>{
-    if(dayISO>today){html+=rowHistory(dayISO,"À venir","","","","color:var(--muted3)");return;}
-    if(isExcluded(dayISO)){html+=rowHistory(dayISO,"Exclu","","","","color:var(--muted3)");return;}
-    const empStart=startMap[empId]; if(!empStart||dayISO<empStart){html+=rowHistory(dayISO,"Non commencé","","","","color:var(--muted3)");return;}
-    const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]); const e=merged[empId]||null;
-    const hp=safeTime(e?.hP)||""; const ha=safeTime(e?.hA)||"";
-    if(ha){ if(hp){const diff=diffFromEntry({hA:ha,hP:hp},empId);if(diff>0)html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");}else html+=rowHistory(dayISO,"OK","",ha,"","color:var(--ok)"); return; }
-    // ✅ Congé dans l'historique
-    const congeDay=cgDash.getActiveConge(empId,dayISO);
-    if(congeDay){html+=rowHistory(dayISO,"☀️ CONGÉ","","","","color:var(--sky)",congeDay.type);return;}
-    const rc=rcByEmpDay[empId]?.[dayISO];
-    if(rc){html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",hp,ha,"","color:var(--muted2)",rc);}
-    else  {html+=rowHistory(dayISO,"—",hp,ha,"","color:var(--muted3)");}
-  });
-  document.getElementById('modalList').innerHTML=html||`<p class="text-center py-10 text-[12px] font-extrabold" style="color:var(--muted3)">Aucune donnée ce mois</p>`;
-}
+// Auth simple
+auth.onAuthStateChanged(user => {
+    if(user){
+        roleLabel.textContent = "Gérant";
+        appWrap.classList.remove('hidden'); loginWrap.classList.add('hidden');
+        dayPicker.value = todayISO(); monthPicker.value = monthKeyFromISO(todayISO());
+        bootDashboard();
+    } else {
+        appWrap.classList.add('hidden'); loginWrap.classList.remove('hidden');
+    }
+});
 
-// ─── CSV exports ──────────────────────────────────────────────────────────────
-function escapeCSV(v){ const s=String(v??""); if(/[",\n]/.test(s))return`"${s.replace(/"/g,'""')}"`;return s; }
-async function exportCSV_RC_Month(){
-  const mk=monthKeyFromISO(dateInput.value); const summary=await buildMonthlySummary(mk);
-  const lines=[["Mois","Employe","Poste","Presents","R","C","SoldeCP","RetardMin"].join(",")];
-  Object.values(summary).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom)).forEach(s=>{
-    const solde=cgDash.soldeRestant(s.empId);
-    lines.push([mk,escapeCSV(`${s.nom} ${titleCase(s.prenom)}`),escapeCSV(s.poste),s.present,s.R,s.C,solde,s.lateMin].join(","));
-  });
-  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`GC_RC_MOIS_${mk}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-async function exportCSV_RC_Year(){
-  const year=dateInput.value.slice(0,4); const currentMk=monthKeyFromISO(todayISO()); const totalsByEmp={};
-  equipe.forEach(emp=>{const id=empIdOf(emp);totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};});
-  for(let i=1;i<=12;i++){const mk=`${year}-${String(i).padStart(2,"0")}`;if(mk>currentMk)break;const summary=await buildMonthlySummary(mk);Object.values(summary).forEach(s=>{if(!totalsByEmp[s.empId])totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0};totalsByEmp[s.empId].present+=Number(s.present)||0;totalsByEmp[s.empId].R+=Number(s.R)||0;totalsByEmp[s.empId].C+=Number(s.C)||0;totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;});}
-  const lines=[["Annee","Employe","Poste","P","R","C","SoldeCP","RetardMin"].join(",")];
-  Object.values(totalsByEmp).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom)).forEach(t=>{const solde=cgDash.soldeRestant(t.empId);lines.push([year,escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()),escapeCSV(t.poste),t.present,t.R,t.C,solde,t.lateMin].join(","));});
-  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`GC_RC_ANNEE_${year}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-// ─── Midnight watcher ─────────────────────────────────────────────────────────
-function startMidnightWatcher(){
-  if(midnightTimer) clearInterval(midnightTimer); let lastDay=todayISO();
-  midnightTimer=setInterval(async()=>{
-    const nowDay=todayISO();
-    if(nowDay!==lastDay){ lastDay=nowDay; const mkToday=monthKeyFromISO(nowDay); dayPicker.value=nowDay; monthPicker.value=mkToday; dateInput.value=isoFromMonthKey(mkToday); clearMonthCache(); _empCinMap=null; syncLine.textContent="Sheets : resync après minuit…"; try{await updateDashboard();await exportYear_ToSheets();}catch(err){syncLine.textContent="⚠️ Sheets : erreur resync minuit";} }
-  },30000);
-}
+document.getElementById('btnLogin').onclick = () => auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value).catch(e => document.getElementById('loginMsg').textContent = "Erreur");
+document.getElementById('btnLogout').onclick = () => auth.signOut();
 
 async function bootDashboard(){
-  const today=todayISO(); const mkToday=monthKeyFromISO(today);
-  dayPicker.value=today; monthPicker.value=mkToday; dateInput.value=isoFromMonthKey(mkToday);
-  dayPicker.addEventListener('change',async()=>{await updateDashboard();});
-  monthPicker.addEventListener('change',async()=>{ const mk=monthPicker.value||mkToday; dateInput.value=isoFromMonthKey(mk); clearMonthCache(); _empCinMap=null; await updateDashboard(); });
-  try{const list=await loadEquipeFromDB();setEquipe(list);}catch(e){}
-  // ✅ Charger les congés au démarrage
-  try{await cgDash.load();cgDash._updateActiveBadge();}catch(e){}
-  await initStaffAdminUI();
-  await updateDashboard();
-  startMidnightWatcher();
+    await cgDash.load();
+    updateDashboard();
 }
-</script>
-</body>
+
+function openSyncModal(){ document.getElementById('syncModal').classList.add('open'); }
+function closeSyncModal(){ document.getElementById('syncModal').classList.remove('open'); }
+function closeStaffAdmin(){ document.getElementById('staffAdminModal').classList.add('modal-closing'); setTimeout(()=> {
+    document.getElementById('staffAdminModal').classList.remove('modal-active', 'modal-closing');
+}, 300); }
+document.getElementById('btnOpenStaffAdmin').onclick = () => document.getElementById('staffAdminModal').classList.add('modal-active');
+
+</script>  
+</body>  
 </html>
