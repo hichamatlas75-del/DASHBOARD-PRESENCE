@@ -2,410 +2,552 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <title>Direction Hub • Grey Corner</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg:#0d0f12;
-      --card:#13161b;
-      --card2:#11141a;
-      --stroke: rgba(255,255,255,.07);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.55);
-      --muted2: rgba(255,255,255,.40);
-
-      --gold:#c5a059;
-
-      --ok:#34d399;
-      --amber:#fbbf24;
-      --crit:#f87171;
-
-      --okBg: rgba(52,211,153,.08);
-      --amberBg: rgba(251,191,36,.08);
-      --critBg: rgba(248,113,113,.08);
+    :root {
+      --bg-deep:   #dbeafe;
+      --bg-base:   #eff6ff;
+      --surface:        rgba(255,255,255,.68);
+      --surface2:       rgba(255,255,255,.90);
+      --surface-soft:   rgba(255,255,255,.50);
+      --stroke:         rgba(30,64,175,.09);
+      --stroke-med:     rgba(30,64,175,.15);
+      --stroke-strong:  rgba(30,64,175,.22);
+      --text:    #1e3a5f;
+      --muted:   #1d4ed8;
+      --muted2:  rgba(29,78,216,.70);
+      --muted3:  rgba(29,78,216,.50);
+      --accent:    #f59e0b;
+      --accentBg:  rgba(245,158,11,.10);
+      --accentBdr: rgba(245,158,11,.30);
+      --ok:      #059669;
+      --amber:   #b45309;
+      --crit:    #dc2626;
+      --okBg:    rgba(5,150,105,.08);
+      --amberBg: rgba(180,83,9,.10);
+      --critBg:  rgba(220,38,38,.08);
+      --chip-p-bg:  rgba(5,150,105,.12);
+      --chip-p-fg:  #065f46;
+      --chip-p-bdr: rgba(5,150,105,.28);
+      --chip-r-bg:  rgba(99,102,241,.10);
+      --chip-r-fg:  #3730a3;
+      --chip-r-bdr: rgba(99,102,241,.25);
+      --chip-c-bg:  rgba(245,158,11,.12);
+      --chip-c-fg:  #92400e;
+      --chip-c-bdr: rgba(245,158,11,.28);
+      --shadow-card: 0 8px 28px rgba(30,64,175,.08), 0 2px 8px rgba(30,64,175,.04);
+      --shadow-lg:   0 20px 60px rgba(30,64,175,.12), 0 4px 16px rgba(30,64,175,.06);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background: var(--bg);
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: #f5f9fe;
       color: var(--text);
-      font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      -webkit-tap-highlight-color:transparent;
-      position:relative;
-      overflow-x:hidden;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
     }
 
-    body::before{
-      content:"";
-      position:fixed; inset:0;
-      pointer-events:none;
-      opacity:.035;
-      background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-      mix-blend-mode:overlay;
+    body::before, body::after { display: none; }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(30,64,175,.18); border-radius: 999px; }
+
+    .glass-card {
+      background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);
+      border: 1px solid var(--stroke-med);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
-    ::-webkit-scrollbar{width:4px;height:4px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background: rgba(197,160,89,.30); border-radius:999px}
-
-    .glass-card{
-      background: linear-gradient(180deg, rgba(19,22,27,.96), rgba(17,20,26,.92));
-      border:1px solid var(--stroke);
-      box-shadow: 0 14px 45px rgba(0,0,0,.35);
-      backdrop-filter: blur(6px);
+    .hTitle {
+      font-family: "DM Serif Display", Georgia, serif;
+      letter-spacing: -.02em;
+      color: #0f2744;
+      font-weight: 400;
     }
 
-    .hTitle{
-      font-family: "Cormorant Garamond", serif;
-      letter-spacing: .02em;
-    }
-    .smallCaps{
-      font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.22em;
-      font-size:10px;
+    .smallCaps {
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: 10px;
       color: var(--muted2);
     }
 
-    .accent-bar{
-      height:2px;
-      width:100%;
-      background: linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,0));
-      border-radius:999px;
-      opacity:.9;
+    .accent-bar {
+      height: 2px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, rgba(245,158,11,0) 100%);
+      border-radius: 999px;
+      opacity: .80;
     }
 
-    .view-btn{
-      color: rgba(255,255,255,.82);
-      border:1px solid transparent;
-      transition:.25s ease;
+    .accent-bar-blue {
+      height: 2px;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(29,78,216,.55) 0%, rgba(29,78,216,0) 100%);
+      border-radius: 999px;
+    }
+
+    .view-btn {
+      color: var(--muted3);
+      border: 1px solid transparent;
+      transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
       background: transparent;
     }
-    .view-btn.active{
-      background: rgba(197,160,89,.14);
-      color: rgba(197,160,89,.95);
-      border-color: rgba(197,160,89,.40);
-      box-shadow: inset 0 0 0 1px rgba(197,160,89,.12);
+    .view-btn:hover:not(.active) {
+      background: rgba(29,78,216,.06);
+      color: var(--muted);
+    }
+    .view-btn.active {
+      background: rgba(245,158,11,.14);
+      color: #92400e;
+      border-color: rgba(245,158,11,.38);
+      box-shadow: inset 0 0 0 1px rgba(245,158,11,.12), 0 2px 8px rgba(245,158,11,.10);
     }
 
-    .inpt{
-      width:100%;
-      background: rgba(255,255,255,.03);
-      border:1px solid var(--stroke);
-      border-radius:16px;
-      padding:12px 12px;
+    .inpt {
+      width: 100%;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--stroke-med);
+      border-radius: 14px;
+      padding: 11px 14px;
       color: var(--text);
-      font-weight:800;
-      font-size:12px;
-      outline:none;
-      color-scheme: dark;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      outline: none;
+      color-scheme: light;
+      transition: border-color .2s ease, box-shadow .2s ease;
     }
-    .inpt:focus{
-      border-color: rgba(197,160,89,.55);
-      box-shadow: 0 0 0 3px rgba(197,160,89,.16);
-    }
-    .btn-login{
-      width:100%;
-      border-radius:16px;
-      padding:12px 14px;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.10em;
-      text-transform:uppercase;
-      background: rgba(197,160,89,.16);
-      color: rgba(197,160,89,.96);
-      border:1px solid rgba(197,160,89,.45);
-    }
-    .btn-login:active{transform:translateY(1px)}
-
-    .spin{
-      width:22px;height:22px;border-radius:999px;
-      border:3px solid rgba(255,255,255,.14);
-      border-top-color: rgba(197,160,89,.9);
-      animation:sp 0.9s linear infinite;
-    }
-    @keyframes sp{to{transform:rotate(360deg)}}
-
-    .staff-card{
-      border-left-width:3px;
-      transition:transform .15s ease, box-shadow .15s ease;
-      cursor:pointer;
-      position:relative;
-      overflow:hidden;
-      background: rgba(19,22,27,.96);
-    }
-    .staff-card:active{transform: scale(.995)}
-    .status-dot{
-      position:absolute; top:10px; right:10px;
-      width:6px; height:6px; border-radius:999px;
-      box-shadow: 0 0 0 6px rgba(255,255,255,.03);
-      opacity:.95;
-    }
-    .arrive-time{
-      position:absolute; bottom:12px; right:12px;
-      font-family:"Cormorant Garamond", serif;
-      font-weight:700;
-      font-size:14px;
-      color: rgba(255,255,255,.78);
-      letter-spacing:.02em;
+    .inpt::placeholder { color: var(--muted3); font-weight: 600; }
+    .inpt:focus {
+      border-color: rgba(245,158,11,.55);
+      box-shadow: 0 0 0 3px rgba(245,158,11,.12);
     }
 
-    .status-green{border-left-color: var(--ok)!important; background: var(--okBg)}
-    .status-orange{border-left-color: var(--amber)!important; background: var(--amberBg)}
-    .status-red{border-left-color: var(--crit)!important; background: var(--critBg)}
-    .status-flash{
-      border-left-color: var(--crit)!important;
+    .btn-login {
+      width: 100%;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.10));
+      color: #78350f;
+      border: 1px solid rgba(245,158,11,.38);
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+      cursor: pointer;
+    }
+    .btn-login:hover {
+      background: linear-gradient(135deg, rgba(245,158,11,.26), rgba(245,158,11,.16));
+      box-shadow: 0 4px 14px rgba(245,158,11,.18);
+      transform: translateY(-1px);
+    }
+    .btn-login:active { transform: translateY(0); }
+
+    .btn-action {
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+      cursor: pointer;
+    }
+    .btn-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(14,165,233,.16);
+    }
+    .btn-action:active { transform: translateY(0); box-shadow: none; }
+
+    .btn-sheets:hover  { box-shadow: 0 4px 14px rgba(66,133,244,.18) !important; }
+    .btn-danger:hover  { box-shadow: 0 4px 14px rgba(220,38,38,.14)  !important; }
+    .btn-neutral:hover { box-shadow: 0 4px 12px rgba(30,64,175,.10)  !important; }
+    .btn-amber:hover   { box-shadow: 0 4px 14px rgba(245,158,11,.18) !important; }
+
+    .spin {
+      width: 28px; height: 28px;
+      border-radius: 999px;
+      border: 3px solid rgba(30,64,175,.10);
+      border-top-color: var(--accent);
+      animation: sp .85s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+
+    .staff-card {
+      border-left-width: 3px;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(160deg, rgba(255,255,255,.90), rgba(255,255,255,.72));
+    }
+    .staff-card:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,64,175,.12); }
+    .staff-card:active { transform: scale(.990); }
+
+    .staff-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.18) 50%, rgba(255,255,255,.0) 100%);
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+    .staff-card:hover::after { opacity: 1; }
+
+    .status-dot {
+      position: absolute; top: 10px; right: 10px;
+      width: 7px; height: 7px; border-radius: 999px;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.35);
+    }
+
+    .arrive-time {
+      position: absolute; bottom: 12px; right: 12px;
+      font-family: "DM Serif Display", serif;
+      font-size: 14px;
+      color: rgba(15,39,68,.72);
+      letter-spacing: .01em;
+    }
+
+    .status-green  { border-left-color: var(--ok)   !important; background: var(--okBg); }
+    .status-orange { border-left-color: var(--amber) !important; background: var(--amberBg); }
+    .status-red    { border-left-color: var(--crit)  !important; background: var(--critBg); }
+    .status-flash  {
+      border-left-color: var(--crit) !important;
       background: var(--critBg);
-      animation:flash-red 1s infinite;
+      animation: flash-red 1s infinite;
     }
-    @keyframes flash-red{
-      0%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
-      50%{box-shadow:inset 0 0 18px rgba(248,113,113,.10);border-left-width:6px}
-      100%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
+    @keyframes flash-red {
+      0%   { box-shadow: inset 0 0 0px rgba(220,38,38,0); }
+      50%  { box-shadow: inset 0 0 20px rgba(220,38,38,.10); border-left-width: 5px; }
+      100% { box-shadow: inset 0 0 0px rgba(220,38,38,0); }
     }
-    .status-off{border-left-color: rgba(148,163,184,.6)!important; background: rgba(255,255,255,.03); opacity:.62}
+    .status-off {
+      border-left-color: rgba(148,163,184,.45) !important;
+      background: rgba(255,255,255,.32);
+      opacity: .62;
+    }
 
-    .chip{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:5px 10px;border-radius:999px;
-      border:1px solid var(--stroke);
-      font-weight:900;font-size:11px;
-      background: rgba(255,255,255,.03);
-      color: rgba(255,255,255,.86);
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid var(--stroke-med);
+      font-weight: 900; font-size: 11px;
+      background: rgba(255,255,255,.70);
+      color: var(--text);
     }
-    .chip-p{background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.22)}
-    .chip-r{background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12)}
-    .chip-c{background: rgba(251,191,36,.10); border-color: rgba(251,191,36,.22)}
+    .chip-p  { background: var(--chip-p-bg);  border-color: var(--chip-p-bdr);  color: var(--chip-p-fg); }
+    .chip-r  { background: var(--chip-r-bg);  border-color: var(--chip-r-bdr);  color: var(--chip-r-fg); }
+    .chip-c  { background: var(--chip-c-bg);  border-color: var(--chip-c-bdr);  color: var(--chip-c-fg); }
 
-    .rc-table{width:100%;border-collapse:collapse}
-    .rc-table th,.rc-table td{
-      border:1px solid rgba(255,255,255,.08);
-      padding:10px 10px;
-      font-size:12px;
-      white-space:nowrap;
+    /* ─── Table R/C ─── */
+    .rc-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;   /* répartition fixe = pas de débordement */
     }
-    .rc-table th{
-      background: rgba(255,255,255,.03);
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.12em;
-      font-size:10px;
-      color: rgba(255,255,255,.55);
+    .rc-table th, .rc-table td {
+      border: 1px solid rgba(30,64,175,.07);
+      padding: 8px 5px;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .rc-table tbody tr:nth-child(odd){ background: rgba(255,255,255,.015); }
-    .rc-table tbody tr:hover{ background: rgba(197,160,89,.07); transition: background .2s ease; }
-    .muted-dash{opacity:.55}
+    /* Colonne Employé autorisée à wrapper */
+    .rc-table td.col-emp {
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.25;
+    }
+    .rc-table th {
+      background: rgba(255,255,255,.55);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: 9px;
+      color: var(--muted2);
+      padding: 7px 5px;
+    }
+    .rc-table tbody tr:nth-child(odd)  { background: rgba(255,255,255,.22); }
+    .rc-table tbody tr:hover           { background: rgba(245,158,11,.05); transition: background .2s ease; }
+    .muted-dash { opacity: .38; }
+    /* Badge poste dans cellule nom */
+    .rc-poste-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted2);
+      letter-spacing: .04em;
+      margin-top: 1px;
+    }
 
-    .drawer{
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:24px;
-      overflow:hidden;
-      background: rgba(19,22,27,.92);
+    /* ─── Drawers ─── */
+    .drawer {
+      border: 1px solid var(--stroke-med);
+      border-radius: 22px;
+      overflow: clip;           /* clip = visuel seulement, laisse défiler les enfants */
+      background: linear-gradient(160deg, rgba(255,255,255,.86), rgba(255,255,255,.66));
     }
-    .drawer summary{
-      list-style:none;
-      cursor:pointer;
-      padding:16px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+    .drawer summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: background .2s ease;
     }
-    .drawer summary::-webkit-details-marker{display:none}
-    .drawer .chev{transition:transform .2s ease; opacity:.8}
-    .drawer[open] .chev{transform:rotate(180deg)}
-    .drawer .body{padding:0 16px 16px 16px}
+    .drawer summary:hover { background: rgba(245,158,11,.04); }
+    .drawer summary::-webkit-details-marker { display: none; }
+    .drawer .chev { transition: transform .22s ease; opacity: .65; color: var(--accent); font-size: 13px; }
+    .drawer[open] .chev { transform: rotate(180deg); }
+    .drawer .body { padding: 0 18px 18px 18px; }
 
-    .modal-active{display:flex!important;animation:slideUp .35s cubic-bezier(0,0,.2,1)}
-    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-    .modal-overlay{
-      background: rgba(0,0,0,.70);
+    /* ─── Modals ─── */
+    .modal-active { display: flex !important; animation: slideUp .32s cubic-bezier(0,.1,.2,1); }
+    .modal-closing { animation: slideDown .26s cubic-bezier(.4,0,1,1) forwards; }
+    @keyframes slideUp   { from { transform: translateY(100%); opacity: .5; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slideDown { from { transform: translateY(0);    opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+
+    .modal-overlay {
+      background: rgba(10,30,65,.32);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
-    .modal-sheet{
-      background: linear-gradient(180deg, rgba(19,22,27,.98), rgba(17,20,26,.96));
-      border:1px solid rgba(255,255,255,.10);
+    .modal-sheet {
+      background: linear-gradient(160deg, rgba(255,255,255,.97), rgba(239,246,255,.94));
+      border: 1px solid var(--stroke-med);
+      box-shadow: var(--shadow-lg);
     }
-    .handle{
-      width:36px; height:4px;
-      background: rgba(255,255,255,.18);
-      border-radius:999px;
-      margin: 0 auto 14px auto;
-      opacity:.85;
+    .handle {
+      width: 38px; height: 4px;
+      background: rgba(30,64,175,.16);
+      border-radius: 999px;
+      margin: 0 auto 16px auto;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim-in {
+      animation: fadeSlideUp .45s cubic-bezier(0,.1,.2,1) both;
+    }
+    .anim-in-1 { animation-delay: .05s; }
+    .anim-in-2 { animation-delay: .12s; }
+    .anim-in-3 { animation-delay: .20s; }
+    .anim-in-4 { animation-delay: .28s; }
+
+    .sync-dot {
+      display: inline-block;
+      width: 6px; height: 6px; border-radius: 999px;
+      background: var(--ok);
+      margin-right: 5px;
+      animation: pulse-dot 2s ease infinite;
+      vertical-align: middle;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .55; transform: scale(.8); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .staff-card, .view-btn, .btn-action, .btn-login { transition: none; }
+      .anim-in { animation: none; }
     }
   </style>
 </head>
 
-<body class="antialiased pb-10">
-  <div class="max-w-md mx-auto px-5 pt-8">
+<body class="antialiased pb-12">
+  <div class="max-w-md mx-auto px-4 pt-[max(20px,env(safe-area-inset-top))] relative z-10">
 
-    <!-- LOGIN -->
-    <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
-      <div class="flex items-start justify-between gap-3">
+    <!-- ══════════════════════════════════ LOGIN ══════════════════════════════════ -->
+    <div id="loginWrap" class="glass-card rounded-3xl p-6 mb-6 anim-in">
+      <div class="flex items-start justify-between gap-3 mb-5">
         <div>
-          <div class="smallCaps">Accès sécurisé</div>
-          <div class="hTitle text-3xl font-bold mt-1" style="color:rgba(255,255,255,.92)">Connexion</div>
-          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
+          <div class="smallCaps mb-1">Accès sécurisé</div>
+          <h1 class="hTitle text-4xl leading-tight">Connexion</h1>
+          <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
         </div>
-        <div class="smallCaps">RH</div>
+        <div class="w-10 h-10 rounded-2xl flex items-center justify-center"
+          style="background:var(--accentBg);border:1px solid var(--accentBdr)">
+          <span style="font-size:18px">🏠</span>
+        </div>
       </div>
-      <div class="mt-4 space-y-2">
+
+      <div class="space-y-3">
         <input id="loginEmail" class="inpt" type="email" placeholder="Email" autocomplete="username" />
-        <input id="loginPass" class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
-        <button id="btnLogin" class="btn-login">Se connecter</button>
-        <div id="loginMsg" class="text-[11px] font-extrabold" style="color:var(--crit)"></div>
+        <input id="loginPass"  class="inpt" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+        <button id="btnLogin" class="btn-login mt-1">Se connecter →</button>
+        <div id="loginMsg" class="text-[11px] font-extrabold pt-1" style="color:var(--crit)"></div>
       </div>
     </div>
 
-    <!-- APP -->
+    <!-- ══════════════════════════════════ APP ══════════════════════════════════ -->
     <div id="appWrap" class="hidden">
-      <header class="flex justify-between items-start mb-6">
-        <div>
-          <h1 class="hTitle text-4xl font-bold leading-none">RH Supervision</h1>
-          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
 
+      <!-- Header -->
+      <header class="glass-card rounded-3xl p-5 flex justify-between items-start mb-5 anim-in">
+        <div>
+          <div class="smallCaps mb-1">Direction</div>
+          <h1 class="hTitle text-4xl leading-tight">RH Supervision</h1>
+          <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
           <div class="mt-3 space-y-1">
-            <div class="smallCaps">
-              Connecté : <span id="roleLabel" style="color:rgba(255,255,255,.86)">—</span>
-            </div>
-            <div id="syncLine" class="smallCaps">Sync : —</div>
+            <div class="smallCaps">Connecté : <span id="roleLabel" style="color:#0f2744;font-size:11px">—</span></div>
+            <div id="syncLine" class="text-[10px] font-bold" style="color:var(--muted2)">Sync : en attente…</div>
           </div>
         </div>
-
-        <div class="flex flex-col items-end gap-2">
-          <button id="btnLogout" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-            style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.85)">
-            Déconnexion
-          </button>
-        </div>
+        <button id="btnLogout" class="btn-action btn-neutral px-4 py-2 rounded-2xl text-[11px] font-extrabold"
+          style="background:rgba(255,255,255,.60);border:1px solid var(--stroke-med);color:var(--text)">
+          Déco.
+        </button>
       </header>
 
-      <!-- CONTROLS -->
-      <div class="mb-4 space-y-4">
-        <div class="glass-card p-1.5 rounded-2xl">
-          <div class="flex">
-            <button onclick="switchMode('day', this)" class="view-btn active flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
-            <button onclick="switchMode('report', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
-            <button onclick="switchMode('rc', this)" class="view-btn flex-1 py-3 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
-          </div>
+      <!-- ─── Onglets mode ─── -->
+      <div class="glass-card p-1.5 rounded-2xl mb-4 anim-in anim-in-1">
+        <div class="flex gap-1">
+          <button onclick="switchMode('day',this)"    class="view-btn active flex-1 py-2.5 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Jour</button>
+          <button onclick="switchMode('report',this)" class="view-btn       flex-1 py-2.5 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Bilan</button>
+          <button onclick="switchMode('rc',this)"     class="view-btn       flex-1 py-2.5 text-[11px] font-extrabold rounded-xl uppercase tracking-wider">Table R/C</button>
         </div>
+      </div>
 
-        <!-- Choix du jour -->
-        <div id="dayPickWrap" class="glass-card rounded-2xl p-4">
-          <div class="flex items-center justify-between">
-            <div class="smallCaps">Choix du jour</div>
+      <!-- ─── Choix du jour ─── -->
+      <div id="dayPickWrap" class="glass-card rounded-2xl p-4 mb-4 anim-in anim-in-2">
+        <div class="smallCaps mb-2">Choix du jour</div>
+        <div class="accent-bar mb-3"></div>
+        <input type="date" id="dayPicker" class="inpt" />
+        <p class="mt-2 text-[10px] font-semibold" style="color:var(--muted3)">
+          Temps réel uniquement aujourd'hui — les jours précédents sont en lecture seule.
+        </p>
+      </div>
+
+      <!-- ─── Choix du mois ─── -->
+      <div id="monthPickWrap" class="glass-card rounded-2xl p-4 mb-4 hidden anim-in anim-in-2">
+        <div class="smallCaps mb-2">Choix du mois</div>
+        <div class="accent-bar mb-3"></div>
+        <input type="month" id="monthPicker" class="inpt">
+        <input type="date"  id="dashDate"    class="hidden">
+      </div>
+
+      <!-- ─── Exports & Période ─── -->
+      <div class="glass-card rounded-2xl p-4 mb-4 anim-in anim-in-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="smallCaps">Période</div>
+            <div id="periodLabel" class="hTitle text-2xl leading-tight mt-1 truncate">—</div>
+            <p class="text-[9px] font-bold mt-2 leading-relaxed" style="color:var(--muted3)">
+              R = 1er OFF semaine · C = OFF supp + absences · Janvier 2026 exclu · Exception : SALIL/BENKHADA pas de R
+            </p>
           </div>
-          <div class="accent-bar mt-2 mb-3"></div>
-          <input type="date" id="dayPicker" class="inpt" />
-          <div class="mt-2 text-[10px] font-semibold" style="color:var(--muted)">
-            Permet d’afficher les jours précédents (temps réel uniquement sur aujourd’hui).
-          </div>
-        </div>
-
-        <!-- Choix du mois -->
-        <div id="monthPickWrap" class="glass-card rounded-2xl p-4 hidden">
-          <div class="smallCaps">Choix du mois</div>
-          <div class="accent-bar mt-2 mb-3"></div>
-          <input type="month" id="monthPicker" class="inpt">
-          <input type="date" id="dashDate" class="hidden">
-        </div>
-
-        <!-- Exports -->
-        <div class="glass-card rounded-2xl p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="smallCaps">Période</div>
-              <div id="periodLabel" class="hTitle text-2xl font-bold mt-1">—</div>
-              <div class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted)">
-                R = 1er OFF de la semaine • C = OFF supplémentaire + absences • Janvier 2026 exclu • Exception: SALIL/BENKHADA pas de R
-              </div>
-            </div>
-            <div class="flex flex-col gap-2">
-              <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
-                Export R/C Mois
-              </button>
-              <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82)">
-                Export Année (résumé)
-              </button>
-            </div>
+          <div class="flex flex-col gap-2 shrink-0">
+            <button onclick="exportCSV_RC_Month()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold"
+              style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
+              Export Mois
+            </button>
+            <button onclick="exportCSV_RC_Year()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold"
+              style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">
+              Export Année
+            </button>
+            <button onclick="exportYear_ToSheets()" class="btn-action btn-sheets px-3 py-2 rounded-xl text-[11px] font-extrabold"
+              style="background:rgba(66,133,244,.13);border:1px solid rgba(66,133,244,.32);color:#1d4ed8">
+              ↗ Sheets
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- CHART -->
-      <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
-        <div class="h-[180px] w-full">
+      <!-- ─── Graphique ─── -->
+      <div id="chartContainer" class="glass-card rounded-3xl p-5 mb-5 hidden anim-in anim-in-4">
+        <div class="smallCaps mb-3">Tendances du mois</div>
+        <div class="accent-bar mb-4"></div>
+        <div class="h-[170px] w-full">
           <canvas id="trendsChart"></canvas>
         </div>
       </div>
 
-      <div id="dashBody" class="space-y-6"></div>
+      <!-- ─── Corps principal ─── -->
+      <div id="dashBody" class="space-y-6 anim-in anim-in-4"></div>
 
-      <!-- OUTILS -->
-      <div class="mt-6 space-y-4">
-        <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-          <div class="smallCaps">Collaborateurs</div>
-          <div class="accent-bar"></div>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-              style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.88)">
-              Gérer équipe
-            </button>
-            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-              style="background:rgba(197,160,89,.18);border:1px solid rgba(197,160,89,.50);color:rgba(197,160,89,.95)">
-              Export JSON
-            </button>
-          </div>
-          <div id="teamPermHint" class="text-[10px] font-semibold leading-snug" style="color:var(--muted)">
-            Stocké dans Firebase: <b>settings/equipe</b>.
-          </div>
+      <!-- ─── Outils équipe ─── -->
+      <div class="glass-card rounded-2xl p-4 mt-5 anim-in anim-in-4">
+        <div class="smallCaps mb-2">Collaborateurs</div>
+        <div class="accent-bar-blue mb-3"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnOpenStaffAdmin" class="btn-action btn-neutral px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+            style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">
+            Gérer équipe
+          </button>
+          <button id="btnExportEquipe" class="btn-action px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+            style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.30);color:#78350f">
+            Export JSON
+          </button>
         </div>
+        <p id="teamPermHint" class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted3)">
+          Stocké dans Firebase: <b>settings/equipe</b>.
+        </p>
       </div>
 
-    </div>
-  </div>
+    </div><!-- /appWrap -->
+  </div><!-- /container -->
 
-  <!-- MODAL Historique -->
+  <!-- ══════════════════════════════════ MODAL HISTORIQUE ══════════════════════════════════ -->
   <div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">
-    <div class="modal-sheet w-full rounded-t-[40px] p-8 pb-12 shadow-2xl" onclick="event.stopPropagation()">
+    <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-12 shadow-2xl max-h-[82vh] flex flex-col" onclick="event.stopPropagation()">
       <div class="handle"></div>
-      <h2 id="modalTitle" class="hTitle text-3xl font-bold mb-6">Historique</h2>
-      <div id="modalList" class="space-y-3 max-h-[62vh] overflow-y-auto pr-2"></div>
+      <div class="flex items-center gap-3 mb-5">
+        <div>
+          <div class="smallCaps">Historique</div>
+          <h2 id="modalTitle" class="hTitle text-3xl leading-tight mt-1">—</h2>
+        </div>
+        <button onclick="closeModal()" class="ml-auto px-3 py-2 rounded-xl text-[11px] font-extrabold btn-action btn-neutral"
+          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
+      </div>
+      <div id="modalList" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
     </div>
   </div>
 
-  <!-- MODAL Admin -->
+  <!-- ══════════════════════════════════ MODAL ADMIN ══════════════════════════════════ -->
   <div id="staffAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeStaffAdmin()">
-    <div class="modal-sheet w-full rounded-t-[40px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="handle"></div>
 
-      <div class="flex items-start justify-between gap-3 mb-4">
+      <div class="flex items-start justify-between gap-3 mb-5">
         <div>
-          <div class="smallCaps">Admin</div>
-          <div class="hTitle text-3xl font-bold mt-1">Gérer l'équipe</div>
-          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
+          <div class="smallCaps">Administration</div>
+          <h2 class="hTitle text-3xl leading-tight mt-1">Gérer l'équipe</h2>
+          <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
         </div>
-        <button class="px-3 py-2 rounded-full text-[11px] font-extrabold" onclick="closeStaffAdmin()"
-          style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.86)">
+        <button onclick="closeStaffAdmin()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold mt-1"
+          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">
           Fermer
         </button>
       </div>
 
-      <div class="rounded-2xl border p-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.03)">
-        <div class="smallCaps mb-3">Ajouter collaborateur</div>
+      <!-- Ajout -->
+      <div class="rounded-2xl border p-4 mb-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.30)">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]"
+            style="background:var(--accentBg);border:1px solid var(--accentBdr)">＋</div>
+          <div class="smallCaps">Ajouter collaborateur</div>
+        </div>
         <div class="grid grid-cols-2 gap-2">
-          <input id="addNom" class="inpt" placeholder="NOM (ex: ELALAMI)" />
+          <input id="addNom"    class="inpt" placeholder="NOM (ex: ELALAMI)" />
           <input id="addPrenom" class="inpt" placeholder="Prénom (ex: HASSAN)" />
         </div>
         <select id="addPoste" class="inpt mt-2">
@@ -416,15 +558,24 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
+        <input id="addDateDebut" class="inpt mt-2" type="date" />
+        <p class="mt-2 text-[10px] font-semibold" style="color:var(--muted3)">
+          Date de début optionnelle. Si vide, première activité détectée automatiquement.
+        </p>
+        <button id="btnAddStaff" class="btn-action btn-amber mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+          style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
           AJOUTER
         </button>
-        <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
+        <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
 
-      <div class="rounded-2xl border p-4 mt-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.02)">
-        <div class="smallCaps mb-3">Supprimer collaborateur</div>
+      <!-- Suppression -->
+      <div class="rounded-2xl border p-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.20)">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]"
+            style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.20)">✕</div>
+          <div class="smallCaps">Supprimer collaborateur</div>
+        </div>
         <select id="delPosteSelect" class="inpt">
           <option value="">-- Choisir poste --</option>
           <option value="SERVICE">SERVICE</option>
@@ -437,16 +588,16 @@
         <select id="delEmpSelect" class="inpt mt-2">
           <option value="">Choisir poste d'abord</option>
         </select>
-        <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.50);color:rgba(248,113,113,.95)">
+        <button id="btnDeleteStaff" class="btn-action btn-danger mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+          style="background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.30);color:#dc2626">
           SUPPRIMER
         </button>
-        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
+        <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
 
-      <div class="mt-4 text-[10px] font-semibold leading-snug" style="color:var(--muted)">
-        Si tu vois <b>PERMISSION_DENIED</b> à l'ajout/suppression, c'est tes <b>rules Firebase</b> qui bloquent l'écriture de <b>settings/equipe</b>.
-      </div>
+      <p class="mt-4 text-[10px] font-semibold leading-relaxed" style="color:var(--muted3)">
+        Si tu vois <b style="color:var(--crit)">PERMISSION_DENIED</b> à l'ajout/suppression, vérifie tes <b>rules Firebase</b> pour autoriser l'écriture sur <b>settings/equipe</b>.
+      </p>
     </div>
   </div>
 
@@ -469,28 +620,29 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    const auth = firebase.auth();
+    const auth     = firebase.auth();
 
-    const dateInput    = document.getElementById('dashDate');
-    const monthPicker  = document.getElementById('monthPicker');
-    const dayPicker    = document.getElementById('dayPicker');
-
-    const dayPickWrap  = document.getElementById('dayPickWrap');
-    const monthPickWrap= document.getElementById('monthPickWrap');
-
-    const loginWrap    = document.getElementById("loginWrap");
-    const appWrap      = document.getElementById("appWrap");
-    const roleLabel    = document.getElementById("roleLabel");
-    const syncLine     = document.getElementById("syncLine");
-    const periodLabel  = document.getElementById("periodLabel");
+    const dateInput     = document.getElementById('dashDate');
+    const monthPicker   = document.getElementById('monthPicker');
+    const dayPicker     = document.getElementById('dayPicker');
+    const dayPickWrap   = document.getElementById('dayPickWrap');
+    const monthPickWrap = document.getElementById('monthPickWrap');
+    const loginWrap     = document.getElementById("loginWrap");
+    const appWrap       = document.getElementById("appWrap");
+    const roleLabel     = document.getElementById("roleLabel");
+    const syncLine      = document.getElementById("syncLine");
+    const periodLabel   = document.getElementById("periodLabel");
 
     let currentMode = 'day', myChart = null;
     let role = null;
     let activePresRef = null, activePunchRef = null;
     let presCache = {}, punchCache = {};
+    let midnightTimer = null;
+    let sheetsSyncRunning = false;
 
     const EQUIPE_PATH = "settings/equipe";
 
+    /* ─── Utilitaires sécurité ─── */
     function esc(s){
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -499,10 +651,12 @@
     }
     function escAttr(s){ return esc(s); }
 
+    /* ─── FIX : safeTime accepte HH:MM:SS ─── */
     function safeTime(t){
       const s = String(t ?? "").trim();
-      if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(s)) return "";
-      const [h,m] = s.split(':');
+      const core = s.replace(/^(\d{1,2}:\d{2}):\d{2}$/, '$1');
+      if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(core)) return "";
+      const [h, m] = core.split(':');
       return h.padStart(2,'0') + ":" + m;
     }
 
@@ -533,17 +687,14 @@
       {nom:'ZAIR',       prenom:'FATIMA',    poste:'CUISINE'}
     ];
 
-    function setEquipe(next){
-      equipe = Array.isArray(next) ? next.slice() : [];
-      clearMonthCache();
-    }
+    function setEquipe(next){ equipe = Array.isArray(next) ? next.slice() : []; clearMonthCache(); }
 
-    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL", "ELMCHAOURI_SOUAD", "SBAI_HAKIMA"]);
-    const noReposIds = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
+    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL","ELMCHAOURI_SOUAD","SBAI_HAKIMA"]);
+    const noReposIds = new Set(["SALIL_HOUDA","BENKHADA_ABDESLAM"]);
 
     const EXCL_START = "2026-01-01";
     const EXCL_END   = "2026-01-31";
-    function isExcluded(dayISO){ return dayISO >= EXCL_START && dayISO <= EXCL_END; }
+    function isExcluded(d){ return d >= EXCL_START && d <= EXCL_END; }
 
     function parseISO(iso){ const [y,m,d]=iso.split("-").map(Number); return {y,m,d}; }
     function toISO(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
@@ -557,7 +708,7 @@
       const {y,m,d}=parseISO(iso);
       const dt=new Date(Date.UTC(y,m-1,d));
       const dow=dt.getUTCDay();
-      return addDaysISO(iso, -(dow===0?6:dow-1));
+      return addDaysISO(iso,-(dow===0?6:dow-1));
     }
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
@@ -570,11 +721,10 @@
       return `${d}/${m}/${y}`;
     }
     function monthKeyFromISO(iso){ return (iso||"").slice(0,7); }
-    function isoFromMonthKey(mk){ return mk + "-01"; }
-
+    function isoFromMonthKey(mk){ return mk+"-01"; }
     function titleCase(s){
-      const t = String(s||"").toLowerCase();
-      return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+      const t=String(s||"").toLowerCase();
+      return t ? t.charAt(0).toUpperCase()+t.slice(1) : "";
     }
 
     function getTimeDiff(a,p,id){
@@ -585,11 +735,11 @@
       const d=(ha*60+ma)-(hp*60+mp);
       return d>0?d:0;
     }
-    function diffFromEntry(entry,empId){ return entry ? getTimeDiff(entry.hA, entry.hP, empId) : 0; }
+    function diffFromEntry(entry,empId){ return entry ? getTimeDiff(entry.hA,entry.hP,empId) : 0; }
 
     function getStatusClass(diff,isOff,hasArrived){
       if(hasArrived){
-        if(diff<=0) return 'status-green';
+        if(diff<=0)  return 'status-green';
         if(diff<30)  return 'status-orange';
         if(diff<60)  return 'status-red';
         return 'status-flash';
@@ -599,12 +749,12 @@
     }
     function getDotColor(diff,isOff,hasArrived){
       if(hasArrived){
-        if(diff<=0) return 'var(--ok)';
+        if(diff<=0)  return 'var(--ok)';
         if(diff<30)  return 'var(--amber)';
         return 'var(--crit)';
       }
-      if(isOff) return 'rgba(148,163,184,.75)';
-      return 'rgba(255,255,255,.20)';
+      if(isOff) return 'rgba(148,163,184,.65)';
+      return 'rgba(255,255,255,.22)';
     }
 
     function classifyOffDay(empId,dayISO,weekRC){
@@ -616,11 +766,14 @@
       return "C";
     }
 
-    function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
-    function getEmpById(empId){
-      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:""};
+    function empIdOf(emp){
+      const nom    = String(emp?.nom    || "").trim().toUpperCase().replace(/\s+/g,"_");
+      const prenom = String(emp?.prenom || "").trim().toUpperCase().replace(/\s+/g,"_");
+      return `${nom}_${prenom}`;
     }
-
+    function getEmpById(empId){
+      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:"",dateDebut:""};
+    }
     function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
     function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
 
@@ -644,16 +797,25 @@
 
     function openStaffAdmin(){
       const m=document.getElementById("staffAdminModal");
-      m.classList.remove("hidden"); m.classList.add("modal-active");
+      m.classList.remove("hidden","modal-closing");
+      m.classList.add("modal-active");
     }
     function closeStaffAdmin(){
       const m=document.getElementById("staffAdminModal");
-      m.classList.remove('modal-active'); m.classList.add('hidden');
+      m.classList.remove("modal-active");
+      m.classList.add("modal-closing");
+      setTimeout(()=>{ m.classList.remove("modal-closing"); m.classList.add("hidden"); }, 260);
+    }
+    function closeModal(){
+      const m=document.getElementById('historyModal');
+      m.classList.remove("modal-active");
+      m.classList.add("modal-closing");
+      setTimeout(()=>{ m.classList.remove("modal-closing"); m.classList.add("hidden"); }, 260);
     }
 
     async function exportEquipeJSON(){
-      let list = equipe;
-      try{ list = await loadEquipeFromDB(); }catch(e){}
+      let list=equipe;
+      try{ list=await loadEquipeFromDB(); }catch(e){}
       const blob=new Blob([JSON.stringify(list,null,2)],{type:"application/json"});
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a");
@@ -683,21 +845,26 @@
       document.getElementById("btnAddStaff").onclick=async()=>{
         const addMsg=document.getElementById("addMsg");
         addMsg.textContent="";
-        const nom=normName(document.getElementById("addNom").value);
-        const prenom=normName(document.getElementById("addPrenom").value);
-        const poste=(document.getElementById("addPoste").value||"").trim().toUpperCase();
+        const nom    = normName(document.getElementById("addNom").value);
+        const prenom = normName(document.getElementById("addPrenom").value);
+        const poste  = (document.getElementById("addPoste").value||"").trim().toUpperCase();
+        const dateDebut = (document.getElementById("addDateDebut").value||"").trim();
+
         if(!nom||!prenom||!poste){ addMsg.textContent="⚠️ Remplis NOM, Prénom et Poste."; return; }
         const id=makeEmpId(nom,prenom);
         if(equipe.some(e=>empIdOf(e)===id)){ addMsg.textContent="⚠️ Déjà existant."; return; }
+
         addMsg.textContent="Ajout…";
-        const next = equipe.slice();
-        next.push({nom,prenom,poste});
+        const next=equipe.slice();
+        next.push({nom,prenom,poste,dateDebut:dateDebut||""});
+
         try{
           await saveEquipeToDB(next);
           setEquipe(next);
           addMsg.textContent="✅ Ajouté.";
           document.getElementById("addNom").value="";
           document.getElementById("addPrenom").value="";
+          document.getElementById("addDateDebut").value="";
           closeStaffAdmin();
           updateDashboard();
         }catch(e){
@@ -712,7 +879,7 @@
         if(!empId){ delMsg.textContent="⚠️ Choisis un collaborateur."; return; }
         if(!confirm(`Confirmer suppression de ${empId} ?`)) return;
         delMsg.textContent="Suppression…";
-        const next = equipe.filter(e => empIdOf(e) !== empId);
+        const next=equipe.filter(e=>empIdOf(e)!==empId);
         try{
           await saveEquipeToDB(next);
           setEquipe(next);
@@ -731,14 +898,18 @@
       return s.val()||null;
     }
     function showLoginUI(msg){
-      detachRealtime(); role=null;
-      appWrap.classList.add("hidden"); loginWrap.classList.remove("hidden");
+      detachRealtime();
+      role=null;
+      if(midnightTimer){ clearInterval(midnightTimer); midnightTimer=null; }
+      appWrap.classList.add("hidden");
+      loginWrap.classList.remove("hidden");
       document.getElementById("loginMsg").textContent=msg||"";
     }
     function showAppUI(){
-      loginWrap.classList.add("hidden"); appWrap.classList.remove("hidden");
+      loginWrap.classList.add("hidden");
+      appWrap.classList.remove("hidden");
       roleLabel.textContent=role||"—";
-      syncLine.textContent="Sync : en attente…";
+      syncLine.innerHTML="Sync : en attente…";
     }
 
     document.getElementById("btnLogin").onclick=async()=>{
@@ -749,6 +920,7 @@
       catch(e){ showLoginUI("Identifiants invalides."); }
     };
     document.getElementById("btnLogout").onclick=async()=>{
+      if(midnightTimer){ clearInterval(midnightTimer); midnightTimer=null; }
       try{ await auth.signOut(); }catch(e){}
       location.reload();
     };
@@ -771,6 +943,57 @@
       bootDashboard();
     });
 
+    /* ══════════════════════════════════ GOOGLE SHEETS ══════════════════════════════════ */
+    const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
+    const SHEETS_SECRET      = "GC_SECRET_2026";
+
+    async function exportYear_ToSheets(){
+      if(sheetsSyncRunning) return;
+      sheetsSyncRunning=true;
+      try{
+        const year=dateInput.value.slice(0,4);
+        const currentMk=monthKeyFromISO(todayISO());
+        const totalsByEmp={};
+        equipe.forEach(emp=>{
+          const id=empIdOf(emp);
+          totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};
+        });
+        syncLine.textContent="Sheets : calcul…";
+        for(let i=1;i<=12;i++){
+          const mk=`${year}-${String(i).padStart(2,"0")}`;
+          if(mk>currentMk) break;
+          const summary=await buildMonthlySummary(mk);
+          Object.values(summary).forEach(s=>{
+            if(!totalsByEmp[s.empId]){
+              totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0};
+            }
+            totalsByEmp[s.empId].present+=Number(s.present)||0;
+            totalsByEmp[s.empId].R      +=Number(s.R)||0;
+            totalsByEmp[s.empId].C      +=Number(s.C)||0;
+            totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;
+          });
+        }
+        const rows=Object.values(totalsByEmp)
+          .sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom))
+          .map(t=>({year,employe:`${t.nom} ${titleCase(t.prenom)}`.trim(),poste:t.poste,presents:t.present,repos:t.R,conge:t.C,retard:t.lateMin}));
+        syncLine.textContent="Sheets : envoi…";
+        const res=await fetch(SHEETS_WEBHOOK_URL,{method:"POST",body:JSON.stringify({year,rows,secret:SHEETS_SECRET})});
+        const raw=await res.text();
+        let json;
+        try{ json=JSON.parse(raw); }catch(_){ throw new Error("Réponse non JSON : "+raw.slice(0,300)); }
+        if(json.ok){
+          syncLine.innerHTML=`<span class="sync-dot"></span>Sheets mis à jour — ${json.written||0} lignes (${year})`;
+        }else{
+          syncLine.textContent=`⚠️ Sheets erreur : ${json.error||"inconnue"}`;
+        }
+      }catch(err){
+        console.error("Sheets export error:",err);
+        syncLine.textContent=`⚠️ Sheets : ${err.message||"connexion échouée"}`;
+      }finally{
+        sheetsSyncRunning=false;
+      }
+    }
+
     function detachRealtime(){
       try{
         if(activePresRef){ activePresRef.off(); activePresRef=null; }
@@ -783,9 +1006,9 @@
       const merged=JSON.parse(JSON.stringify(pres||{}));
       const p=punches||{};
       Object.keys(p).forEach(empId=>{
-        merged[empId] ||= {};
+        merged[empId]||={};
         const pe=p[empId]||{};
-        if(pe.hA) merged[empId].hA = pe.hA;
+        if(pe.hA) merged[empId].hA=pe.hA;
         if(merged[empId].hA && merged[empId].off===true) merged[empId].off=false;
       });
       return merged;
@@ -797,23 +1020,21 @@
       const hh=String(now.getHours()).padStart(2,'0');
       const mm=String(now.getMinutes()).padStart(2,'0');
       const ss=String(now.getSeconds()).padStart(2,'0');
-      syncLine.textContent=`Sync : temps réel ✅ (${hh}:${mm}:${ss})`;
+      syncLine.innerHTML=`<span class="sync-dot"></span>Temps réel ✅ (${hh}:${mm}:${ss})`;
     }
     function setSyncWaiting(){ syncLine.textContent="Sync : connexion…"; }
-    function setSyncStatic(dayISO){ syncLine.textContent=`Sync : lecture (${fmtFR(dayISO)})`; }
-    function setSyncError(){ syncLine.textContent="Sync : erreur (réseau ?) ⚠️"; }
+    function setSyncStatic(d){ syncLine.textContent=`Lecture (${fmtFR(d)})`; }
+    function setSyncError(){   syncLine.textContent="Sync : erreur réseau ⚠️"; }
 
-    function attachRealtimeForDate(dayISO, realtime){
+    function attachRealtimeForDate(dayISO,realtime){
       detachRealtime();
       if(realtime) setSyncWaiting(); else setSyncStatic(dayISO);
-
       activePresRef=database.ref('presences/'+dayISO);
       activePresRef.on('value',(snap)=>{
         presCache=snap.val()||{};
         if(currentMode==="day") renderDayView(mergedDayData());
         if(realtime) setSyncOK();
       },()=>setSyncError());
-
       activePunchRef=database.ref('punches/'+dayISO);
       activePunchRef.on('value',(snap)=>{
         punchCache=snap.val()||{};
@@ -826,21 +1047,16 @@
       currentMode=mode;
       document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-
       document.getElementById('chartContainer').classList.toggle('hidden',mode!=='report');
       dayPickWrap.classList.toggle('hidden',mode!=='day');
       monthPickWrap.classList.toggle('hidden',mode==='day');
-
       updateDashboard();
     }
 
-    const monthDataCache=new Map();
-    const monthRCMapCache=new Map();
-
-    function clearMonthCache(){
-      monthDataCache.clear();
-      monthRCMapCache.clear();
-    }
+    const monthDataCache  = new Map();
+    const monthRCMapCache = new Map();
+    const empStartMapCache= new Map();
+    function clearMonthCache(){ monthDataCache.clear(); monthRCMapCache.clear(); empStartMapCache.clear(); }
 
     function getDatesInMonth(seedISO){
       const {y,m}=parseISO(seedISO);
@@ -858,101 +1074,124 @@
 
     function errorCard(text){
       return `<div class="glass-card p-5 rounded-2xl" style="border-color:rgba(248,113,113,.28);background:rgba(248,113,113,.06)">
-        <div class="text-[11px] font-extrabold" style="color:rgba(248,113,113,.95)">${esc(text)}</div>
+        <div class="text-[11px] font-extrabold" style="color:rgba(220,38,38,.90)">${esc(text)}</div>
       </div>`;
     }
 
     async function batchFetchPresPunch(dates){
       try{
-        const [presRes, punchRes] = await Promise.all([
-          Promise.allSettled(dates.map(d => database.ref('presences/'+d).once('value'))),
-          Promise.allSettled(dates.map(d => database.ref('punches/'+d).once('value')))
+        const [presRes,punchRes]=await Promise.all([
+          Promise.allSettled(dates.map(d=>database.ref('presences/'+d).once('value'))),
+          Promise.allSettled(dates.map(d=>database.ref('punches/'+d).once('value')))
         ]);
-
-        const presByDay={}, punchByDay={};
+        const presByDay={},punchByDay={};
         dates.forEach((d,i)=>{
-          presByDay[d]  = (presRes[i].status === "fulfilled" ? (presRes[i].value.val()||{}) : {});
-          punchByDay[d] = (punchRes[i].status === "fulfilled" ? (punchRes[i].value.val()||{}) : {});
+          presByDay[d]  = (presRes[i].status==="fulfilled"  ? (presRes[i].value.val()||{})  : {});
+          punchByDay[d] = (punchRes[i].status==="fulfilled" ? (punchRes[i].value.val()||{}) : {});
         });
-
-        const anyFail = presRes.some(r=>r.status==="rejected") || punchRes.some(r=>r.status==="rejected");
-        return {presByDay, punchByDay, anyFail};
+        const anyFail=presRes.some(r=>r.status==="rejected")||punchRes.some(r=>r.status==="rejected");
+        return {presByDay,punchByDay,anyFail};
       }catch(e){
-        return {presByDay:{}, punchByDay:{}, anyFail:true, fatal:true, err:e};
+        return {presByDay:{},punchByDay:{},anyFail:true,fatal:true,err:e};
       }
     }
 
     async function getMonthData(mk){
       if(monthDataCache.has(mk)) return monthDataCache.get(mk);
-
       const dates=getDatesInMonthKey(mk);
       const pack={monthKey:mk,dates,presByDay:{},punchByDay:{},anyFail:false};
-
-      const res = await batchFetchPresPunch(dates);
-      pack.presByDay = res.presByDay || {};
-      pack.punchByDay = res.punchByDay || {};
-      pack.anyFail = !!res.anyFail;
-
+      const res=await batchFetchPresPunch(dates);
+      pack.presByDay=res.presByDay||{};
+      pack.punchByDay=res.punchByDay||{};
+      pack.anyFail=!!res.anyFail;
       monthDataCache.set(mk,pack);
       return pack;
     }
 
+    function hasAnyEmpActivity(e){
+      if(!e) return false;
+      return !!(safeTime(e.hP)||safeTime(e.hA)||e.off===true);
+    }
+    function getConfiguredEmpStart(emp){
+      const d=String(emp?.dateDebut||"").trim();
+      return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+    }
+
+    async function getEmpStartMapForYear(year){
+      if(empStartMapCache.has(year)) return empStartMapCache.get(year);
+      const currentMk=monthKeyFromISO(todayISO());
+      const startMap={};
+      equipe.forEach(emp=>{
+        const configured=getConfiguredEmpStart(emp);
+        startMap[empIdOf(emp)]=configured||null;
+      });
+      for(let i=1;i<=12;i++){
+        const mk=`${year}-${String(i).padStart(2,"0")}`;
+        if(mk>currentMk) break;
+        const md=await getMonthData(mk);
+        const {dates,presByDay,punchByDay}=md;
+        for(const dayISO of dates){
+          if(dayISO>todayISO()) continue;
+          const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+          equipe.forEach(emp=>{
+            const id=empIdOf(emp);
+            if(startMap[id]) return;
+            if(hasAnyEmpActivity(merged[id]||null)) startMap[id]=dayISO;
+          });
+        }
+      }
+      empStartMapCache.set(year,startMap);
+      return startMap;
+    }
+
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
+      const year=mk.slice(0,4);
+      const startMap=await getEmpStartMapForYear(year);
+      const md=await getMonthData(mk);
+      const {dates,presByDay,punchByDay}=md;
+      const today=todayISO();
+      const rcByEmpDay={};
+      equipe.forEach(emp=>{ rcByEmpDay[empIdOf(emp)]={}; });
+      const weekRC={};
 
-      const md = await getMonthData(mk);
-      const {dates,presByDay,punchByDay} = md;
-      const today = todayISO();
-
-      const rcByEmpDay = {};
-      equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        rcByEmpDay[id] = {};
-      });
-
-      const weekRC = {};
-
-      const firstDay = mk + "-01";
-      const wkStart  = weekStartMondayISO(firstDay);
-      if(wkStart < firstDay){
-        const ctxDates = [];
-        let d = wkStart;
-        while(d < firstDay){ ctxDates.push(d); d = addDaysISO(d,1); }
-
-        const ctx = await batchFetchPresPunch(ctxDates);
+      const firstDay=mk+"-01";
+      const wkStart=weekStartMondayISO(firstDay);
+      if(wkStart<firstDay){
+        const ctxDates=[];
+        let d=wkStart;
+        while(d<firstDay){ ctxDates.push(d); d=addDaysISO(d,1); }
+        const ctx=await batchFetchPresPunch(ctxDates);
         ctxDates.forEach(dayISO=>{
-          if(dayISO > today || isExcluded(dayISO)) return;
-          const merged = mergeDay(ctx.presByDay[dayISO]||{}, ctx.punchByDay[dayISO]||{});
+          if(dayISO>today||isExcluded(dayISO)) return;
+          const merged=mergeDay(ctx.presByDay[dayISO]||{},ctx.punchByDay[dayISO]||{});
           equipe.forEach(emp=>{
-            const id = empIdOf(emp);
-            const e  = merged[id] || null;
-            if(e && e.off) classifyOffDay(id, dayISO, weekRC);
+            const id=empIdOf(emp);
+            const start=startMap[id];
+            if(!start||dayISO<start) return;
+            const e=merged[id]||null;
+            if(e&&e.off) classifyOffDay(id,dayISO,weekRC);
           });
         });
       }
 
       dates.forEach(dayISO=>{
-        if(dayISO > today) return;
-        if(isExcluded(dayISO)) return;
-
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
+        if(dayISO>today||isExcluded(dayISO)) return;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         equipe.forEach(emp=>{
-          const id = empIdOf(emp);
-          const e = merged[id] || null;
-
-          const ha = safeTime(e?.hA);
+          const id=empIdOf(emp);
+          const start=startMap[id];
+          if(!start||dayISO<start) return;
+          const e=merged[id]||null;
+          const ha=safeTime(e?.hA);
           if(ha) return;
-          if(e && e.off){
-            rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC);
-            return;
-          }
-          rcByEmpDay[id][dayISO] = "C";
+          if(e&&e.off){ rcByEmpDay[id][dayISO]=classifyOffDay(id,dayISO,weekRC); return; }
+          rcByEmpDay[id][dayISO]="C";
         });
       });
 
-      const out = { rcByEmpDay };
-      monthRCMapCache.set(mk, out);
+      const out={rcByEmpDay,startMap};
+      monthRCMapCache.set(mk,out);
       return out;
     }
 
@@ -962,15 +1201,14 @@
       const container=document.getElementById('dashBody');
       const groups={};
       equipe.forEach(e=>(groups[e.poste]||=[]).push(e));
-
       let html='';
       POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
-        html+=`<div class="mb-8">
+        html+=`<div class="mb-6">
           <div class="flex items-center gap-3 mb-3">
             <div class="smallCaps">${esc(poste)}</div>
             <div class="accent-bar" style="flex:1"></div>
           </div>
-          <div class="grid grid-cols-2 gap-4">`;
+          <div class="grid grid-cols-2 gap-3">`;
 
         groups[poste].slice().sort((a,b)=>{
           const A=empIdOf(a),B=empIdOf(b);
@@ -980,39 +1218,35 @@
         }).forEach(emp=>{
           const id=empIdOf(emp);
           const d=data[id]||{};
+          const hp=safeTime(d.hP)||"";
+          const ha=safeTime(d.hA)||"";
+          const diff=diffFromEntry({hA:ha,hP:hp},id);
+          const sClass=getStatusClass(diff,!!d.off,!!ha);
+          const dot=getDotColor(diff,!!d.off,!!ha);
 
-          const hp = safeTime(d.hP) || "";
-          const ha = safeTime(d.hA) || "";
-          const diff = diffFromEntry({ hA: ha, hP: hp }, id);
-          const sClass = getStatusClass(diff, !!d.off, !!ha);
-          const dot = getDotColor(diff, !!d.off, !!ha);
-
-          let statusText='Attente',statusColor='color:rgba(255,255,255,.45)';
+          let statusText='Attente',statusColor='color:var(--muted3)';
           if(ha){
             if(hp){
-              if(diff>0){ statusText=`${diff} min`; statusColor='color:var(--crit)'; }
+              if(diff>0){ statusText=`+${diff} min`; statusColor='color:var(--crit)'; }
               else { statusText="À l'heure"; statusColor='color:var(--ok)'; }
-            }else{
-              statusText="OK"; statusColor='color:var(--ok)';
-            }
+            }else{ statusText="OK"; statusColor='color:var(--ok)'; }
           }else if(d.off){
             statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
           }
 
           html+=`
-            <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between h-28">
+            <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between" style="min-height:7rem">
               <span class="status-dot" style="background:${escAttr(dot)}"></span>
-              ${ha ? `<div class="arrive-time">${esc(ha)}</div>` : ``}
+              ${ha ? `<div class="arrive-time">${esc(ha)}</div>` : ''}
               <div>
-                <p class="text-[11px] font-extrabold uppercase truncate" style="color:rgba(255,255,255,.86)">${esc(emp.nom)}</p>
-                <p class="text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">${esc(titleCase(emp.prenom))}</p>
+                <p class="text-[11px] font-extrabold uppercase truncate pr-4" style="color:#0f2744">${esc(emp.nom)}</p>
+                <p class="text-[10px] font-semibold mt-0.5" style="color:var(--muted3)">${esc(titleCase(emp.prenom))}</p>
               </div>
-              <p class="text-[11px] font-extrabold" style="${escAttr(statusColor)}">${esc(statusText)}</p>
+              <p class="text-[11px] font-extrabold mt-2" style="${escAttr(statusColor)}">${esc(statusText)}</p>
             </button>`;
         });
         html+=`</div></div>`;
       });
-
       container.innerHTML=html;
       container.querySelectorAll('[data-empid]').forEach(btn=>{
         btn.addEventListener('click',()=>{
@@ -1025,14 +1259,21 @@
     function renderChart(labels,lates,presences){
       const ctx=document.getElementById('trendsChart').getContext('2d');
       if(myChart) myChart.destroy();
-
       myChart=new Chart(ctx,{
         type:'line',
         data:{
           labels,
           datasets:[
-            { label:"Retards (min)", data:lates, borderColor:'rgba(197,160,89,.95)', backgroundColor:'rgba(197,160,89,.10)', tension:.35,borderWidth:3,pointRadius:0,fill:true },
-            { label:"Présences (nb)", data:presences, borderColor:'rgba(52,211,153,.95)', backgroundColor:'rgba(52,211,153,.10)', tension:.35,borderWidth:2,pointRadius:0,fill:false }
+            {
+              label:"Retards (min)", data:lates,
+              borderColor:'rgba(245,158,11,.95)', backgroundColor:'rgba(245,158,11,.08)',
+              tension:.38, borderWidth:2.5, pointRadius:0, fill:true
+            },
+            {
+              label:"Présences (nb)", data:presences,
+              borderColor:'rgba(5,150,105,.90)', backgroundColor:'rgba(5,150,105,.08)',
+              tension:.38, borderWidth:2, pointRadius:0, fill:false
+            }
           ]
         },
         options:{
@@ -1041,589 +1282,455 @@
             legend:{display:false},
             tooltip:{
               enabled:true,
-              backgroundColor:'rgba(13,15,18,.92)',
-              titleColor:'rgba(255,255,255,.92)',
-              bodyColor:'rgba(255,255,255,.78)',
-              borderColor:'rgba(197,160,89,.55)',
+              backgroundColor:'rgba(255,255,255,.96)',
+              titleColor:'#0f2744',
+              bodyColor:'#1e3a5f',
+              borderColor:'rgba(245,158,11,.35)',
               borderWidth:1,
-              padding:10
+              padding:10,
+              cornerRadius:10
             }
           },
           scales:{
-            y:{display:false},
-            x:{ grid:{display:false}, ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'} }
+            y:{ display:false },
+            x:{ grid:{display:false}, ticks:{font:{size:8,weight:'600'}, color:'var(--muted2)'} }
           }
         }
       });
     }
 
     function loadingCard(text){
-      return `<div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
+      return `<div class="glass-card p-6 rounded-2xl flex items-center justify-center gap-3">
         <div class="spin"></div>
-        <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">${esc(text)}</div>
+        <div class="text-[11px] font-extrabold" style="color:var(--muted2)">${esc(text)}</div>
       </div>`;
     }
 
     function currentDayForDayMode(){
-      const t = todayISO();
-      const v = (dayPicker.value || t);
-      return v;
+      return dayPicker.value || todayISO();
     }
 
     async function updateDashboard(){
       if(role!=="gerant") return;
-
-      const seedISO = dateInput.value || isoFromMonthKey(monthKeyFromISO(todayISO()));
-      const mkSeed = monthKeyFromISO(seedISO);
-      periodLabel.textContent = `Mois: ${esc(mkSeed)} • Année: ${esc(seedISO.slice(0,4))}`;
+      const seedISO=dateInput.value||isoFromMonthKey(monthKeyFromISO(todayISO()));
+      const mkSeed=monthKeyFromISO(seedISO);
+      periodLabel.textContent=`${mkSeed} · ${seedISO.slice(0,4)}`;
 
       if(currentMode==="day"){
-        const dayISO = currentDayForDayMode();
-        const realtime = (dayISO === todayISO());
-        attachRealtimeForDate(dayISO, realtime);
+        const dayISO=currentDayForDayMode();
+        const realtime=(dayISO===todayISO());
+        attachRealtimeForDate(dayISO,realtime);
         renderDayView(mergedDayData());
         return;
       }
-
       detachRealtime();
       document.getElementById('dashBody').innerHTML=loadingCard(
         currentMode==="report" ? "Chargement du bilan…" : "Chargement des tableaux R/C…"
       );
-
       if(currentMode==="report") await renderReportView();
       else await renderRCView();
     }
 
     async function renderReportView(){
       const mk=monthKeyFromISO(dateInput.value);
-      const md = await getMonthData(mk);
-
+      const md=await getMonthData(mk);
       if(md.anyFail){
-        document.getElementById('dashBody').innerHTML =
-          errorCard("Réseau instable : certaines journées n’ont pas pu être chargées. Réessaie (changer de mois puis revenir) ou vérifie la connexion.");
+        document.getElementById('dashBody').innerHTML=errorCard("Réseau instable : certaines journées manquantes. Change de mois puis reviens, ou vérifie ta connexion.");
         return;
       }
-
       const {dates,presByDay,punchByDay}=md;
       const today=todayISO();
-
       const stats={};
-      equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
-
-      const {rcByEmpDay} = await getMonthRCMap(mk);
+      equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0}; });
+      const {rcByEmpDay,startMap}=await getMonthRCMap(mk);
       const dailyLates=[],dailyPresence=[],labels=[];
 
       dates.forEach(dayISO=>{
         labels.push(dayISO.split('-')[2]);
-        if(dayISO>today){ dailyLates.push(0); dailyPresence.push(0); return; }
-        if(isExcluded(dayISO)){ dailyLates.push(0); dailyPresence.push(0); return; }
-
+        if(dayISO>today||isExcluded(dayISO)){ dailyLates.push(0); dailyPresence.push(0); return; }
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         let tL=0,tP=0;
-
         Object.keys(stats).forEach(id=>{
+          const start=startMap[id];
+          if(!start||dayISO<start) return;
           const e=merged[id]||null;
-          const hp = safeTime(e?.hP) || "";
-          const ha = safeTime(e?.hA) || "";
-
+          const hp=safeTime(e?.hP)||"";
+          const ha=safeTime(e?.hA)||"";
           if(ha){
             const diff=diffFromEntry({hA:ha,hP:hp},id);
-            stats[id].present++;
-            stats[id].lateMin+=diff;
-            tL+=diff; tP++;
+            stats[id].present++; stats[id].lateMin+=diff; tL+=diff; tP++;
             return;
           }
-          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
-          stats[id][rc]++;
+          const rc=rcByEmpDay[id]?.[dayISO];
+          if(rc) stats[id][rc]++;
         });
-
-        dailyLates.push(tL);
-        dailyPresence.push(tP);
+        dailyLates.push(tL); dailyPresence.push(tP);
       });
 
       renderChart(labels,dailyLates,dailyPresence);
 
       const lateList=Object.values(stats).filter(s=>s.lateMin>0).sort((a,b)=>b.lateMin-a.lateMin);
       const goodList=Object.values(stats).filter(s=>s.lateMin===0&&s.present>0).sort((a,b)=>b.present-a.present);
+      const maxLate=lateList.length?lateList[0].lateMin:0;
 
-      const maxLate = lateList.length ? lateList[0].lateMin : 0;
+      let html='<div class="space-y-6">';
 
-      let html='<div class="space-y-8">';
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
-          <div class="smallCaps" style="color:rgba(248,113,113,.90)">Top retardataires</div>
-          <div class="accent-bar" style="flex:1;opacity:.45;background:linear-gradient(90deg, rgba(248,113,113,.85), rgba(248,113,113,0))"></div>
+          <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires</div>
+          <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(220,38,38,.40),transparent)"></div>
         </div>`;
-
       if(!lateList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucun retard enregistré</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucun retard enregistré 🎉</div>`;
       }else{
         lateList.slice(0,6).forEach(s=>{
-          const pct = maxLate ? Math.max(6, Math.round((s.lateMin / maxLate) * 100)) : 0;
-          html+=`
-            <div class="glass-card p-5 rounded-2xl mb-3">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
-                <span style="color:var(--crit);font-weight:900">${esc(s.lateMin)}m</span>
-              </div>
-              <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:10px;overflow:hidden">
-                <div style="height:6px;width:${escAttr(pct)}%;background:rgba(248,113,113,.55)"></div>
-              </div>
-            </div>`;
+          const pct=maxLate?Math.max(6,Math.round((s.lateMin/maxLate)*100)):0;
+          html+=`<div class="glass-card p-4 rounded-2xl mb-3">
+            <div class="flex justify-between items-center">
+              <span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+              <span class="text-[12px] font-extrabold" style="color:var(--crit)">${esc(s.lateMin)} min</span>
+            </div>
+            <div style="height:5px;border-radius:999px;background:rgba(245,158,11,.10);margin-top:10px;overflow:hidden">
+              <div style="height:5px;width:${escAttr(pct)}%;background:linear-gradient(90deg,rgba(220,38,38,.65),rgba(220,38,38,.35));border-radius:999px;transition:width .4s ease"></div>
+            </div>
+          </div>`;
         });
       }
       html+=`</div>`;
 
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
-          <div class="smallCaps" style="color:rgba(52,211,153,.90)">Les plus exemplaires</div>
-          <div class="accent-bar" style="flex:1;opacity:.45;background:linear-gradient(90deg, rgba(52,211,153,.85), rgba(52,211,153,0))"></div>
+          <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus exemplaires</div>
+          <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(5,150,105,.40),transparent)"></div>
         </div>`;
-
       if(!goodList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucune présence "OK" trouvée</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucune présence "OK" trouvée</div>`;
       }else{
         goodList.slice(0,6).forEach(s=>{
-          html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
-            <span style="color:var(--ok);font-weight:900">${esc(s.present)}j OK</span>
+          html+=`<div class="glass-card p-4 rounded-2xl mb-3 flex justify-between items-center">
+            <span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+            <span class="text-[12px] font-extrabold" style="color:var(--ok)">${esc(s.present)} j ✓</span>
           </div>`;
         });
       }
-
-      html+='</div></div>';
+      html+=`</div></div>`;
       document.getElementById('dashBody').innerHTML=html;
     }
 
     async function buildMonthlySummary(mk){
-      const md = await getMonthData(mk);
+      const year=mk.slice(0,4);
+      const startMap=await getEmpStartMapForYear(year);
+      const md=await getMonthData(mk);
       const {dates,presByDay,punchByDay}=md;
-      const {rcByEmpDay} = await getMonthRCMap(mk);
-
+      const {rcByEmpDay}=await getMonthRCMap(mk);
       const today=todayISO();
-      const out = {};
+      const out={};
       equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        out[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
+        const id=empIdOf(emp);
+        out[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};
       });
-
       dates.forEach(dayISO=>{
-        if(dayISO>today) return;
-        if(isExcluded(dayISO)) return;
-
-        const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
+        if(dayISO>today||isExcluded(dayISO)) return;
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         Object.keys(out).forEach(id=>{
-          const e = merged[id] || null;
-          const hp = safeTime(e?.hP) || "";
-          const ha = safeTime(e?.hA) || "";
-
+          const start=startMap[id];
+          if(!start||dayISO<start) return;
+          const e=merged[id]||null;
+          const hp=safeTime(e?.hP)||"";
+          const ha=safeTime(e?.hA)||"";
           if(ha){
             out[id].present++;
-            out[id].lateMin += diffFromEntry({hA:ha,hP:hp}, id);
+            out[id].lateMin+=diffFromEntry({hA:ha,hP:hp},id);
             return;
           }
-
-          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
-          if(rc==="R") out[id].R++;
-          else out[id].C++;
+          const rc=rcByEmpDay[id]?.[dayISO];
+          if(!rc) return;
+          if(rc==="R") out[id].R++; else out[id].C++;
         });
       });
-
       return out;
     }
 
-    async function buildYearSummary(year){
-      const currentMk = monthKeyFromISO(todayISO());
-      const totalsByEmp = {};
+    async function buildYearSummaryOptimized(year,monthPrefetch){
+      const currentMk=monthKeyFromISO(todayISO());
+      const totalsByEmp={};
       equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
+        const id=empIdOf(emp);
+        totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0};
       });
-
       for(let i=1;i<=12;i++){
-        const mk = `${year}-${String(i).padStart(2,"0")}`;
-        if(mk > currentMk) break;
-
-        const month = await buildMonthlySummary(mk);
+        const mk=`${year}-${String(i).padStart(2,"0")}`;
+        if(mk>currentMk) break;
+        const month=(monthPrefetch&&monthPrefetch[mk])?monthPrefetch[mk]:await buildMonthlySummary(mk);
         Object.values(month).forEach(s=>{
           if(!totalsByEmp[s.empId]){
-            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"", present:0, R:0, C:0, lateMin:0 };
+            totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0};
           }
-          totalsByEmp[s.empId].present += Number(s.present)||0;
-          totalsByEmp[s.empId].R       += Number(s.R)||0;
-          totalsByEmp[s.empId].C       += Number(s.C)||0;
-          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
+          totalsByEmp[s.empId].present+=Number(s.present)||0;
+          totalsByEmp[s.empId].R      +=Number(s.R)||0;
+          totalsByEmp[s.empId].C      +=Number(s.C)||0;
+          totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;
         });
       }
       return totalsByEmp;
     }
 
-    // ✅ PERF FIX: éviter le recalcul du mois courant dans renderRCView
-    // buildYearSummary(year, monthPrefetch)
-    async function buildYearSummaryOptimized(year, monthPrefetch){
-      const currentMk = monthKeyFromISO(todayISO());
-      const totalsByEmp = {};
-      equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
-      });
+    /* ══════════════════════════════════ TABLE R/C ══════════════════════════════════ */
 
-      for(let i=1;i<=12;i++){
-        const mk = `${year}-${String(i).padStart(2,"0")}`;
-        if(mk > currentMk) break;
-
-        const month = (monthPrefetch && monthPrefetch[mk]) ? monthPrefetch[mk] : await buildMonthlySummary(mk);
-        Object.values(month).forEach(s=>{
-          if(!totalsByEmp[s.empId]){
-            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom||s.empId, prenom:s.prenom||"", poste:s.poste||"", present:0, R:0, C:0, lateMin:0 };
-          }
-          totalsByEmp[s.empId].present += Number(s.present)||0;
-          totalsByEmp[s.empId].R       += Number(s.R)||0;
-          totalsByEmp[s.empId].C       += Number(s.C)||0;
-          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
-        });
-      }
-      return totalsByEmp;
+    function makeTable(rows, colR, colC){
+      return `<div class="mt-4">
+        <table class="rc-table">
+          <colgroup>
+            <col style="width:44%">
+            <col style="width:14%">
+            <col style="width:9%">
+            <col style="width:9%">
+            <col style="width:24%">
+          </colgroup>
+          <thead><tr>
+            <th style="text-align:left">Employé</th>
+            <th style="text-align:center">Prés.</th>
+            <th style="text-align:center">${esc(colR)}</th>
+            <th style="text-align:center">${esc(colC)}</th>
+            <th style="text-align:center">Retard</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r=>{
+              const late=Number(r.lateMin)||0;
+              return `<tr>
+                <td class="col-emp">
+                  <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span><br>
+                  <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744">${esc(titleCase(r.prenom))}</span>
+                  <br><span class="rc-poste-badge">${esc((r.poste||"").toLowerCase())}</span>
+                </td>
+                <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
+                <td style="text-align:center;font-weight:900;color:var(--crit)">
+                  ${late ? `<span style="font-size:10px">${esc(late)}m</span>` : '<span class="muted-dash">—</span>'}
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>`;
     }
 
     async function renderRCView(){
-      const mk   = monthKeyFromISO(dateInput.value);
-      const year = dateInput.value.slice(0,4);
-
-      const md = await getMonthData(mk);
+      const mk=monthKeyFromISO(dateInput.value);
+      const year=dateInput.value.slice(0,4);
+      const md=await getMonthData(mk);
       if(md.anyFail){
-        document.getElementById('dashBody').innerHTML =
-          errorCard("Réseau instable : certaines journées n’ont pas pu être chargées. Réessaie (changer de mois puis revenir) ou vérifie la connexion.");
+        document.getElementById('dashBody').innerHTML=errorCard("Réseau instable : certaines journées manquantes. Réessaie ou vérifie la connexion.");
         return;
       }
+      const monthSummary=await buildMonthlySummary(mk);
+      const yearSummary =await buildYearSummaryOptimized(year,{[mk]:monthSummary});
 
-      // Mois courant calculé 1 seule fois
-      const monthSummary = await buildMonthlySummary(mk);
-
-      // Année optimisée: réutilise monthSummary pour mk
-      const yearSummary  = await buildYearSummaryOptimized(year, { [mk]: monthSummary });
-
-      const monthRows = Object.values(monthSummary).sort((a,b)=>{
-        if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
+      const sortFn=(a,b)=>{
+        if(a.poste!==b.poste) return POSTES_ORDER.indexOf(a.poste)-POSTES_ORDER.indexOf(b.poste);
         return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-      });
+      };
+
+      const monthRows=Object.values(monthSummary).sort(sortFn);
       let mP=0,mR=0,mC=0,mL=0;
       monthRows.forEach(r=>{ mP+=r.present; mR+=r.R; mC+=r.C; mL+=r.lateMin; });
 
-      const monthTable = `
-        <div class="mt-4 overflow-x-auto">
-          <table class="rc-table">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Employé</th>
-                <th style="text-align:left;">Poste</th>
-                <th style="text-align:center;">Présents</th>
-                <th style="text-align:center;">R</th>
-                <th style="text-align:center;">C</th>
-                <th style="text-align:center;">Retard (min)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${monthRows.map(r=>{
-                const late = (Number(r.lateMin)||0);
-                return `
-                  <tr>
-                    <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
-                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--crit);">
-                      ${late ? esc(late) : '<span class="muted-dash">—</span>'}
-                    </td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-          </table>
-        </div>
-      `;
-
-      const yearRows = Object.values(yearSummary).sort((a,b)=>{
-        if(a.poste !== b.poste) return (POSTES_ORDER.indexOf(a.poste) - POSTES_ORDER.indexOf(b.poste));
-        return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-      });
+      const yearRows=Object.values(yearSummary).sort(sortFn);
       let yP=0,yR=0,yC=0,yL=0;
       yearRows.forEach(r=>{ yP+=r.present; yR+=r.R; yC+=r.C; yL+=r.lateMin; });
 
-      const yearTable = `
-        <div class="mt-4 overflow-x-auto">
-          <table class="rc-table">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Employé</th>
-                <th style="text-align:left;">Poste</th>
-                <th style="text-align:center;">Présents</th>
-                <th style="text-align:center;">Repos</th>
-                <th style="text-align:center;">Congé cumulé</th>
-                <th style="text-align:center;">Retard (min)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${yearRows.map(r=>{
-                const late = (Number(r.lateMin)||0);
-                return `
-                  <tr>
-                    <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
-                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
-                    <td style="text-align:center;font-weight:900;color:var(--crit);">
-                      ${late ? esc(late) : '<span class="muted-dash">—</span>'}
-                    </td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-          </table>
-        </div>
-      `;
-
-      const html = `
-        <div class="space-y-4">
-          <details class="drawer" open>
-            <summary>
-              <div>
-                <div class="smallCaps">Tableau Mois</div>
-                <div class="hTitle text-xl font-bold mt-1">${esc(mk)}
-                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(mP)} • R ${esc(mR)} • C ${esc(mC)} • Retard ${esc(mL)}m</span>
-                </div>
-              </div>
-              <div class="chev">▾</div>
-            </summary>
-            <div class="body">${monthTable}</div>
-          </details>
-
-          <details class="drawer">
-            <summary>
-              <div>
-                <div class="smallCaps">Tableau Année (résumé)</div>
-                <div class="hTitle text-xl font-bold mt-1">${esc(year)}
-                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(yP)} • Repos ${esc(yR)} • Congé ${esc(yC)} • Retard ${esc(yL)}m</span>
-                </div>
-              </div>
-              <div class="chev">▾</div>
-            </summary>
-            <div class="body">
-              ${yearTable}
-              <div class="mt-3 text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">
-                Année = cumul des mois jusqu’au mois courant • Congé cumulé = C seulement.
+      const html=`<div class="space-y-4">
+        <details class="drawer" open>
+          <summary>
+            <div>
+              <div class="smallCaps">Tableau Mois</div>
+              <div class="hTitle text-xl mt-1">${esc(mk)}
+                <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">
+                  · ${esc(mP)} présents · R ${esc(mR)} · C ${esc(mC)} · ${esc(mL)} min
+                </span>
               </div>
             </div>
-          </details>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="body">${makeTable(monthRows,'R','C')}</div>
+        </details>
 
-          <div class="mt-2 text-[10px] font-semibold" style="color:rgba(255,255,255,.50)">
-            R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
+        <details class="drawer">
+          <summary>
+            <div>
+              <div class="smallCaps">Tableau Année (cumul)</div>
+              <div class="hTitle text-xl mt-1">${esc(year)}
+                <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">
+                  · ${esc(yP)} présents · Repos ${esc(yR)} · Congé ${esc(yC)} · ${esc(yL)} min
+                </span>
+              </div>
+            </div>
+            <div class="chev">▾</div>
+          </summary>
+          <div class="body">
+            ${makeTable(yearRows,'Repos','Congé')}
+            <p class="mt-3 text-[10px] font-semibold" style="color:var(--muted3)">
+              Année = cumul des mois jusqu'au mois courant · Congé = C seulement
+            </p>
           </div>
-        </div>
-      `;
+        </details>
 
-      document.getElementById('dashBody').innerHTML = html;
+        <p class="text-[10px] font-semibold" style="color:var(--muted3)">
+          R = 1er OFF semaine (sauf SALIL/BENKHADA) · C = OFF supp + absences · Retard = HA − HP
+        </p>
+      </div>`;
+
+      document.getElementById('dashBody').innerHTML=html;
     }
 
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
-      const rcTxt=rc?` • ${esc(rc)}`:"";
-      return `
-        <div class="p-4 rounded-xl" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
-          <div class="flex justify-between items-center">
-            <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
-            <span class="smallCaps" style="font-size:10px;${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
-          </div>
-          <div class="mt-3 grid grid-cols-3 gap-2">
-            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HP: <span style="color:rgba(255,255,255,.85)">${esc(hp||"—")}</span></div>
-            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HA: <span style="color:rgba(255,255,255,.85)">${esc(ha||"—")}</span></div>
-            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">Ret: <span style="color:rgba(255,255,255,.85)">${esc(retard||"—")}</span></div>
-          </div>
-        </div>`;
+      const rcTxt=rc?` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>`:"";
+      return `<div class="p-4 rounded-2xl" style="background:rgba(255,255,255,.50);border:1px solid var(--stroke-med)">
+        <div class="flex justify-between items-center">
+          <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
+          <span class="text-[11px] font-extrabold" style="${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
+        </div>
+        <div class="mt-3 grid grid-cols-3 gap-2">
+          <div class="text-[10px] font-bold" style="color:var(--muted3)">HP <span style="color:#0f2744;font-weight:900">${esc(hp||"—")}</span></div>
+          <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha||"—")}</span></div>
+          <div class="text-[10px] font-bold" style="color:var(--muted3)">Ret <span style="color:#0f2744;font-weight:900">${esc(retard||"—")}</span></div>
+        </div>
+      </div>`;
     }
 
     async function openHistory(nom,prenom){
       const modal=document.getElementById('historyModal');
-      modal.classList.remove("hidden"); modal.classList.add('modal-active');
+      modal.classList.remove("hidden","modal-closing");
+      modal.classList.add('modal-active');
       document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
-      document.getElementById('modalList').innerHTML=`
-        <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
-          <div class="spin"></div>
-          <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">Chargement historique…</div>
-        </div>`;
+      document.getElementById('modalList').innerHTML=loadingCard("Chargement historique…");
 
       const mk=monthKeyFromISO(dateInput.value);
-      const md = await getMonthData(mk);
-
+      const md=await getMonthData(mk);
       if(md.anyFail){
-        document.getElementById('modalList').innerHTML =
-          errorCard("Réseau instable : historique partiel. Réessaie après stabilisation de la connexion.");
+        document.getElementById('modalList').innerHTML=errorCard("Réseau instable : historique partiel.");
         return;
       }
-
       const {dates,presByDay,punchByDay}=md;
-      const {rcByEmpDay} = await getMonthRCMap(mk);
+      const {rcByEmpDay,startMap}=await getMonthRCMap(mk);
       const today=todayISO();
-
-      const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
-      const empId = emp ? empIdOf(emp) : (nom + "_" + prenom);
-
+      const emp=equipe.find(e=>e.nom===nom&&e.prenom===prenom);
+      const empId=emp?empIdOf(emp):(nom+"_"+prenom);
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:rgba(255,255,255,.35)"); return; }
-        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:rgba(255,255,255,.45)"); return; }
-
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:var(--muted3)"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:var(--muted3)"); return; }
+        const empStart=startMap[empId];
+        if(!empStart||dayISO<empStart){ html+=rowHistory(dayISO,"Non commencé","","","","color:var(--muted3)"); return; }
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
-
-        const hp = safeTime(e?.hP)||"";
-        const ha = safeTime(e?.hA)||"";
-
+        const hp=safeTime(e?.hP)||"";
+        const ha=safeTime(e?.hA)||"";
         if(ha){
           if(hp){
             const diff=diffFromEntry({hA:ha,hP:hp},empId);
-            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff}m`,"color:var(--crit)");
+            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
             else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
           }else{
             html+=rowHistory(dayISO,"OK","",ha,"","color:var(--ok)");
           }
           return;
         }
-
-        const rc = (rcByEmpDay[empId] && rcByEmpDay[empId][dayISO]) ? rcByEmpDay[empId][dayISO] : "C";
-        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(255,255,255,.60)", rc);
+        const rc=rcByEmpDay[empId]?.[dayISO];
+        if(rc){ html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",hp,ha,"","color:var(--muted2)",rc); }
+        else   { html+=rowHistory(dayISO,"—",hp,ha,"","color:var(--muted3)"); }
       });
-
-      document.getElementById('modalList').innerHTML=html||'<p class="text-center py-10" style="color:rgba(255,255,255,.45);font-weight:800">Aucune donnée</p>';
-    }
-
-    function closeModal(){
-      const m=document.getElementById('historyModal');
-      m.classList.remove('modal-active'); m.classList.add('hidden');
+      document.getElementById('modalList').innerHTML=html||
+        `<p class="text-center py-10 text-[12px] font-extrabold" style="color:var(--muted3)">Aucune donnée ce mois</p>`;
     }
 
     function escapeCSV(v){
-      const s = String(v ?? "");
+      const s=String(v??"");
       if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
       return s;
     }
 
     async function exportCSV_RC_Month(){
-      const mk = monthKeyFromISO(dateInput.value);
-      const summary = await buildMonthlySummary(mk);
-
-      const header = ["Mois","Employe","Poste","Presents","ReposTotal","CongeTotal","RetardMin"];
-      const lines = [header.join(",")];
-
-      Object.values(summary)
-        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-        .forEach(s=>{
-          lines.push([
-            mk,
-            escapeCSV(`${s.nom} ${titleCase(s.prenom)}`),
-            escapeCSV(s.poste),
-            s.present,
-            s.R,
-            s.C,
-            s.lateMin
-          ].join(","));
-        });
-
-      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `GC_RC_MOIS_${mk}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const mk=monthKeyFromISO(dateInput.value);
+      const summary=await buildMonthlySummary(mk);
+      const header=["Mois","Employe","Poste","Presents","ReposTotal","CongeTotal","RetardMin"];
+      const lines=[header.join(",")];
+      Object.values(summary).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom)).forEach(s=>{
+        lines.push([mk,escapeCSV(`${s.nom} ${titleCase(s.prenom)}`),escapeCSV(s.poste),s.present,s.R,s.C,s.lateMin].join(","));
+      });
+      const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download=`GC_RC_MOIS_${mk}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
     async function exportCSV_RC_Year(){
-      const year = dateInput.value.slice(0,4);
-      const currentMk = monthKeyFromISO(todayISO());
-
-      const totalsByEmp = {};
-      equipe.forEach(emp=>{
-        const id = empIdOf(emp);
-        totalsByEmp[id] = { empId:id, nom:emp.nom, prenom:emp.prenom, poste:emp.poste, present:0, R:0, C:0, lateMin:0 };
-      });
-
+      const year=dateInput.value.slice(0,4);
+      const currentMk=monthKeyFromISO(todayISO());
+      const totalsByEmp={};
+      equipe.forEach(emp=>{ const id=empIdOf(emp); totalsByEmp[id]={empId:id,nom:emp.nom,prenom:emp.prenom,poste:emp.poste,present:0,R:0,C:0,lateMin:0}; });
       for(let i=1;i<=12;i++){
-        const mk = `${year}-${String(i).padStart(2,"0")}`;
-        if(mk > currentMk) break;
-
-        const summary = await buildMonthlySummary(mk);
+        const mk=`${year}-${String(i).padStart(2,"0")}`;
+        if(mk>currentMk) break;
+        const summary=await buildMonthlySummary(mk);
         Object.values(summary).forEach(s=>{
-          if(!totalsByEmp[s.empId]){
-            totalsByEmp[s.empId] = { empId:s.empId, nom:s.nom || s.empId, prenom:s.prenom || "", poste:s.poste || "", present:0, R:0, C:0, lateMin:0 };
-          }
-          totalsByEmp[s.empId].present += Number(s.present)||0;
-          totalsByEmp[s.empId].R       += Number(s.R)||0;
-          totalsByEmp[s.empId].C       += Number(s.C)||0;
-          totalsByEmp[s.empId].lateMin += Number(s.lateMin)||0;
+          if(!totalsByEmp[s.empId]){ totalsByEmp[s.empId]={empId:s.empId,nom:s.nom||s.empId,prenom:s.prenom||"",poste:s.poste||"",present:0,R:0,C:0,lateMin:0}; }
+          totalsByEmp[s.empId].present+=Number(s.present)||0;
+          totalsByEmp[s.empId].R      +=Number(s.R)||0;
+          totalsByEmp[s.empId].C      +=Number(s.C)||0;
+          totalsByEmp[s.empId].lateMin+=Number(s.lateMin)||0;
         });
       }
+      const header=["Annee","Employe","Poste","PresentsTotal","ReposTotal","CongeCumuleAnnee","RetardTotalMin"];
+      const lines=[header.join(",")];
+      Object.values(totalsByEmp).sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom)).forEach(t=>{
+        lines.push([year,escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()),escapeCSV(t.poste),t.present,t.R,t.C,t.lateMin].join(","));
+      });
+      const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download=`GC_RC_ANNEE_RESUME_${year}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
 
-      const header = ["Annee","Employe","Poste","PresentsTotal","ReposTotal","CongeCumuleAnnee","RetardTotalMin"];
-      const lines = [header.join(",")];
-
-      Object.values(totalsByEmp)
-        .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-        .forEach(t=>{
-          lines.push([
-            year,
-            escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()),
-            escapeCSV(t.poste),
-            t.present,
-            t.R,
-            t.C,
-            t.lateMin
-          ].join(","));
-        });
-
-      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `GC_RC_ANNEE_RESUME_${year}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+    function startMidnightWatcher(){
+      if(midnightTimer) clearInterval(midnightTimer);
+      let lastDay=todayISO();
+      midnightTimer=setInterval(async()=>{
+        const nowDay=todayISO();
+        if(nowDay!==lastDay){
+          lastDay=nowDay;
+          const mkToday=monthKeyFromISO(nowDay);
+          dayPicker.value=nowDay;
+          monthPicker.value=mkToday;
+          dateInput.value=isoFromMonthKey(mkToday);
+          clearMonthCache();
+          syncLine.textContent="Sheets : resync après minuit…";
+          try{ await updateDashboard(); await exportYear_ToSheets(); }
+          catch(err){ console.error("Midnight resync error:",err); syncLine.textContent="⚠️ Sheets : erreur resync minuit"; }
+        }
+      },30000);
     }
 
     async function bootDashboard(){
-      const today = todayISO();
-      const mkToday = monthKeyFromISO(today);
+      const today=todayISO();
+      const mkToday=monthKeyFromISO(today);
+      dayPicker.value=today;
+      monthPicker.value=mkToday;
+      dateInput.value=isoFromMonthKey(mkToday);
 
-      // Day picker init (⚠️ pas de .max figé: on autorise navigation, et évite le bug "minuit")
-      dayPicker.value = today;
-
-      monthPicker.value = mkToday;
-      dateInput.value = isoFromMonthKey(mkToday);
-
-      dayPicker.addEventListener('change', async()=>{
-        await updateDashboard();
-      });
-
-      monthPicker.addEventListener('change', async()=>{
-        const mk = monthPicker.value || mkToday;
-        dateInput.value = isoFromMonthKey(mk);
+      dayPicker.addEventListener('change',async()=>{ await updateDashboard(); });
+      monthPicker.addEventListener('change',async()=>{
+        const mk=monthPicker.value||mkToday;
+        dateInput.value=isoFromMonthKey(mk);
         clearMonthCache();
         await updateDashboard();
       });
 
-      try{
-        const list=await loadEquipeFromDB();
-        setEquipe(list);
-      }catch(e){}
-
+      try{ const list=await loadEquipeFromDB(); setEquipe(list); }catch(e){}
       await initStaffAdminUI();
       await updateDashboard();
+      startMidnightWatcher();
     }
   </script>
 </body>
