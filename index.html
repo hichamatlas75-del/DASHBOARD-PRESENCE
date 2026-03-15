@@ -2,58 +2,42 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Direction Hub • Grey Corner</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg-deep:#e0f2fe;
-      --bg-base:#f0f9ff;
+      --bg:#0d0f12;
+      --card:#13161b;
+      --card2:#11141a;
+      --stroke: rgba(255,255,255,.07);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.55);
+      --muted2: rgba(255,255,255,.40);
 
-      --surface:rgba(255,255,255,.72);
-      --surface2:rgba(255,255,255,.92);
-      --surface-soft:rgba(255,255,255,.55);
+      --gold:#c5a059;
 
-      --stroke:rgba(12,74,110,.10);
-      --stroke-strong:rgba(12,74,110,.16);
+      --ok:#34d399;
+      --amber:#fbbf24;
+      --crit:#f87171;
 
-      --text:#0c4a6e;
-      --muted:#0369a1;
-      --muted2:rgba(3,105,161,.62);
-
-      --gold:#0ea5e9;
-
-      --ok:#059669;
-      --amber:#d97706;
-      --crit:#dc2626;
-
-      --okBg:rgba(5,150,105,.08);
-      --amberBg:rgba(217,119,6,.08);
-      --critBg:rgba(220,38,38,.08);
-
-      --shadow:0 10px 30px rgba(2,132,199,.08);
+      --okBg: rgba(52,211,153,.08);
+      --amberBg: rgba(251,191,36,.08);
+      --critBg: rgba(248,113,113,.08);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
-
-    html{
-      -webkit-text-size-adjust:100%;
-      text-size-adjust:100%;
-    }
-
     body{
       margin:0;
-      min-height:100dvh;
-      background:
-        radial-gradient(circle at top center, var(--bg-base) 0%, var(--bg-deep) 72%);
-      color:var(--text);
-      font-family:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       -webkit-tap-highlight-color:transparent;
       position:relative;
       overflow-x:hidden;
@@ -61,88 +45,74 @@
 
     body::before{
       content:"";
-      position:fixed;
-      inset:0;
+      position:fixed; inset:0;
       pointer-events:none;
-      background:
-        radial-gradient(circle at -10% -10%, rgba(34,211,238,.18), transparent 28%),
-        radial-gradient(circle at 110% 30%, rgba(168,85,247,.12), transparent 30%),
-        radial-gradient(circle at 30% 100%, rgba(251,191,36,.12), transparent 28%);
-      z-index:0;
+      opacity:.035;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      mix-blend-mode:overlay;
     }
 
     ::-webkit-scrollbar{width:4px;height:4px}
     ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:rgba(2,132,199,.20);border-radius:999px}
+    ::-webkit-scrollbar-thumb{background: rgba(197,160,89,.30); border-radius:999px}
 
     .glass-card{
-      background:linear-gradient(180deg, var(--surface2), var(--surface));
+      background: linear-gradient(180deg, rgba(19,22,27,.96), rgba(17,20,26,.92));
       border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
+      box-shadow: 0 14px 45px rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
     }
 
     .hTitle{
-      font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
-      letter-spacing:-.02em;
-      color:#082f49;
-      font-weight:800;
+      font-family: "Cormorant Garamond", serif;
+      letter-spacing: .02em;
     }
-
     .smallCaps{
       font-weight:800;
       text-transform:uppercase;
-      letter-spacing:.12em;
+      letter-spacing:.22em;
       font-size:10px;
-      color:var(--muted2);
+      color: var(--muted2);
     }
 
     .accent-bar{
       height:2px;
       width:100%;
-      background:linear-gradient(90deg, rgba(14,165,233,.95), rgba(14,165,233,0));
+      background: linear-gradient(90deg, rgba(197,160,89,.95), rgba(197,160,89,0));
       border-radius:999px;
-      opacity:.95;
+      opacity:.9;
     }
 
     .view-btn{
-      color:var(--muted);
+      color: rgba(255,255,255,.82);
       border:1px solid transparent;
       transition:.25s ease;
-      background:transparent;
+      background: transparent;
     }
-
     .view-btn.active{
-      background:rgba(14,165,233,.12);
-      color:#075985;
-      border-color:rgba(14,165,233,.32);
-      box-shadow:inset 0 0 0 1px rgba(14,165,233,.08);
+      background: rgba(197,160,89,.14);
+      color: rgba(197,160,89,.95);
+      border-color: rgba(197,160,89,.40);
+      box-shadow: inset 0 0 0 1px rgba(197,160,89,.12);
     }
 
     .inpt{
       width:100%;
-      background:rgba(255,255,255,.85);
+      background: rgba(255,255,255,.03);
       border:1px solid var(--stroke);
       border-radius:16px;
       padding:12px 12px;
-      color:var(--text);
+      color: var(--text);
       font-weight:800;
       font-size:12px;
       outline:none;
-      color-scheme:light;
+      color-scheme: dark;
     }
-
-    .inpt::placeholder{
-      color:rgba(3,105,161,.56);
-      font-weight:700;
-    }
-
     .inpt:focus{
-      border-color:rgba(14,165,233,.48);
-      box-shadow:0 0 0 3px rgba(14,165,233,.14);
+      border-color: rgba(197,160,89,.55);
+      box-shadow: 0 0 0 3px rgba(197,160,89,.16);
     }
-
     .btn-login{
       width:100%;
       border-radius:16px;
@@ -151,18 +121,17 @@
       font-weight:900;
       letter-spacing:.10em;
       text-transform:uppercase;
-      background:rgba(14,165,233,.14);
-      color:#075985;
-      border:1px solid rgba(14,165,233,.35);
+      background: rgba(197,160,89,.16);
+      color: rgba(197,160,89,.96);
+      border:1px solid rgba(197,160,89,.45);
     }
-
     .btn-login:active{transform:translateY(1px)}
 
     .spin{
       width:22px;height:22px;border-radius:999px;
-      border:3px solid rgba(2,132,199,.12);
-      border-top-color:rgba(14,165,233,.9);
-      animation:sp .9s linear infinite;
+      border:3px solid rgba(255,255,255,.14);
+      border-top-color: rgba(197,160,89,.9);
+      animation:sp 0.9s linear infinite;
     }
     @keyframes sp{to{transform:rotate(360deg)}}
 
@@ -172,83 +141,75 @@
       cursor:pointer;
       position:relative;
       overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.76));
+      background: rgba(19,22,27,.96);
     }
-
-    .staff-card:active{transform:scale(.995)}
-
+    .staff-card:active{transform: scale(.995)}
     .status-dot{
       position:absolute; top:10px; right:10px;
       width:6px; height:6px; border-radius:999px;
-      box-shadow:0 0 0 6px rgba(255,255,255,.40);
+      box-shadow: 0 0 0 6px rgba(255,255,255,.03);
       opacity:.95;
     }
-
     .arrive-time{
       position:absolute; bottom:12px; right:12px;
-      font-weight:800;
-      font-size:13px;
-      color:rgba(8,47,73,.74);
-      letter-spacing:.01em;
+      font-family:"Cormorant Garamond", serif;
+      font-weight:700;
+      font-size:14px;
+      color: rgba(255,255,255,.78);
+      letter-spacing:.02em;
     }
 
-    .status-green{border-left-color:var(--ok)!important;background:var(--okBg)}
-    .status-orange{border-left-color:var(--amber)!important;background:var(--amberBg)}
-    .status-red{border-left-color:var(--crit)!important;background:var(--critBg)}
+    .status-green{border-left-color: var(--ok)!important; background: var(--okBg)}
+    .status-orange{border-left-color: var(--amber)!important; background: var(--amberBg)}
+    .status-red{border-left-color: var(--crit)!important; background: var(--critBg)}
     .status-flash{
-      border-left-color:var(--crit)!important;
-      background:var(--critBg);
+      border-left-color: var(--crit)!important;
+      background: var(--critBg);
       animation:flash-red 1s infinite;
     }
-
     @keyframes flash-red{
-      0%{box-shadow:inset 0 0 0px rgba(220,38,38,0)}
-      50%{box-shadow:inset 0 0 18px rgba(220,38,38,.10);border-left-width:6px}
-      100%{box-shadow:inset 0 0 0px rgba(220,38,38,0)}
+      0%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
+      50%{box-shadow:inset 0 0 18px rgba(248,113,113,.10);border-left-width:6px}
+      100%{box-shadow:inset 0 0 0px rgba(248,113,113,.0)}
     }
-
-    .status-off{
-      border-left-color:rgba(148,163,184,.55)!important;
-      background:rgba(255,255,255,.38);
-      opacity:.68;
-    }
+    .status-off{border-left-color: rgba(148,163,184,.6)!important; background: rgba(255,255,255,.03); opacity:.62}
 
     .chip{
       display:inline-flex;align-items:center;gap:6px;
       padding:5px 10px;border-radius:999px;
       border:1px solid var(--stroke);
       font-weight:900;font-size:11px;
-      background:rgba(255,255,255,.70);
-      color:#0f172a;
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.86);
     }
-    .chip-p{background:rgba(5,150,105,.10);border-color:rgba(5,150,105,.18)}
-    .chip-r{background:rgba(255,255,255,.66);border-color:rgba(12,74,110,.12)}
-    .chip-c{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.20)}
+    .chip-p{background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.22)}
+    .chip-r{background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12)}
+    .chip-c{background: rgba(251,191,36,.10); border-color: rgba(251,191,36,.22)}
 
     .rc-table{width:100%;border-collapse:collapse}
     .rc-table th,.rc-table td{
-      border:1px solid rgba(12,74,110,.08);
+      border:1px solid rgba(255,255,255,.08);
       padding:10px 10px;
       font-size:12px;
       white-space:nowrap;
     }
     .rc-table th{
-      background:rgba(255,255,255,.56);
+      background: rgba(255,255,255,.03);
       font-weight:900;
       text-transform:uppercase;
       letter-spacing:.12em;
       font-size:10px;
-      color:rgba(3,105,161,.72);
+      color: rgba(255,255,255,.55);
     }
-    .rc-table tbody tr:nth-child(odd){ background:rgba(255,255,255,.25); }
-    .rc-table tbody tr:hover{ background:rgba(14,165,233,.05); transition: background .2s ease; }
-    .muted-dash{opacity:.45}
+    .rc-table tbody tr:nth-child(odd){ background: rgba(255,255,255,.015); }
+    .rc-table tbody tr:hover{ background: rgba(197,160,89,.07); transition: background .2s ease; }
+    .muted-dash{opacity:.55}
 
     .drawer{
-      border:1px solid rgba(12,74,110,.10);
+      border:1px solid rgba(255,255,255,.10);
       border-radius:24px;
       overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.70));
+      background: rgba(19,22,27,.92);
     }
     .drawer summary{
       list-style:none;
@@ -260,48 +221,40 @@
       gap:12px;
     }
     .drawer summary::-webkit-details-marker{display:none}
-    .drawer .chev{transition:transform .2s ease; opacity:.8; color:var(--muted);}
+    .drawer .chev{transition:transform .2s ease; opacity:.8}
     .drawer[open] .chev{transform:rotate(180deg)}
     .drawer .body{padding:0 16px 16px 16px}
 
     .modal-active{display:flex!important;animation:slideUp .35s cubic-bezier(0,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-
     .modal-overlay{
-      background:rgba(3,37,65,.34);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
+      background: rgba(0,0,0,.70);
+      backdrop-filter: blur(12px);
     }
-
     .modal-sheet{
-      background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(240,249,255,.94));
-      border:1px solid rgba(12,74,110,.10);
+      background: linear-gradient(180deg, rgba(19,22,27,.98), rgba(17,20,26,.96));
+      border:1px solid rgba(255,255,255,.10);
     }
-
     .handle{
-      width:36px;height:4px;
-      background:rgba(3,105,161,.18);
+      width:36px; height:4px;
+      background: rgba(255,255,255,.18);
       border-radius:999px;
-      margin:0 auto 14px auto;
-      opacity:.9;
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .staff-card,.view-btn{transition:none}
+      margin: 0 auto 14px auto;
+      opacity:.85;
     }
   </style>
 </head>
 
 <body class="antialiased pb-10">
-  <div class="max-w-md mx-auto px-4 pt-[max(18px,env(safe-area-inset-top))] relative z-10">
+  <div class="max-w-md mx-auto px-5 pt-8">
 
     <!-- LOGIN -->
     <div id="loginWrap" class="glass-card rounded-3xl p-5 mb-6">
       <div class="flex items-start justify-between gap-3">
         <div>
           <div class="smallCaps">Accès sécurisé</div>
-          <div class="hTitle text-3xl font-bold mt-1">Connexion</div>
-          <div class="smallCaps mt-1" style="color:#0284c7">Grey Corner</div>
+          <div class="hTitle text-3xl font-bold mt-1" style="color:rgba(255,255,255,.92)">Connexion</div>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
         </div>
         <div class="smallCaps">RH</div>
       </div>
@@ -315,14 +268,14 @@
 
     <!-- APP -->
     <div id="appWrap" class="hidden">
-      <header class="glass-card rounded-3xl p-5 flex justify-between items-start mb-6">
+      <header class="flex justify-between items-start mb-6">
         <div>
           <h1 class="hTitle text-4xl font-bold leading-none">RH Supervision</h1>
-          <div class="smallCaps mt-1" style="color:#0284c7">Grey Corner</div>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
 
           <div class="mt-3 space-y-1">
             <div class="smallCaps">
-              Connecté : <span id="roleLabel" style="color:#082f49">—</span>
+              Connecté : <span id="roleLabel" style="color:rgba(255,255,255,.86)">—</span>
             </div>
             <div id="syncLine" class="smallCaps">Sync : —</div>
           </div>
@@ -330,7 +283,7 @@
 
         <div class="flex flex-col items-end gap-2">
           <button id="btnLogout" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-            style="background:rgba(255,255,255,.55);border:1px solid rgba(12,74,110,.10);color:#0c4a6e">
+            style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.85)">
             Déconnexion
           </button>
         </div>
@@ -378,52 +331,48 @@
             </div>
             <div class="flex flex-col gap-2">
               <button onclick="exportCSV_RC_Month()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.35);color:#075985">
+                style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
                 Export R/C Mois
               </button>
               <button onclick="exportCSV_RC_Year()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(255,255,255,.55);border:1px solid rgba(12,74,110,.10);color:#0c4a6e">
-                Export Année CSV
-              </button>
-              <button onclick="exportYear_ToSheets()" class="px-4 py-2 rounded-full text-[11px] font-extrabold"
-                style="background:rgba(66,133,244,.14);border:1px solid rgba(66,133,244,.35);color:#2563eb">
-                ↗ Sync Google Sheets
+                style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.82)">
+                Export Année (résumé)
               </button>
             </div>
           </div>
         </div>
-
-        <!-- CHART -->
-        <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
-          <div class="h-[180px] w-full">
-            <canvas id="trendsChart"></canvas>
-          </div>
-        </div>
-
-        <div id="dashBody" class="space-y-6"></div>
-
-        <!-- OUTILS -->
-        <div class="mt-6 space-y-4">
-          <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-            <div class="smallCaps">Collaborateurs</div>
-            <div class="accent-bar"></div>
-            <div class="grid grid-cols-2 gap-2">
-              <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-                style="background:rgba(255,255,255,.55);border:1px solid rgba(12,74,110,.10);color:#0c4a6e">
-                Gérer équipe
-              </button>
-              <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-                style="background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.35);color:#075985">
-                Export JSON
-              </button>
-            </div>
-            <div id="teamPermHint" class="text-[10px] font-semibold leading-snug" style="color:var(--muted)">
-              Stocké dans Firebase: <b>settings/equipe</b>.
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      <!-- CHART -->
+      <div id="chartContainer" class="glass-card rounded-3xl p-6 mb-6 hidden">
+        <div class="h-[180px] w-full">
+          <canvas id="trendsChart"></canvas>
+        </div>
+      </div>
+
+      <div id="dashBody" class="space-y-6"></div>
+
+      <!-- OUTILS -->
+      <div class="mt-6 space-y-4">
+        <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
+          <div class="smallCaps">Collaborateurs</div>
+          <div class="accent-bar"></div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnOpenStaffAdmin" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+              style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.88)">
+              Gérer équipe
+            </button>
+            <button id="btnExportEquipe" class="px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+              style="background:rgba(197,160,89,.18);border:1px solid rgba(197,160,89,.50);color:rgba(197,160,89,.95)">
+              Export JSON
+            </button>
+          </div>
+          <div id="teamPermHint" class="text-[10px] font-semibold leading-snug" style="color:var(--muted)">
+            Stocké dans Firebase: <b>settings/equipe</b>.
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -445,15 +394,15 @@
         <div>
           <div class="smallCaps">Admin</div>
           <div class="hTitle text-3xl font-bold mt-1">Gérer l'équipe</div>
-          <div class="smallCaps mt-1" style="color:#0284c7">Grey Corner</div>
+          <div class="smallCaps mt-1" style="color:rgba(197,160,89,.95)">Grey Corner</div>
         </div>
         <button class="px-3 py-2 rounded-full text-[11px] font-extrabold" onclick="closeStaffAdmin()"
-          style="background:rgba(255,255,255,.55);border:1px solid rgba(12,74,110,.10);color:#0c4a6e">
+          style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.86)">
           Fermer
         </button>
       </div>
 
-      <div class="rounded-2xl border p-4" style="border-color:rgba(12,74,110,.10);background:rgba(255,255,255,.35)">
+      <div class="rounded-2xl border p-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.03)">
         <div class="smallCaps mb-3">Ajouter collaborateur</div>
         <div class="grid grid-cols-2 gap-2">
           <input id="addNom" class="inpt" placeholder="NOM (ex: ELALAMI)" />
@@ -467,18 +416,14 @@
           <option value="MENAGE">MENAGE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
-        <input id="addDateDebut" class="inpt mt-2" type="date" />
-        <div class="mt-2 text-[10px] font-semibold" style="color:var(--muted)">
-          Date de début optionnelle. Si vide, le système prendra la première activité trouvée.
-        </div>
         <button id="btnAddStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.35);color:#075985">
+          style="background:rgba(197,160,89,.22);border:1px solid rgba(197,160,89,.55);color:rgba(197,160,89,.95)">
           AJOUTER
         </button>
         <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
       </div>
 
-      <div class="rounded-2xl border p-4 mt-4" style="border-color:rgba(12,74,110,.10);background:rgba(255,255,255,.25)">
+      <div class="rounded-2xl border p-4 mt-4" style="border-color:rgba(255,255,255,.10);background:rgba(255,255,255,.02)">
         <div class="smallCaps mb-3">Supprimer collaborateur</div>
         <select id="delPosteSelect" class="inpt">
           <option value="">-- Choisir poste --</option>
@@ -493,7 +438,7 @@
           <option value="">Choisir poste d'abord</option>
         </select>
         <button id="btnDeleteStaff" class="mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#dc2626">
+          style="background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.50);color:rgba(248,113,113,.95)">
           SUPPRIMER
         </button>
         <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted)"></div>
@@ -543,8 +488,6 @@
     let role = null;
     let activePresRef = null, activePunchRef = null;
     let presCache = {}, punchCache = {};
-    let midnightTimer = null;
-    let sheetsSyncRunning = false;
 
     const EQUIPE_PATH = "settings/equipe";
 
@@ -673,21 +616,9 @@
       return "C";
     }
 
-function empIdOf(emp){
-  const nom = String(emp?.nom || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "_");
-
-  const prenom = String(emp?.prenom || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "_");
-
-  return `${nom}_${prenom}`;
-}
+    function empIdOf(emp){ return emp.nom+"_"+emp.prenom; }
     function getEmpById(empId){
-      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:"",dateDebut:""};
+      return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:""};
     }
 
     function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
@@ -755,23 +686,18 @@ function empIdOf(emp){
         const nom=normName(document.getElementById("addNom").value);
         const prenom=normName(document.getElementById("addPrenom").value);
         const poste=(document.getElementById("addPoste").value||"").trim().toUpperCase();
-        const dateDebut=(document.getElementById("addDateDebut").value||"").trim();
-
         if(!nom||!prenom||!poste){ addMsg.textContent="⚠️ Remplis NOM, Prénom et Poste."; return; }
         const id=makeEmpId(nom,prenom);
         if(equipe.some(e=>empIdOf(e)===id)){ addMsg.textContent="⚠️ Déjà existant."; return; }
-
         addMsg.textContent="Ajout…";
         const next = equipe.slice();
-        next.push({nom,prenom,poste,dateDebut:dateDebut||""});
-
+        next.push({nom,prenom,poste});
         try{
           await saveEquipeToDB(next);
           setEquipe(next);
           addMsg.textContent="✅ Ajouté.";
           document.getElementById("addNom").value="";
           document.getElementById("addPrenom").value="";
-          document.getElementById("addDateDebut").value="";
           closeStaffAdmin();
           updateDashboard();
         }catch(e){
@@ -805,16 +731,8 @@ function empIdOf(emp){
       return s.val()||null;
     }
     function showLoginUI(msg){
-      detachRealtime();
-      role=null;
-
-      if(midnightTimer){
-        clearInterval(midnightTimer);
-        midnightTimer = null;
-      }
-
-      appWrap.classList.add("hidden");
-      loginWrap.classList.remove("hidden");
+      detachRealtime(); role=null;
+      appWrap.classList.add("hidden"); loginWrap.classList.remove("hidden");
       document.getElementById("loginMsg").textContent=msg||"";
     }
     function showAppUI(){
@@ -831,10 +749,6 @@ function empIdOf(emp){
       catch(e){ showLoginUI("Identifiants invalides."); }
     };
     document.getElementById("btnLogout").onclick=async()=>{
-      if(midnightTimer){
-        clearInterval(midnightTimer);
-        midnightTimer = null;
-      }
       try{ await auth.signOut(); }catch(e){}
       location.reload();
     };
@@ -856,109 +770,6 @@ function empIdOf(emp){
       showAppUI();
       bootDashboard();
     });
-
-    // ═══════════════════════════════════════════════
-    // GOOGLE SHEETS WEBHOOK
-    // ═══════════════════════════════════════════════
-    const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
-    const SHEETS_SECRET      = "GC_SECRET_2026";
-
-    async function exportYear_ToSheets(){
-      if(sheetsSyncRunning) return;
-      sheetsSyncRunning = true;
-
-      try{
-        const year = dateInput.value.slice(0,4);
-        const currentMk = monthKeyFromISO(todayISO());
-
-        const totalsByEmp = {};
-        equipe.forEach(emp=>{
-          const id = empIdOf(emp);
-          totalsByEmp[id] = {
-            empId:id,
-            nom:emp.nom,
-            prenom:emp.prenom,
-            poste:emp.poste,
-            present:0,
-            R:0,
-            C:0,
-            lateMin:0
-          };
-        });
-
-        syncLine.textContent = "Sheets : calcul en cours…";
-
-        for(let i=1; i<=12; i++){
-          const mk = `${year}-${String(i).padStart(2,"0")}`;
-          if(mk > currentMk) break;
-
-          const summary = await buildMonthlySummary(mk);
-          Object.values(summary).forEach(s=>{
-            if(!totalsByEmp[s.empId]){
-              totalsByEmp[s.empId] = {
-                empId:s.empId,
-                nom:s.nom || s.empId,
-                prenom:s.prenom || "",
-                poste:s.poste || "",
-                present:0,
-                R:0,
-                C:0,
-                lateMin:0
-              };
-            }
-            totalsByEmp[s.empId].present += Number(s.present) || 0;
-            totalsByEmp[s.empId].R += Number(s.R) || 0;
-            totalsByEmp[s.empId].C += Number(s.C) || 0;
-            totalsByEmp[s.empId].lateMin += Number(s.lateMin) || 0;
-          });
-        }
-
-        const rows = Object.values(totalsByEmp)
-          .sort((a,b)=> (a.nom+a.prenom).localeCompare(b.nom+b.prenom))
-          .map(t=>({
-            year,
-            employe: `${t.nom} ${titleCase(t.prenom)}`.trim(),
-            poste: t.poste,
-            presents: t.present,
-            repos: t.R,
-            conge: t.C,
-            retard: t.lateMin
-          }));
-
-        syncLine.textContent = "Sheets : envoi…";
-
-        const res = await fetch(SHEETS_WEBHOOK_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            year,
-            rows,
-            secret: SHEETS_SECRET
-          })
-        });
-
-        const raw = await res.text();
-        console.log("Sheets raw response:", raw);
-
-        let json;
-        try{
-          json = JSON.parse(raw);
-        }catch(parseErr){
-          throw new Error("Réponse non JSON : " + raw.slice(0, 300));
-        }
-
-        if(json.ok){
-          syncLine.textContent = `✅ Google Sheets mis à jour — ${json.written || 0} lignes (${year})`;
-        }else{
-          syncLine.textContent = `⚠️ Sheets erreur : ${json.error || "inconnue"}`;
-        }
-
-      }catch(err){
-        console.error("Sheets export error:", err);
-        syncLine.textContent = `⚠️ Sheets : ${err.message || "connexion échouée"}`;
-      }finally{
-        sheetsSyncRunning = false;
-      }
-    }
 
     function detachRealtime(){
       try{
@@ -1023,14 +834,12 @@ function empIdOf(emp){
       updateDashboard();
     }
 
-    const monthDataCache = new Map();
-    const monthRCMapCache = new Map();
-    const empStartMapCache = new Map();
+    const monthDataCache=new Map();
+    const monthRCMapCache=new Map();
 
     function clearMonthCache(){
       monthDataCache.clear();
       monthRCMapCache.clear();
-      empStartMapCache.clear();
     }
 
     function getDatesInMonth(seedISO){
@@ -1088,62 +897,8 @@ function empIdOf(emp){
       return pack;
     }
 
-    function hasAnyEmpActivity(mergedEntry){
-      if(!mergedEntry) return false;
-      const hp = safeTime(mergedEntry.hP) || "";
-      const ha = safeTime(mergedEntry.hA) || "";
-      const off = mergedEntry.off === true;
-      return !!(hp || ha || off);
-    }
-
-    function getConfiguredEmpStart(emp){
-      const d = String(emp?.dateDebut || "").trim();
-      return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
-    }
-
-    async function getEmpStartMapForYear(year){
-      if(empStartMapCache.has(year)) return empStartMapCache.get(year);
-
-      const currentMk = monthKeyFromISO(todayISO());
-      const startMap = {};
-      equipe.forEach(emp => {
-        const configured = getConfiguredEmpStart(emp);
-        startMap[empIdOf(emp)] = configured || null;
-      });
-
-      for(let i=1;i<=12;i++){
-        const mk = `${year}-${String(i).padStart(2,"0")}`;
-        if(mk > currentMk) break;
-
-        const md = await getMonthData(mk);
-        const { dates, presByDay, punchByDay } = md;
-
-        for(const dayISO of dates){
-          if(dayISO > todayISO()) continue;
-
-          const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
-
-          equipe.forEach(emp=>{
-            const id = empIdOf(emp);
-            if(startMap[id]) return;
-
-            const e = merged[id] || null;
-            if(hasAnyEmpActivity(e)){
-              startMap[id] = dayISO;
-            }
-          });
-        }
-      }
-
-      empStartMapCache.set(year, startMap);
-      return startMap;
-    }
-
     async function getMonthRCMap(mk){
       if(monthRCMapCache.has(mk)) return monthRCMapCache.get(mk);
-
-      const year = mk.slice(0,4);
-      const startMap = await getEmpStartMapForYear(year);
 
       const md = await getMonthData(mk);
       const {dates,presByDay,punchByDay} = md;
@@ -1159,29 +914,18 @@ function empIdOf(emp){
 
       const firstDay = mk + "-01";
       const wkStart  = weekStartMondayISO(firstDay);
-
       if(wkStart < firstDay){
         const ctxDates = [];
         let d = wkStart;
-        while(d < firstDay){
-          ctxDates.push(d);
-          d = addDaysISO(d,1);
-        }
+        while(d < firstDay){ ctxDates.push(d); d = addDaysISO(d,1); }
 
         const ctx = await batchFetchPresPunch(ctxDates);
-
         ctxDates.forEach(dayISO=>{
-          if(dayISO > today) return;
-          if(isExcluded(dayISO)) return;
-
+          if(dayISO > today || isExcluded(dayISO)) return;
           const merged = mergeDay(ctx.presByDay[dayISO]||{}, ctx.punchByDay[dayISO]||{});
-
           equipe.forEach(emp=>{
             const id = empIdOf(emp);
-            const start = startMap[id];
-            if(!start || dayISO < start) return;
-
-            const e = merged[id] || null;
+            const e  = merged[id] || null;
             if(e && e.off) classifyOffDay(id, dayISO, weekRC);
           });
         });
@@ -1195,25 +939,19 @@ function empIdOf(emp){
 
         equipe.forEach(emp=>{
           const id = empIdOf(emp);
-          const start = startMap[id];
-
-          if(!start || dayISO < start) return;
-
           const e = merged[id] || null;
+
           const ha = safeTime(e?.hA);
-
           if(ha) return;
-
           if(e && e.off){
             rcByEmpDay[id][dayISO] = classifyOffDay(id, dayISO, weekRC);
             return;
           }
-
           rcByEmpDay[id][dayISO] = "C";
         });
       });
 
-      const out = { rcByEmpDay, startMap };
+      const out = { rcByEmpDay };
       monthRCMapCache.set(mk, out);
       return out;
     }
@@ -1249,7 +987,7 @@ function empIdOf(emp){
           const sClass = getStatusClass(diff, !!d.off, !!ha);
           const dot = getDotColor(diff, !!d.off, !!ha);
 
-          let statusText='Attente',statusColor='color:rgba(3,105,161,.60)';
+          let statusText='Attente',statusColor='color:rgba(255,255,255,.45)';
           if(ha){
             if(hp){
               if(diff>0){ statusText=`${diff} min`; statusColor='color:var(--crit)'; }
@@ -1266,8 +1004,8 @@ function empIdOf(emp){
               <span class="status-dot" style="background:${escAttr(dot)}"></span>
               ${ha ? `<div class="arrive-time">${esc(ha)}</div>` : ``}
               <div>
-                <p class="text-[11px] font-extrabold uppercase truncate" style="color:#082f49">${esc(emp.nom)}</p>
-                <p class="text-[10px] font-semibold" style="color:rgba(3,105,161,.70)">${esc(titleCase(emp.prenom))}</p>
+                <p class="text-[11px] font-extrabold uppercase truncate" style="color:rgba(255,255,255,.86)">${esc(emp.nom)}</p>
+                <p class="text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">${esc(titleCase(emp.prenom))}</p>
               </div>
               <p class="text-[11px] font-extrabold" style="${escAttr(statusColor)}">${esc(statusText)}</p>
             </button>`;
@@ -1293,8 +1031,8 @@ function empIdOf(emp){
         data:{
           labels,
           datasets:[
-            { label:"Retards (min)", data:lates, borderColor:'rgba(14,165,233,.95)', backgroundColor:'rgba(14,165,233,.10)', tension:.35,borderWidth:3,pointRadius:0,fill:true },
-            { label:"Présences (nb)", data:presences, borderColor:'rgba(5,150,105,.95)', backgroundColor:'rgba(5,150,105,.10)', tension:.35,borderWidth:2,pointRadius:0,fill:false }
+            { label:"Retards (min)", data:lates, borderColor:'rgba(197,160,89,.95)', backgroundColor:'rgba(197,160,89,.10)', tension:.35,borderWidth:3,pointRadius:0,fill:true },
+            { label:"Présences (nb)", data:presences, borderColor:'rgba(52,211,153,.95)', backgroundColor:'rgba(52,211,153,.10)', tension:.35,borderWidth:2,pointRadius:0,fill:false }
           ]
         },
         options:{
@@ -1303,17 +1041,17 @@ function empIdOf(emp){
             legend:{display:false},
             tooltip:{
               enabled:true,
-              backgroundColor:'rgba(255,255,255,.96)',
-              titleColor:'#082f49',
-              bodyColor:'#0c4a6e',
-              borderColor:'rgba(14,165,233,.35)',
+              backgroundColor:'rgba(13,15,18,.92)',
+              titleColor:'rgba(255,255,255,.92)',
+              bodyColor:'rgba(255,255,255,.78)',
+              borderColor:'rgba(197,160,89,.55)',
               borderWidth:1,
               padding:10
             }
           },
           scales:{
             y:{display:false},
-            x:{ grid:{display:false}, ticks:{font:{size:8}, color:'rgba(3,105,161,.72)'} }
+            x:{ grid:{display:false}, ticks:{font:{size:8}, color:'rgba(255,255,255,.55)'} }
           }
         }
       });
@@ -1322,7 +1060,7 @@ function empIdOf(emp){
     function loadingCard(text){
       return `<div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
         <div class="spin"></div>
-        <div class="text-[11px] font-extrabold" style="color:rgba(3,105,161,.75)">${esc(text)}</div>
+        <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">${esc(text)}</div>
       </div>`;
     }
 
@@ -1372,7 +1110,7 @@ function empIdOf(emp){
       const stats={};
       equipe.forEach(e=>{ const id=empIdOf(e); stats[id]={info:e,present:0,lateMin:0,R:0,C:0,excluded:0}; });
 
-      const {rcByEmpDay, startMap} = await getMonthRCMap(mk);
+      const {rcByEmpDay} = await getMonthRCMap(mk);
       const dailyLates=[],dailyPresence=[],labels=[];
 
       dates.forEach(dayISO=>{
@@ -1384,9 +1122,6 @@ function empIdOf(emp){
         let tL=0,tP=0;
 
         Object.keys(stats).forEach(id=>{
-          const start = startMap[id];
-          if(!start || dayISO < start) return;
-
           const e=merged[id]||null;
           const hp = safeTime(e?.hP) || "";
           const ha = safeTime(e?.hA) || "";
@@ -1398,9 +1133,8 @@ function empIdOf(emp){
             tL+=diff; tP++;
             return;
           }
-
-          const rc = rcByEmpDay[id]?.[dayISO];
-          if(rc) stats[id][rc]++;
+          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
+          stats[id][rc]++;
         });
 
         dailyLates.push(tL);
@@ -1422,17 +1156,17 @@ function empIdOf(emp){
         </div>`;
 
       if(!lateList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(3,105,161,.60)">Aucun retard enregistré</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucun retard enregistré</div>`;
       }else{
         lateList.slice(0,6).forEach(s=>{
           const pct = maxLate ? Math.max(6, Math.round((s.lateMin / maxLate) * 100)) : 0;
           html+=`
             <div class="glass-card p-5 rounded-2xl mb-3">
               <div class="flex justify-between items-center">
-                <span class="text-xs font-extrabold" style="color:#082f49">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
+                <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
                 <span style="color:var(--crit);font-weight:900">${esc(s.lateMin)}m</span>
               </div>
-              <div style="height:6px;border-radius:999px;background:rgba(14,165,233,.08);margin-top:10px;overflow:hidden">
+              <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:10px;overflow:hidden">
                 <div style="height:6px;width:${escAttr(pct)}%;background:rgba(248,113,113,.55)"></div>
               </div>
             </div>`;
@@ -1447,11 +1181,11 @@ function empIdOf(emp){
         </div>`;
 
       if(!goodList.length){
-        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(3,105,161,.60)">Aucune présence "OK" trouvée</div>`;
+        html+=`<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:rgba(255,255,255,.55)">Aucune présence "OK" trouvée</div>`;
       }else{
         goodList.slice(0,6).forEach(s=>{
           html+=`<div class="glass-card p-5 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-xs font-extrabold" style="color:#082f49">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
+            <span class="text-xs font-extrabold">${esc(s.info.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(s.info.prenom))}</span></span>
             <span style="color:var(--ok);font-weight:900">${esc(s.present)}j OK</span>
           </div>`;
         });
@@ -1462,9 +1196,6 @@ function empIdOf(emp){
     }
 
     async function buildMonthlySummary(mk){
-      const year = mk.slice(0,4);
-      const startMap = await getEmpStartMapForYear(year);
-
       const md = await getMonthData(mk);
       const {dates,presByDay,punchByDay}=md;
       const {rcByEmpDay} = await getMonthRCMap(mk);
@@ -1483,9 +1214,6 @@ function empIdOf(emp){
         const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
 
         Object.keys(out).forEach(id=>{
-          const start = startMap[id];
-          if(!start || dayISO < start) return;
-
           const e = merged[id] || null;
           const hp = safeTime(e?.hP) || "";
           const ha = safeTime(e?.hA) || "";
@@ -1496,9 +1224,7 @@ function empIdOf(emp){
             return;
           }
 
-          const rc = rcByEmpDay[id]?.[dayISO];
-          if(!rc) return;
-
+          const rc = (rcByEmpDay[id] && rcByEmpDay[id][dayISO]) ? rcByEmpDay[id][dayISO] : "C";
           if(rc==="R") out[id].R++;
           else out[id].C++;
         });
@@ -1533,6 +1259,8 @@ function empIdOf(emp){
       return totalsByEmp;
     }
 
+    // ✅ PERF FIX: éviter le recalcul du mois courant dans renderRCView
+    // buildYearSummary(year, monthPrefetch)
     async function buildYearSummaryOptimized(year, monthPrefetch){
       const currentMk = monthKeyFromISO(todayISO());
       const totalsByEmp = {};
@@ -1570,7 +1298,10 @@ function empIdOf(emp){
         return;
       }
 
+      // Mois courant calculé 1 seule fois
       const monthSummary = await buildMonthlySummary(mk);
+
+      // Année optimisée: réutilise monthSummary pour mk
       const yearSummary  = await buildYearSummaryOptimized(year, { [mk]: monthSummary });
 
       const monthRows = Object.values(monthSummary).sort((a,b)=>{
@@ -1599,9 +1330,9 @@ function empIdOf(emp){
                 return `
                   <tr>
                     <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
-                    <td style="font-weight:800;color:rgba(3,105,161,.70);">${esc(r.poste)}</td>
+                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:#0f172a;">${esc(r.R)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--crit);">
                       ${late ? esc(late) : '<span class="muted-dash">—</span>'}
@@ -1640,9 +1371,9 @@ function empIdOf(emp){
                 return `
                   <tr>
                     <td style="font-weight:900;">${esc(r.nom)} <span style="opacity:.6;font-weight:800">${esc(titleCase(r.prenom))}</span></td>
-                    <td style="font-weight:800;color:rgba(3,105,161,.70);">${esc(r.poste)}</td>
+                    <td style="font-weight:800;color:rgba(255,255,255,.70);">${esc(r.poste)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--ok);">${esc(r.present)}</td>
-                    <td style="text-align:center;font-weight:900;color:#0f172a;">${esc(r.R)}</td>
+                    <td style="text-align:center;font-weight:900;color:rgba(255,255,255,.88);">${esc(r.R)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--amber);">${esc(r.C)}</td>
                     <td style="text-align:center;font-weight:900;color:var(--crit);">
                       ${late ? esc(late) : '<span class="muted-dash">—</span>'}
@@ -1662,7 +1393,7 @@ function empIdOf(emp){
               <div>
                 <div class="smallCaps">Tableau Mois</div>
                 <div class="hTitle text-xl font-bold mt-1">${esc(mk)}
-                  <span style="opacity:.60;font-weight:800;font-family:'Plus Jakarta Sans'"> • Présents ${esc(mP)} • R ${esc(mR)} • C ${esc(mC)} • Retard ${esc(mL)}m</span>
+                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(mP)} • R ${esc(mR)} • C ${esc(mC)} • Retard ${esc(mL)}m</span>
                 </div>
               </div>
               <div class="chev">▾</div>
@@ -1675,20 +1406,20 @@ function empIdOf(emp){
               <div>
                 <div class="smallCaps">Tableau Année (résumé)</div>
                 <div class="hTitle text-xl font-bold mt-1">${esc(year)}
-                  <span style="opacity:.60;font-weight:800;font-family:'Plus Jakarta Sans'"> • Présents ${esc(yP)} • Repos ${esc(yR)} • Congé ${esc(yC)} • Retard ${esc(yL)}m</span>
+                  <span style="opacity:.60;font-weight:800;font-family:'DM Sans'"> • Présents ${esc(yP)} • Repos ${esc(yR)} • Congé ${esc(yC)} • Retard ${esc(yL)}m</span>
                 </div>
               </div>
               <div class="chev">▾</div>
             </summary>
             <div class="body">
               ${yearTable}
-              <div class="mt-3 text-[10px] font-semibold" style="color:rgba(3,105,161,.68)">
+              <div class="mt-3 text-[10px] font-semibold" style="color:rgba(255,255,255,.55)">
                 Année = cumul des mois jusqu’au mois courant • Congé cumulé = C seulement.
               </div>
             </div>
           </details>
 
-          <div class="mt-2 text-[10px] font-semibold" style="color:rgba(3,105,161,.62)">
+          <div class="mt-2 text-[10px] font-semibold" style="color:rgba(255,255,255,.50)">
             R = 1er OFF de la semaine (sauf SALIL/BENKHADA) • C = OFF supplémentaire + absences • Retard = HA - HP
           </div>
         </div>
@@ -1700,15 +1431,15 @@ function empIdOf(emp){
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
       const rcTxt=rc?` • ${esc(rc)}`:"";
       return `
-        <div class="p-4 rounded-xl" style="background:rgba(255,255,255,.45);border:1px solid rgba(12,74,110,.08)">
+        <div class="p-4 rounded-xl" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
           <div class="flex justify-between items-center">
             <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
             <span class="smallCaps" style="font-size:10px;${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
           </div>
           <div class="mt-3 grid grid-cols-3 gap-2">
-            <div class="text-[10px] font-extrabold" style="color:rgba(3,105,161,.62)">HP: <span style="color:#082f49">${esc(hp||"—")}</span></div>
-            <div class="text-[10px] font-extrabold" style="color:rgba(3,105,161,.62)">HA: <span style="color:#082f49">${esc(ha||"—")}</span></div>
-            <div class="text-[10px] font-extrabold" style="color:rgba(3,105,161,.62)">Ret: <span style="color:#082f49">${esc(retard||"—")}</span></div>
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HP: <span style="color:rgba(255,255,255,.85)">${esc(hp||"—")}</span></div>
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">HA: <span style="color:rgba(255,255,255,.85)">${esc(ha||"—")}</span></div>
+            <div class="text-[10px] font-extrabold" style="color:rgba(255,255,255,.55)">Ret: <span style="color:rgba(255,255,255,.85)">${esc(retard||"—")}</span></div>
           </div>
         </div>`;
     }
@@ -1720,7 +1451,7 @@ function empIdOf(emp){
       document.getElementById('modalList').innerHTML=`
         <div class="glass-card p-5 rounded-2xl flex items-center justify-center gap-3">
           <div class="spin"></div>
-          <div class="text-[11px] font-extrabold" style="color:rgba(3,105,161,.72)">Chargement historique…</div>
+          <div class="text-[11px] font-extrabold" style="color:rgba(255,255,255,.70)">Chargement historique…</div>
         </div>`;
 
       const mk=monthKeyFromISO(dateInput.value);
@@ -1733,7 +1464,7 @@ function empIdOf(emp){
       }
 
       const {dates,presByDay,punchByDay}=md;
-      const {rcByEmpDay, startMap} = await getMonthRCMap(mk);
+      const {rcByEmpDay} = await getMonthRCMap(mk);
       const today=todayISO();
 
       const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
@@ -1741,14 +1472,8 @@ function empIdOf(emp){
 
       let html="";
       dates.slice().reverse().forEach(dayISO=>{
-        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:rgba(3,105,161,.40)"); return; }
-        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:rgba(3,105,161,.50)"); return; }
-
-        const empStart = startMap[empId];
-        if(!empStart || dayISO < empStart){
-          html += rowHistory(dayISO, "Non commencé", "", "", "", "color:rgba(3,105,161,.45)");
-          return;
-        }
+        if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:rgba(255,255,255,.35)"); return; }
+        if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:rgba(255,255,255,.45)"); return; }
 
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
@@ -1767,15 +1492,11 @@ function empIdOf(emp){
           return;
         }
 
-        const rc = rcByEmpDay[empId]?.[dayISO];
-        if(rc){
-          html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(3,105,161,.72)", rc);
-        }else{
-          html += rowHistory(dayISO, "—", hp, ha, "", "color:rgba(3,105,161,.45)");
-        }
+        const rc = (rcByEmpDay[empId] && rcByEmpDay[empId][dayISO]) ? rcByEmpDay[empId][dayISO] : "C";
+        html += rowHistory(dayISO, rc==="R" ? "Repos" : "Congé", hp, ha, "", "color:rgba(255,255,255,.60)", rc);
       });
 
-      document.getElementById('modalList').innerHTML=html||'<p class="text-center py-10" style="color:rgba(3,105,161,.50);font-weight:800">Aucune donnée</p>';
+      document.getElementById('modalList').innerHTML=html||'<p class="text-center py-10" style="color:rgba(255,255,255,.45);font-weight:800">Aucune donnée</p>';
     }
 
     function closeModal(){
@@ -1875,43 +1596,13 @@ function empIdOf(emp){
       URL.revokeObjectURL(url);
     }
 
-    function startMidnightWatcher(){
-      if(midnightTimer) clearInterval(midnightTimer);
-
-      let lastDay = todayISO();
-
-      midnightTimer = setInterval(async () => {
-        const nowDay = todayISO();
-
-        if(nowDay !== lastDay){
-          lastDay = nowDay;
-
-          const mkToday = monthKeyFromISO(nowDay);
-
-          dayPicker.value = nowDay;
-          monthPicker.value = mkToday;
-          dateInput.value = isoFromMonthKey(mkToday);
-
-          clearMonthCache();
-
-          syncLine.textContent = "Sheets : resync après minuit…";
-
-          try{
-            await updateDashboard();
-            await exportYear_ToSheets();
-          }catch(err){
-            console.error("Midnight resync error:", err);
-            syncLine.textContent = "⚠️ Sheets : erreur resync minuit";
-          }
-        }
-      }, 30000);
-    }
-
     async function bootDashboard(){
       const today = todayISO();
       const mkToday = monthKeyFromISO(today);
 
+      // Day picker init (⚠️ pas de .max figé: on autorise navigation, et évite le bug "minuit")
       dayPicker.value = today;
+
       monthPicker.value = mkToday;
       dateInput.value = isoFromMonthKey(mkToday);
 
@@ -1933,7 +1624,6 @@ function empIdOf(emp){
 
       await initStaffAdminUI();
       await updateDashboard();
-      startMidnightWatcher();
     }
   </script>
 </body>
