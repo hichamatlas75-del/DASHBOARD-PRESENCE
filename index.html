@@ -634,12 +634,7 @@ const cgDash = {
   async renderView(){
     if(!this._data) await this.load();
     const today=todayISO(); const all=this.allFlat();
-    let filtered=all;
-    if(this.filter==='actif')      filtered=all.filter(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today);
-    else if(this.filter==='upcoming')  filtered=all.filter(c=>c.statut==='approuvé'&&c.dateDebut>today);
-    else if(this.filter==='en_attente')filtered=all.filter(c=>c.statut==='en_attente');
-    else if(this.filter==='passe') filtered=all.filter(c=>c.dateFin<today);
-    filtered.sort((a,b)=>(a.dateDebut||'').localeCompare(b.dateDebut||''));
+    const year=today.slice(0,4);
 
     const ac=all.filter(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today).length;
     const up=all.filter(c=>c.statut==='approuvé'&&c.dateDebut>today).length;
@@ -660,52 +655,100 @@ const cgDash = {
       </div>
     </div>`;
 
-    if(!filtered.length){
+    // ✅ Grouper par empId — une seule carte par employé
+    const byEmp={};
+    all.forEach(c=>{
+      const key=c.empId||c.cin||'?';
+      if(!byEmp[key]){
+        byEmp[key]={
+          empId:c.empId||'',
+          empNom:c.empNom||'',
+          empPrenom:c.empPrenom||'',
+          empDept:c.empDept||'',
+          cin:c.cin||'',
+          totalJours:0,
+          entries:[]
+        };
+      }
+      byEmp[key].totalJours+=(Number(c.jours)||0);
+      byEmp[key].entries.push(c);
+    });
+
+    // Filtrer selon le filtre actif
+    let empKeys=Object.keys(byEmp);
+    if(this.filter==='actif'){
+      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today));
+    }else if(this.filter==='upcoming'){
+      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='approuvé'&&c.dateDebut>today));
+    }else if(this.filter==='en_attente'){
+      empKeys=empKeys.filter(k=>byEmp[k].entries.some(c=>c.statut==='en_attente'));
+    }else if(this.filter==='passe'){
+      empKeys=empKeys.filter(k=>byEmp[k].entries.every(c=>c.dateFin<today));
+    }
+
+    // Trier par nom
+    empKeys.sort((a,b)=>{
+      const A=byEmp[a].empNom+byEmp[a].empPrenom;
+      const B=byEmp[b].empNom+byEmp[b].empPrenom;
+      return A.localeCompare(B);
+    });
+
+    if(!empKeys.length){
       document.getElementById('dashBody').innerHTML=summary+`<div class="glass-card rounded-2xl p-8 text-center" style="color:var(--muted3)"><div class="text-4xl mb-3">☀️</div><div class="text-[12px] font-extrabold">Aucun congé dans ce filtre.</div></div>`;
       this._updateActiveBadge(); return;
     }
 
-    const isActive=c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today;
-    const isUpcoming=c=>c.statut==='approuvé'&&c.dateDebut>today;
-    const isPast=c=>c.dateFin<today;
+    const cards=empKeys.map(k=>{
+      const emp=byEmp[k];
+      const empName=emp.empNom&&emp.empPrenom
+        ?`${emp.empNom} ${titleCase(emp.empPrenom)}`
+        :emp.empNom||emp.cin||'—';
 
-    const cards=filtered.map(c=>{
-      const empName=c.empNom&&c.empPrenom?`${c.empNom} ${titleCase(c.empPrenom)}`:c.empNom||c.cin||'—';
-      const active=isActive(c),upcoming=isUpcoming(c),pending=c.statut==='en_attente',past=isPast(c);
-      const rowClass=pending?'pending':past?'past':'';
-      const statusBadge=active
+      const isActive=emp.entries.some(c=>c.statut==='approuvé'&&c.dateDebut<=today&&c.dateFin>=today);
+      const isUpcoming=emp.entries.some(c=>c.statut==='approuvé'&&c.dateDebut>today);
+      const isPending=emp.entries.some(c=>c.statut==='en_attente');
+
+      const statusBadge=isActive
         ?`<span class="chip chip-sky text-[10px]">☀️ EN COURS</span>`
-        :upcoming?`<span class="chip chip-p text-[10px]">→ À VENIR</span>`
-        :pending?`<span class="chip chip-c text-[10px]">⏳ EN ATTENTE</span>`
+        :isUpcoming?`<span class="chip chip-p text-[10px]">→ À VENIR</span>`
+        :isPending?`<span class="chip chip-c text-[10px]">⏳ EN ATTENTE</span>`
         :`<span class="chip text-[10px]" style="opacity:.6">✓ PASSÉ</span>`;
-      const solde=this.soldeRestant(c.empId||'');
+
+      const solde=this.soldeRestant(emp.empId);
       const soldePct=Math.round((solde/18)*100);
       const soldeColor=solde>8?'var(--ok)':solde>4?'var(--amber)':'var(--crit)';
-      const autoTag=c._autoSync?`<span class="text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold" style="background:var(--skyBg);color:var(--sky);border:1px solid var(--skyBdr)">⚡ auto</span>`:'';
+      const rowClass=isActive?'':'past';
 
-      return `<div class="conge-row ${rowClass}">
-        <div class="flex items-start justify-between gap-2 flex-wrap mb-2">
+      return `<div class="conge-row ${isActive?'':''}">
+        <div class="flex items-start justify-between gap-2 flex-wrap mb-3">
           <div>
-            <div class="text-[13px] font-extrabold" style="color:#0f2744">${esc(empName)}${autoTag}</div>
-            ${c.empDept?`<div class="smallCaps" style="font-size:9px;margin-top:2px">${esc(c.empDept)}</div>`:''}
+            <div class="text-[14px] font-extrabold" style="color:#0f2744">${esc(empName)}</div>
+            ${emp.empDept?`<div class="smallCaps" style="font-size:9px;margin-top:2px">${esc(emp.empDept)}</div>`:''}
           </div>
           ${statusBadge}
         </div>
-        <div class="text-[11px] font-extrabold" style="color:var(--text)">
-          ${esc(c.type||'—')} <span style="opacity:.5">· du</span> ${esc(c.dateDebut||'—')} <span style="opacity:.5">au</span> ${esc(c.dateFin||'—')}
-          <span class="ml-2 font-black" style="color:var(--sky)">${esc(c.jours||'?')}j</span>
+
+        <div class="flex items-center justify-between py-2 px-3 rounded-xl mb-2"
+          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke)">
+          <span class="text-[11px] font-bold" style="color:var(--muted2)">
+            Congé pris — ${esc(year)}
+          </span>
+          <span class="text-[13px] font-extrabold" style="color:var(--sky)">${esc(emp.totalJours)}j</span>
         </div>
-        ${c.note?`<div class="text-[10px] mt-1 italic" style="color:var(--muted3)">${esc(c.note)}</div>`:''}
-        ${c.empId?`<div class="mt-3">
+
+        <div class="mt-2">
           <div class="flex justify-between text-[9px] font-extrabold mb-1" style="color:var(--muted2)">
-            <span>SOLDE CP</span><span style="color:${soldeColor}">${solde}j / 18j</span>
+            <span>SOLDE CP</span>
+            <span style="color:${soldeColor}">${solde}j / 18j</span>
           </div>
-          <div class="mini-solde"><div class="mini-solde-fill" style="width:${soldePct}%;background:${soldeColor}"></div></div>
-        </div>`:''}
+          <div class="mini-solde">
+            <div class="mini-solde-fill" style="width:${Math.min(100,soldePct)}%;background:${soldeColor}"></div>
+          </div>
+        </div>
       </div>`;
     }).join('');
 
-    document.getElementById('dashBody').innerHTML=summary+`<div class="space-y-2">${cards}</div>`;
+    document.getElementById('dashBody').innerHTML=summary+`<div class="space-y-3">${cards}</div>`;
     this._updateActiveBadge();
   },
 
