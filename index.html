@@ -551,12 +551,16 @@
   <div id="historyModal" class="fixed inset-0 z-50 hidden modal-overlay items-end" onclick="closeModal()">
     <div class="modal-sheet w-full rounded-t-[36px] p-6 pb-12 shadow-2xl max-h-[82vh] flex flex-col" onclick="event.stopPropagation()">
       <div class="handle"></div>
-      <div class="flex items-center gap-3 mb-5">
-        <div>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex-1 min-w-0">
           <div class="smallCaps">Historique</div>
-          <h2 id="modalTitle" class="hTitle text-3xl leading-tight mt-1">—</h2>
+          <h2 id="modalTitle" class="hTitle text-2xl leading-tight mt-0.5 truncate">—</h2>
         </div>
-        <button onclick="closeModal()" class="ml-auto px-3 py-2 rounded-xl text-[11px] font-extrabold btn-action btn-neutral"
+        <!-- Sélecteur de mois -->
+        <input type="month" id="modalMonthPicker" class="inpt"
+          style="width:auto;min-width:0;flex-shrink:0;font-size:11px;padding:8px 10px;border-radius:12px"
+          onchange="_modalMonthChange(this.value)" />
+        <button onclick="closeModal()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold flex-shrink-0"
           style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
       </div>
       <div id="modalList" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
@@ -1649,14 +1653,25 @@
 
     /* ══════════════════════════════════ CALENDRIER DÉTAILLÉ ══════════════════════════════════ */
 
-    async function openCalendarModal(nom, prenom){
+    // ── État partagé du modal (pour rechargement au changement de mois) ──
+    let _modalState = null; // { mode:'calendar'|'history', nom, prenom }
+    function _modalMonthChange(newMk){
+      if(!_modalState) return;
+      if(_modalState.mode==='calendar') openCalendarModal(_modalState.nom, _modalState.prenom, newMk);
+      else                              openHistory(_modalState.nom, _modalState.prenom, newMk);
+    }
+
+    async function openCalendarModal(nom, prenom, mk){
+      // mk optionnel : si absent, utiliser le mois courant du dashboard
+      mk = mk || monthKeyFromISO(dateInput.value);
+      _modalState = {mode:'calendar', nom, prenom};
       const modal=document.getElementById('historyModal');
       modal.classList.remove("hidden","modal-closing");
       modal.classList.add('modal-active');
       document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
+      document.getElementById('modalMonthPicker').value=mk;
       document.getElementById('modalList').innerHTML=loadingCard("Chargement calendrier…");
 
-      const mk=monthKeyFromISO(dateInput.value);
       const md=await getMonthData(mk);
       if(md.anyFail){
         document.getElementById('modalList').innerHTML=errorCard("Réseau instable : calendrier partiel.");
@@ -1781,14 +1796,17 @@
       </div>`;
     }
 
-    async function openHistory(nom,prenom){
+    async function openHistory(nom, prenom, mk){
+      // mk optionnel : si absent, utiliser le mois courant du dashboard
+      mk = mk || monthKeyFromISO(dateInput.value);
+      _modalState = {mode:'history', nom, prenom};
       const modal=document.getElementById('historyModal');
       modal.classList.remove("hidden","modal-closing");
       modal.classList.add('modal-active');
       document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
+      document.getElementById('modalMonthPicker').value=mk;
       document.getElementById('modalList').innerHTML=loadingCard("Chargement historique…");
 
-      const mk=monthKeyFromISO(dateInput.value);
       const md=await getMonthData(mk);
       if(md.anyFail){
         document.getElementById('modalList').innerHTML=errorCard("Réseau instable : historique partiel.");
