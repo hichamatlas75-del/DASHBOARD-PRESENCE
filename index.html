@@ -300,7 +300,14 @@
       padding: 7px 5px;
     }
     .rc-table tbody tr:nth-child(odd)  { background: rgba(255,255,255,.22); }
-    .rc-table tbody tr:hover           { background: rgba(245,158,11,.05); transition: background .2s ease; }
+    .rc-table tbody tr[data-nom] {
+      cursor: pointer;
+      transition: background .18s ease, transform .12s ease;
+    }
+    .rc-table tbody tr[data-nom]:hover {
+      background: rgba(245,158,11,.08);
+    }
+    .rc-table tbody tr[data-nom]:active { opacity: .80; }
     .muted-dash { opacity: .38; }
     /* Badge poste dans cellule nom */
     .rc-poste-badge {
@@ -311,6 +318,23 @@
       letter-spacing: .04em;
       margin-top: 1px;
     }
+    /* Cellule calendrier dans le modal */
+    .cal-cell {
+      border-radius: 9px;
+      padding: 5px 2px;
+      min-height: 46px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: 1px solid rgba(148,163,184,.10);
+    }
+    .cal-cell.cal-today {
+      border: 2px solid rgba(245,158,11,.65) !important;
+      box-shadow: 0 0 0 3px rgba(245,158,11,.10);
+    }
+    .cal-cell.cal-out { background: rgba(148,163,184,.04); }
 
     /* ─── Drawers ─── */
     .drawer {
@@ -1531,11 +1555,12 @@
           <tbody>
             ${rows.map(r=>{
               const late=Number(r.lateMin)||0;
-              return `<tr>
+              return `<tr data-nom="${escAttr(r.nom)}" data-prenom="${escAttr(r.prenom)}" title="Cliquer pour voir le calendrier">
                 <td class="col-emp">
                   <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span><br>
                   <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744">${esc(titleCase(r.prenom))}</span>
                   <br><span class="rc-poste-badge">${esc((r.poste||"").toLowerCase())}</span>
+                  <span style="font-size:9px;color:var(--muted3);margin-left:4px">📅</span>
                 </td>
                 <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
                 <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
@@ -1611,11 +1636,134 @@
         </details>
 
         <p class="text-[10px] font-semibold" style="color:var(--muted3)">
-          R = 1er OFF semaine (sauf SALIL/BENKHADA) · C = OFF supp + absences · Retard = HA − HP
+          R = 1er OFF semaine (sauf SALIL/BENKHADA) · C = OFF supp · Retard = HA − HP · 📅 cliquer sur un employé pour le calendrier
         </p>
       </div>`;
 
       document.getElementById('dashBody').innerHTML=html;
+      // ── Clic sur ligne → calendrier détaillé ──
+      document.getElementById('dashBody').querySelectorAll('tr[data-nom]').forEach(tr=>{
+        tr.addEventListener('click',()=>openCalendarModal(tr.dataset.nom, tr.dataset.prenom));
+      });
+    }
+
+    /* ══════════════════════════════════ CALENDRIER DÉTAILLÉ ══════════════════════════════════ */
+
+    async function openCalendarModal(nom, prenom){
+      const modal=document.getElementById('historyModal');
+      modal.classList.remove("hidden","modal-closing");
+      modal.classList.add('modal-active');
+      document.getElementById('modalTitle').innerText=nom+" "+titleCase(prenom);
+      document.getElementById('modalList').innerHTML=loadingCard("Chargement calendrier…");
+
+      const mk=monthKeyFromISO(dateInput.value);
+      const md=await getMonthData(mk);
+      if(md.anyFail){
+        document.getElementById('modalList').innerHTML=errorCard("Réseau instable : calendrier partiel.");
+        return;
+      }
+      const {dates,presByDay,punchByDay}=md;
+      const {rcByEmpDay,startMap}=await getMonthRCMap(mk);
+      const today=todayISO();
+      const emp=equipe.find(e=>e.nom===nom&&e.prenom===prenom);
+      const empId=emp?empIdOf(emp):(nom+"_"+prenom);
+      const empStart=startMap[empId];
+
+      // ── Calcul du statut de chaque jour ──
+      const TYPES={
+        future: {bg:'rgba(148,163,184,.06)', color:'rgba(148,163,184,.45)', label:'·'},
+        exclu:  {bg:'rgba(148,163,184,.06)', color:'rgba(148,163,184,.35)', label:'—'},
+        avant:  {bg:'rgba(148,163,184,.04)', color:'rgba(148,163,184,.30)', label:'·'},
+        present:{bg:'rgba(5,150,105,.11)',   color:'#065f46',               label:'✓'},
+        retard: {bg:'rgba(220,38,38,.08)',   color:'#991b1b',               label:'⚡'},
+        repos:  {bg:'rgba(99,102,241,.12)',  color:'#3730a3',               label:'R'},
+        conge:  {bg:'rgba(245,158,11,.13)',  color:'#92400e',               label:'C'},
+        off:    {bg:'rgba(148,163,184,.11)', color:'rgba(100,116,139,.75)', label:'OFF'},
+        absent: {bg:'rgba(234,88,12,.09)',   color:'#9a3412',               label:'⚠'}
+      };
+
+      let nPresent=0,nR=0,nC=0,nOff=0,nAbsent=0;
+      const dayMap={}; // dayISO → {type, ha, hp, diff}
+
+      dates.forEach(dayISO=>{
+        if(dayISO>today){         dayMap[dayISO]={type:'future'}; return; }
+        if(isExcluded(dayISO)){   dayMap[dayISO]={type:'exclu'};  return; }
+        if(!empStart||dayISO<empStart){ dayMap[dayISO]={type:'avant'}; return; }
+        const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
+        const e=merged[empId]||null;
+        const ha=safeTime(e?.hA)||"";
+        const hp=safeTime(e?.hP)||"";
+        if(ha){
+          const diff=diffFromEntry({hA:ha,hP:hp},empId);
+          if(diff>0){ dayMap[dayISO]={type:'retard',ha,hp,diff}; nPresent++; }
+          else       { dayMap[dayISO]={type:'present',ha,hp};     nPresent++; }
+          return;
+        }
+        const rc=rcByEmpDay[empId]?.[dayISO];
+        if(rc==='R'){      dayMap[dayISO]={type:'repos'}; nR++;      return; }
+        if(rc==='C'){      dayMap[dayISO]={type:'conge'}; nC++;      return; }
+        if(e&&e.off){      dayMap[dayISO]={type:'off'};   nOff++;    return; }
+        dayMap[dayISO]={type:'absent'}; nAbsent++;
+      });
+
+      // ── Badges récap ──
+      const badge=(bg,bd,fg,txt)=>`<span style="background:${bg};border:1px solid ${bd};color:${fg};font-weight:900;font-size:10px;padding:3px 9px;border-radius:999px;white-space:nowrap">${txt}</span>`;
+      let recapHtml=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">`;
+      if(nPresent) recapHtml+=badge('rgba(5,150,105,.11)','rgba(5,150,105,.28)','#065f46',`✓ ${nPresent} présents`);
+      if(nR)       recapHtml+=badge('rgba(99,102,241,.12)','rgba(99,102,241,.25)','#3730a3',`R ${nR} repos`);
+      if(nC)       recapHtml+=badge('rgba(245,158,11,.13)','rgba(245,158,11,.28)','#92400e',`C ${nC} congés`);
+      if(nOff)     recapHtml+=badge('rgba(148,163,184,.12)','rgba(148,163,184,.28)','#475569',`OFF ${nOff}`);
+      if(nAbsent)  recapHtml+=badge('rgba(234,88,12,.10)','rgba(234,88,12,.28)','#9a3412',`⚠ ${nAbsent} absents`);
+      recapHtml+=`</div>`;
+
+      // ── En-tête jours ──
+      const DAYS_FR=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+      let calHtml=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">`;
+      DAYS_FR.forEach(d=>{ calHtml+=`<div style="text-align:center;font-size:8px;font-weight:800;color:var(--muted2);padding:2px 0;text-transform:uppercase;letter-spacing:.06em">${d}</div>`; });
+      calHtml+=`</div>`;
+
+      // ── Grille calendrier ──
+      const firstDay=dates[0];
+      const lastDay=dates[dates.length-1];
+      let cursor=weekStartMondayISO(firstDay);
+      calHtml+=`<div style="display:flex;flex-direction:column;gap:2px">`;
+      while(cursor<=lastDay){
+        calHtml+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">`;
+        for(let i=0;i<7;i++){
+          const inMonth=dates.includes(cursor);
+          if(!inMonth){
+            calHtml+=`<div class="cal-cell cal-out"></div>`;
+          }else{
+            const info=dayMap[cursor]||{type:'avant'};
+            const t=TYPES[info.type]||TYPES.avant;
+            const isToday=(cursor===today);
+            const {d}=parseISO(cursor);
+            // Sous-label : heure arrivée si présent, retard si retard
+            let sub=t.label;
+            if(info.type==='present') sub=info.ha||'✓';
+            if(info.type==='retard')  sub=`+${info.diff}m`;
+            calHtml+=`<div class="cal-cell${isToday?' cal-today':''}" style="background:${t.bg};border-color:${isToday?'rgba(245,158,11,.65)':'rgba(148,163,184,.10)'}">
+              <div style="font-size:11px;font-weight:900;color:#0f2744">${d}</div>
+              <div style="font-size:9px;font-weight:800;color:${t.color};text-align:center;line-height:1.1">${sub}</div>
+            </div>`;
+          }
+          cursor=addDaysISO(cursor,1);
+        }
+        calHtml+=`</div>`;
+      }
+      calHtml+=`</div>`;
+
+      // ── Légende ──
+      const legHtml=`<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--stroke-med);padding-top:10px">
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">✓ Présent</span>
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">⚡ Retard</span>
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">R Repos</span>
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">C Congé</span>
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">OFF jour de repos</span>
+        <span style="font-size:9px;font-weight:700;color:var(--muted3)">⚠ Absent non justifié</span>
+      </div>`;
+
+      document.getElementById('modalList').innerHTML=recapHtml+calHtml+legHtml;
     }
 
     function rowHistory(dayISO,statut,hp,ha,retard,cls,rc){
