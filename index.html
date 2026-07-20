@@ -240,6 +240,23 @@
       background: rgba(255,255,255,.32);
       opacity: .62;
     }
+    /* Absent non justifié : bordure + pulse orange */
+    .status-absent {
+      border-left-color: rgba(234,88,12,.70) !important;
+      background: rgba(234,88,12,.06);
+      animation: pulse-absent 2s ease-in-out infinite;
+    }
+    @keyframes pulse-absent {
+      0%,100% { box-shadow: inset 0 0 0px rgba(234,88,12,0); border-left-width: 3px; }
+      50%      { box-shadow: inset 0 0 18px rgba(234,88,12,.10); border-left-width: 5px; }
+    }
+    /* Badge absent inline dans le modal historique */
+    .badge-absent {
+      display:inline-flex; align-items:center; gap:4px;
+      background:rgba(234,88,12,.10); border:1px solid rgba(234,88,12,.30);
+      color:#9a3412; font-weight:900; font-size:10px;
+      padding:3px 8px; border-radius:999px; letter-spacing:.04em;
+    }
 
     .chip {
       display: inline-flex; align-items: center; gap: 5px;
@@ -1170,7 +1187,12 @@
             const start=startMap[id];
             if(!start||dayISO<start) return;
             const e=merged[id]||null;
-            if(e&&e.off) classifyOffDay(id,dayISO,weekRC);
+            // BUG1 FIX : même logique que la boucle principale —
+            // si hA existe l'employé est présent, on n'alimente pas weekRC
+            // (sinon un off=true résiduel consommait à tort le R de semaine
+            //  et l'OFF réel du mois suivant était classé C au lieu de R)
+            const ctxHa=safeTime(e?.hA);
+            if(!ctxHa&&e&&e.off) classifyOffDay(id,dayISO,weekRC);
           });
         });
       }
@@ -1185,8 +1207,10 @@
           const e=merged[id]||null;
           const ha=safeTime(e?.hA);
           if(ha) return;
+          // BUG2 FIX : C uniquement si la case off est explicitement cochée.
+          // Sans hA et sans off=true → absent non justifié, on ne classe pas C.
           if(e&&e.off){ rcByEmpDay[id][dayISO]=classifyOffDay(id,dayISO,weekRC); return; }
-          rcByEmpDay[id][dayISO]="C";
+          // pas de rcByEmpDay ici → le jour reste non classé (ni R ni C)
         });
       });
 
@@ -1201,6 +1225,9 @@
       const container=document.getElementById('dashBody');
       const groups={};
       equipe.forEach(e=>(groups[e.poste]||=[]).push(e));
+      // Pour distinguer jour passé / aujourd'hui / futur
+      const selectedDay=currentDayForDayMode();
+      const isPastDay=(selectedDay<todayISO());
       let html='';
       POSTES_ORDER.filter(p=>groups[p]).forEach(poste=>{
         html+=`<div class="mb-6">
@@ -1224,6 +1251,11 @@
           const sClass=getStatusClass(diff,!!d.off,!!ha);
           const dot=getDotColor(diff,!!d.off,!!ha);
 
+          // Absent non justifié : pas de hA, pas de off, et jour déjà passé
+          const isAbsent=(!ha&&!d.off&&isPastDay);
+          const finalSClass=isAbsent?'status-absent':sClass;
+          const finalDot=isAbsent?'rgba(234,88,12,.80)':dot;
+
           let statusText='Attente',statusColor='color:var(--muted3)';
           if(ha){
             if(hp){
@@ -1232,11 +1264,13 @@
             }else{ statusText="OK"; statusColor='color:var(--ok)'; }
           }else if(d.off){
             statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
+          }else if(isAbsent){
+            statusText="⚠ Absent"; statusColor='color:rgba(234,88,12,.90)';
           }
 
           html+=`
-            <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(sClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between" style="min-height:7rem">
-              <span class="status-dot" style="background:${escAttr(dot)}"></span>
+            <button data-empid="${escAttr(id)}" class="staff-card ${escAttr(finalSClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between" style="min-height:7rem">
+              <span class="status-dot" style="background:${escAttr(finalDot)}"></span>
               ${ha ? `<div class="arrive-time">${esc(ha)}</div>` : ''}
               <div>
                 <p class="text-[11px] font-extrabold uppercase truncate pr-4" style="color:#0f2744">${esc(emp.nom)}</p>
@@ -1618,6 +1652,7 @@
       const emp=equipe.find(e=>e.nom===nom&&e.prenom===prenom);
       const empId=emp?empIdOf(emp):(nom+"_"+prenom);
       let html="";
+      let absCount=0; // compteur absences non justifiées du mois
       dates.slice().reverse().forEach(dayISO=>{
         if(dayISO>today){ html+=rowHistory(dayISO,"À venir","","","","color:var(--muted3)"); return; }
         if(isExcluded(dayISO)){ html+=rowHistory(dayISO,"Exclu","","","","color:var(--muted3)"); return; }
@@ -1638,10 +1673,25 @@
           return;
         }
         const rc=rcByEmpDay[empId]?.[dayISO];
-        if(rc){ html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",hp,ha,"","color:var(--muted2)",rc); }
-        else   { html+=rowHistory(dayISO,"—",hp,ha,"","color:var(--muted3)"); }
+        if(rc){
+          html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",hp,ha,"","color:var(--muted2)",rc);
+        }else{
+          // Absent non justifié : ni hA, ni off coché → alerte orange
+          absCount++;
+          html+=rowHistory(dayISO,"⚠ Absent",hp,ha,"","color:rgba(234,88,12,.90)");
+        }
       });
-      document.getElementById('modalList').innerHTML=html||
+      // Bandeau récapitulatif en tête si absences non justifiées détectées
+      const absBanner=absCount>0
+        ?`<div style="background:rgba(234,88,12,.08);border:1px solid rgba(234,88,12,.28);border-radius:16px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px">⚠️</span>
+            <div>
+              <div style="font-weight:900;font-size:12px;color:#9a3412">${absCount} absence${absCount>1?'s':''} non justifiée${absCount>1?'s':''} ce mois</div>
+              <div style="font-size:10px;font-weight:600;color:rgba(154,52,18,.70);margin-top:2px">Ni pointage (HA) ni case OFF cochée</div>
+            </div>
+          </div>`
+        :'';
+      document.getElementById('modalList').innerHTML=(absBanner+html)||
         `<p class="text-center py-10 text-[12px] font-extrabold" style="color:var(--muted3)">Aucune donnée ce mois</p>`;
     }
 
