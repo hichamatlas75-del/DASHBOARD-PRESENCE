@@ -1119,11 +1119,14 @@
     const monthRCMapCache   = new Map();
     const empStartMapCache  = new Map();
     const yearTimelineCache = new Map();
+    const yearPrefetchedSet = new Set();
+
     function clearMonthCache(){
       monthDataCache.clear();
       monthRCMapCache.clear();
       empStartMapCache.clear();
       yearTimelineCache.clear();
+      yearPrefetchedSet.clear();
     }
 
     function getDatesInMonth(seedISO){
@@ -1146,29 +1149,58 @@
       </div>`;
     }
 
-    async function batchFetchPresPunch(dates){
+    /* ─── Requête de plage ultra-rapide (1 seule requête pour presences et 1 pour punches) ─── */
+    async function fetchRangePresPunch(startDate, endDate){
       try{
-        const [presRes,punchRes]=await Promise.all([
-          Promise.allSettled(dates.map(d=>database.ref('presences/'+d).once('value'))),
-          Promise.allSettled(dates.map(d=>database.ref('punches/'+d).once('value')))
+        const [presSnap, punchSnap] = await Promise.all([
+          database.ref('presences').orderByKey().startAt(startDate).endAt(endDate).once('value'),
+          database.ref('punches').orderByKey().startAt(startDate).endAt(endDate).once('value')
         ]);
-        const presByDay={},punchByDay={};
-        dates.forEach((d,i)=>{
-          presByDay[d]  = (presRes[i].status==="fulfilled"  ? (presRes[i].value.val()||{})  : {});
-          punchByDay[d] = (punchRes[i].status==="fulfilled" ? (punchRes[i].value.val()||{}) : {});
-        });
-        const anyFail=presRes.some(r=>r.status==="rejected")||punchRes.some(r=>r.status==="rejected");
-        return {presByDay,punchByDay,anyFail};
+        return {
+          presByDay: presSnap.val() || {},
+          punchByDay: punchSnap.val() || {},
+          anyFail: false
+        };
       }catch(e){
-        return {presByDay:{},punchByDay:{},anyFail:true,fatal:true,err:e};
+        console.error("fetchRangePresPunch error:", e);
+        return {presByDay:{}, punchByDay:{}, anyFail:true, fatal:true, err:e};
+      }
+    }
+
+    /* ─── Pré-chargement de l'année entière en seulement 2 requêtes globales ─── */
+    async function prefetchYearData(year){
+      if(yearPrefetchedSet.has(year)) return;
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      const res = await fetchRangePresPunch(startDate, endDate);
+      if(!res.anyFail){
+        yearPrefetchedSet.add(year);
+        for(let i=1;i<=12;i++){
+          const mk=`${year}-${String(i).padStart(2,"0")}`;
+          const dates=getDatesInMonthKey(mk);
+          const presByDay={}, punchByDay={};
+          dates.forEach(d=>{
+            if(res.presByDay[d]) presByDay[d]=res.presByDay[d];
+            if(res.punchByDay[d]) punchByDay[d]=res.punchByDay[d];
+          });
+          monthDataCache.set(mk, {
+            monthKey: mk,
+            dates,
+            presByDay,
+            punchByDay,
+            anyFail: false
+          });
+        }
       }
     }
 
     async function getMonthData(mk){
       if(monthDataCache.has(mk)) return monthDataCache.get(mk);
       const dates=getDatesInMonthKey(mk);
+      const startDate=dates[0];
+      const endDate=dates[dates.length-1];
       const pack={monthKey:mk,dates,presByDay:{},punchByDay:{},anyFail:false};
-      const res=await batchFetchPresPunch(dates);
+      const res=await fetchRangePresPunch(startDate, endDate);
       pack.presByDay=res.presByDay||{};
       pack.punchByDay=res.punchByDay||{};
       pack.anyFail=!!res.anyFail;
@@ -1187,6 +1219,7 @@
 
     async function getEmpStartMapForYear(year){
       if(empStartMapCache.has(year)) return empStartMapCache.get(year);
+      await prefetchYearData(year);
       const currentMk=monthKeyFromISO(todayISO());
       const startMap={};
       equipe.forEach(emp=>{
@@ -1214,6 +1247,7 @@
 
     async function getYearTimeline(year){
       if(yearTimelineCache.has(year)) return yearTimelineCache.get(year);
+      await prefetchYearData(year);
       const startMap=await getEmpStartMapForYear(year);
       const currentMk=monthKeyFromISO(todayISO());
       const today=todayISO();
