@@ -743,7 +743,6 @@
       {nom:'ELKOBBI',    prenom:'MOSTAFA',   poste:'BAR'},
       {nom:'ELGORRAMY',  prenom:'ANISSA',    poste:'MENAGE'},
       {nom:'ELGORRAMY',  prenom:'SOUAD',     poste:'MENAGE'},
-      {nom:'ELMCHAOURI', prenom:'SOUAD',     poste:'MENAGE'},
       {nom:'ENNHAILI',   prenom:'SOUMIA',    poste:'ECONOMAT'},
       {nom:'FILALI',     prenom:'ABDERAFI',  poste:'BAR'},
       {nom:'HATTAF',     prenom:'MOHAMED',   poste:'SERVICE'},
@@ -762,7 +761,7 @@
 
     function setEquipe(next){ equipe = Array.isArray(next) ? next.slice() : []; clearMonthCache(); }
 
-    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL","ELMCHAOURI_SOUAD","SBAI_HAKIMA"]);
+    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL","SBAI_HAKIMA","ABOUARSA_EDDRISSIA"]);
     const noReposIds = new Set(["SALIL_HOUDA","BENKHADA_ABDESLAM"]);
 
     const EXCL_START = "2026-01-01";
@@ -800,11 +799,19 @@
       return t ? t.charAt(0).toUpperCase()+t.slice(1) : "";
     }
 
+    function getEffectiveHP(hp, empId){
+      if(hp) return hp;
+      const emp = getEmpById(empId);
+      if(emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ")) return "09:00";
+      return "";
+    }
+
     function getTimeDiff(a,p,id){
       if(!a) return 0;
       if(id && haOnlyIds.has(id)) return 0;
-      if(!p) return 0;
-      const [ha,ma]=a.split(':').map(Number),[hp,mp]=p.split(':').map(Number);
+      const effectiveP = getEffectiveHP(p, id);
+      if(!effectiveP) return 0;
+      const [ha,ma]=a.split(':').map(Number),[hp,mp]=effectiveP.split(':').map(Number);
       const d=(ha*60+ma)-(hp*60+mp);
       return d>0?d:0;
     }
@@ -1407,27 +1414,32 @@
           if(B==="BOUCHNAK_NAOUAL") return 1;
           return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
         }).forEach(emp=>{
-          const id=empIdOf(emp);
-          const d=data[id]||{};
-          const hp=safeTime(d.hP)||"";
+          const isSec=(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ");
+          const {y:ySel,m:mSel,d:dDay}=parseISO(selectedDay);
+          const dtSel=new Date(Date.UTC(ySel,mSel-1,dDay));
+          const isMonday=(dtSel.getUTCDay()===1);
+
+          const hp=safeTime(d.hP)||(isSec?"09:00":"");
           const ha=safeTime(d.hA)||"";
           const diff=diffFromEntry({hA:ha,hP:hp},id);
           const sClass=getStatusClass(diff,!!d.off,!!ha);
           const dot=getDotColor(diff,!!d.off,!!ha);
 
-          // Absent non justifié : pas de hA, pas de off, et jour déjà passé
-          const isAbsent=(!ha&&!d.off&&isPastDay);
-          const finalSClass=isAbsent?'status-absent':sClass;
-          const finalDot=isAbsent?'rgba(234,88,12,.80)':dot;
+          // Absent non justifié : pas de hA, pas de off, pas lundi pour sécurité, et jour déjà passé
+          const isAbsent=(!ha&&!d.off&&isPastDay&&!(isSec&&isMonday));
+          const finalSClass=(isSec&&isMonday&&!ha)?'status-off':(isAbsent?'status-absent':sClass);
+          const finalDot=(isSec&&isMonday&&!ha)?'rgba(99,102,241,.80)':(isAbsent?'rgba(234,88,12,.80)':dot);
 
           let statusText='Attente',statusColor='color:var(--muted3)';
           if(ha){
-            if(hp){
+            if(hp||isSec){
               if(diff>0){ statusText=`+${diff} min`; statusColor='color:var(--crit)'; }
               else { statusText="À l'heure"; statusColor='color:var(--ok)'; }
             }else{ statusText="OK"; statusColor='color:var(--ok)'; }
           }else if(d.off){
             statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
+          }else if(isSec&&isMonday){
+            statusText="Repos Lundi"; statusColor='color:var(--chip-r-fg)';
           }else if(isAbsent){
             statusText="⚠ Absent"; statusColor='color:rgba(234,88,12,.90)';
           }
@@ -1883,12 +1895,21 @@
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
         const ha=safeTime(e?.hA)||"";
-        const hp=safeTime(e?.hP)||"";
+        const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
+        const [yY,mM,dD]=dayISO.split('-').map(Number);
+        const dtD=new Date(Date.UTC(yY,mM-1,dD));
+        const isMonday=(dtD.getUTCDay()===1);
+
+        const hp=safeTime(e?.hP)||(isSec?"09:00":"");
+        const ha=safeTime(e?.hA)||"";
         if(ha){
           const diff=diffFromEntry({hA:ha,hP:hp},empId);
           if(diff>0){ dayMap[dayISO]={type:'retard',ha,hp,diff}; nPresent++; }
           else       { dayMap[dayISO]={type:'present',ha,hp};     nPresent++; }
           return;
+        }
+        if(isSec&&isMonday){
+          dayMap[dayISO]={type:'repos'}; nR++; return;
         }
         const rc=rcByEmpDay[empId]?.[dayISO];
         if(rc==='R'){      dayMap[dayISO]={type:'repos'}; nR++;      return; }
@@ -2001,6 +2022,7 @@
       const today=todayISO();
       const emp=equipe.find(e=>e.nom===nom&&e.prenom===prenom);
       const empId=emp?empIdOf(emp):(nom+"_"+prenom);
+      const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
       let html="";
       let absCount=0; // compteur absences non justifiées du mois
       dates.slice().reverse().forEach(dayISO=>{
@@ -2010,16 +2032,20 @@
         if(!empStart||dayISO<empStart){ html+=rowHistory(dayISO,"Non commencé","","","","color:var(--muted3)"); return; }
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
-        const hp=safeTime(e?.hP)||"";
+        const [yY,mM,dD]=dayISO.split('-').map(Number);
+        const dtD=new Date(Date.UTC(yY,mM-1,dD));
+        const isMonday=(dtD.getUTCDay()===1);
+
+        const hp=safeTime(e?.hP)||(isSec?"09:00":"");
         const ha=safeTime(e?.hA)||"";
         if(ha){
-          if(hp){
-            const diff=diffFromEntry({hA:ha,hP:hp},empId);
-            if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
-            else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
-          }else{
-            html+=rowHistory(dayISO,"OK","",ha,"","color:var(--ok)");
-          }
+          const diff=diffFromEntry({hA:ha,hP:hp},empId);
+          if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
+          else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
+          return;
+        }
+        if(isSec&&isMonday){
+          html+=rowHistory(dayISO,"Repos Lundi",hp,ha,"","color:var(--chip-r-fg)","R");
           return;
         }
         const rc=rcByEmpDay[empId]?.[dayISO];
