@@ -1910,7 +1910,6 @@
         if(!empStart||dayISO<empStart){ dayMap[dayISO]={type:'avant'}; return; }
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
-        const ha=safeTime(e?.hA)||"";
         const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
         const [yY,mM,dD]=dayISO.split('-').map(Number);
         const dtD=new Date(Date.UTC(yY,mM-1,dD));
