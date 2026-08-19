@@ -627,6 +627,7 @@
           <option value="CUISINE">CUISINE</option>
           <option value="CAISSE">CAISSE</option>
           <option value="MENAGE">MENAGE</option>
+          <option value="SECURITE">SECURITE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
         <input id="addDateDebut" class="inpt mt-2" type="date" />
@@ -654,6 +655,7 @@
           <option value="CUISINE">CUISINE</option>
           <option value="CAISSE">CAISSE</option>
           <option value="MENAGE">MENAGE</option>
+          <option value="SECURITE">SECURITE</option>
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
         <select id="delEmpSelect" class="inpt mt-2">
@@ -1381,7 +1383,7 @@
       return out;
     }
 
-    const POSTES_ORDER=['SERVICE','BAR','CUISINE','CAISSE','MENAGE','ECONOMAT'];
+    const POSTES_ORDER=['SERVICE','BAR','CUISINE','CAISSE','MENAGE','SECURITE','ECONOMAT'];
 
     function renderDayView(data){
       const container=document.getElementById('dashBody');
