@@ -1595,15 +1595,22 @@
 
       renderChart(labels,dailyLates,dailyPresence);
 
-      const lateList=Object.values(stats).filter(s=>s.lateMin>0).sort((a,b)=>b.lateMin-a.lateMin);
-      const goodList=Object.values(stats).filter(s=>s.lateMin===0&&s.present>0).sort((a,b)=>b.present-a.present);
-      const maxLate=lateList.length?lateList[0].lateMin:0;
+      // Filtrer les classements Bilan : inclure UNIQUEMENT Service et Bar (exclure Sécurité, Ménage, Caisse, Cuisine, etc.)
+      function isRankedPoste(poste) {
+        const p = String(poste || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return p === "SERVICE" || p === "BAR";
+      }
+
+      const rankedStats = Object.values(stats).filter(s => isRankedPoste(s.info?.poste));
+      const lateList = rankedStats.filter(s => s.lateMin > 0).sort((a, b) => b.lateMin - a.lateMin);
+      const goodList = rankedStats.filter(s => s.lateMin === 0 && s.present > 0).sort((a, b) => b.present - a.present);
+      const maxLate = lateList.length ? lateList[0].lateMin : 0;
 
       let html='<div class="space-y-6">';
 
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
-          <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires</div>
+          <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires · Service & Bar</div>
           <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(220,38,38,.40),transparent)"></div>
         </div>`;
       if(!lateList.length){
@@ -1613,8 +1620,11 @@
           const pct=maxLate?Math.max(6,Math.round((s.lateMin/maxLate)*100)):0;
           html+=`<div class="glass-card p-4 rounded-2xl mb-3">
             <div class="flex justify-between items-center">
-              <span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
-              <span class="text-[12px] font-extrabold" style="color:var(--crit)">${esc(s.lateMin)} min</span>
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+                <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+              </div>
+              <span class="text-[12px] font-extrabold flex-shrink-0 ml-2" style="color:var(--crit)">${esc(s.lateMin)} min</span>
             </div>
             <div style="height:5px;border-radius:999px;background:rgba(245,158,11,.10);margin-top:10px;overflow:hidden">
               <div style="height:5px;width:${escAttr(pct)}%;background:linear-gradient(90deg,rgba(220,38,38,.65),rgba(220,38,38,.35));border-radius:999px;transition:width .4s ease"></div>
@@ -1626,7 +1636,7 @@
 
       html+=`<div>
         <div class="flex items-center gap-3 mb-3">
-          <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus exemplaires</div>
+          <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus disciplinés · Service & Bar</div>
           <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(5,150,105,.40),transparent)"></div>
         </div>`;
       if(!goodList.length){
@@ -1634,8 +1644,11 @@
       }else{
         goodList.slice(0,6).forEach(s=>{
           html+=`<div class="glass-card p-4 rounded-2xl mb-3 flex justify-between items-center">
-            <span class="text-[12px] font-extrabold" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
-            <span class="text-[12px] font-extrabold" style="color:var(--ok)">${esc(s.present)} j ✓</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+              <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+            </div>
+            <span class="text-[12px] font-extrabold flex-shrink-0 ml-2" style="color:var(--ok)">${esc(s.present)} j ✓</span>
           </div>`;
         });
       }
