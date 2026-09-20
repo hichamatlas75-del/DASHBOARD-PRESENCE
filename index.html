@@ -784,7 +784,7 @@
     }
     function todayISO(){
       return new Intl.DateTimeFormat('fr-CA',{
-        timeZone:'Africa/Casablanca',year:'numeric',month:'2-digit',day:'2-digit'
+        timeZone:'GMT',year:'numeric',month:'2-digit',day:'2-digit'
       }).format(new Date());
     }
     function fmtFR(iso){
@@ -1102,10 +1102,10 @@
 
     function setSyncOK(){
       const now=new Date();
-      const hh=String(now.getHours()).padStart(2,'0');
-      const mm=String(now.getMinutes()).padStart(2,'0');
-      const ss=String(now.getSeconds()).padStart(2,'0');
-      syncLine.innerHTML=`<span class="sync-dot"></span>Temps réel ✅ (${hh}:${mm}:${ss})`;
+      const hh=String(now.getUTCHours()).padStart(2,'0');
+      const mm=String(now.getUTCMinutes()).padStart(2,'0');
+      const ss=String(now.getUTCSeconds()).padStart(2,'0');
+      syncLine.innerHTML=`<span class="sync-dot"></span>Temps réel ✅ (${hh}:${mm}:${ss} GMT)`;
     }
     function setSyncWaiting(){ syncLine.textContent="Sync : connexion…"; }
     function setSyncStatic(d){ syncLine.textContent=`Lecture (${fmtFR(d)})`; }
