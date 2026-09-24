@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "presences": {
+      ".indexOn": [".key"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "punches": {
+      ".indexOn": [".key"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "settings": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}
