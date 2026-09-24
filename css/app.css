@@ -295,16 +295,17 @@ body::before, body::after { display: none; }
 }
 .rc-table th, .rc-table td {
   border: 1px solid rgba(30,64,175,.07);
-  padding: 8px 5px;
+  padding: 8px 6px;
   font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: middle;
 }
 .rc-table td.col-emp {
   white-space: normal;
   word-break: break-word;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 .rc-table th {
   background: rgba(255,255,255,.55);
@@ -313,7 +314,7 @@ body::before, body::after { display: none; }
   letter-spacing: .08em;
   font-size: 9px;
   color: var(--muted2);
-  padding: 7px 5px;
+  padding: 8px 6px;
 }
 .rc-table tbody tr:nth-child(odd)  { background: rgba(255,255,255,.22); }
 .rc-table tbody tr[data-nom] {
@@ -326,32 +327,19 @@ body::before, body::after { display: none; }
 .rc-table tbody tr[data-nom]:active { opacity: .80; }
 .muted-dash { opacity: .38; }
 
-.solde-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 10px;
+/* Typographie spécifique employé dans le tableau */
+.emp-name-main {
   font-weight: 900;
-  letter-spacing: .02em;
-  line-height: 1.2;
+  font-size: 11px;
+  color: #0f2744;
+  letter-spacing: .01em;
 }
-.solde-plus {
-  background: rgba(16,185,129,.14);
-  border: 1px solid rgba(16,185,129,.35);
-  color: #065f46;
-}
-.solde-zero {
-  background: rgba(30,41,59,.06);
-  border: 1px solid rgba(30,41,59,.14);
-  color: var(--muted2);
+.emp-prenom-sub {
   opacity: .65;
+  font-weight: 700;
+  font-size: 10.5px;
+  color: #0f2744;
 }
-.solde-minus {
-  background: rgba(245,158,11,.14);
-  border: 1px solid rgba(245,158,11,.35);
-  color: #92400e;
-}
-
 .rc-poste-badge {
   display: inline-block;
   font-size: 9px;
@@ -359,6 +347,58 @@ body::before, body::after { display: none; }
   color: var(--muted2);
   letter-spacing: .04em;
   margin-top: 1px;
+}
+
+/* ─── Agrandissement adaptatif pour PC & Tablette ─── */
+@media (min-width: 640px) {
+  .rc-table th, .rc-table td {
+    padding: 11px 8px;
+    font-size: 12.5px;
+  }
+  .rc-table th {
+    font-size: 10.5px;
+    padding: 10px 8px;
+    letter-spacing: .10em;
+  }
+  .emp-name-main {
+    font-size: 13.5px;
+  }
+  .emp-prenom-sub {
+    font-size: 12.5px;
+  }
+  .rc-poste-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    background: rgba(30,64,175,.06);
+    border-radius: 6px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rc-table th, .rc-table td {
+    padding: 14px 12px;
+    font-size: 14px;
+  }
+  .rc-table th {
+    font-size: 11.5px;
+    padding: 12px 12px;
+  }
+  .emp-name-main {
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .emp-prenom-sub {
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .rc-poste-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  .solde-badge {
+    padding: 3px 9px;
+    font-size: 12px;
+  }
 }
 
 .cal-cell {

@@ -330,12 +330,12 @@ function makeTable(rows, colR, colC) {
   return `<div class="mt-4 overflow-x-auto">
     <table class="rc-table">
       <colgroup>
-        <col style="width:35%">
-        <col style="width:13%">
-        <col style="width:10%">
-        <col style="width:10%">
-        <col style="width:16%">
-        <col style="width:16%">
+        <col style="width:38%" class="sm:!w-[42%] md:!w-[45%]">
+        <col style="width:12%" class="sm:!w-[11%] md:!w-[11%]">
+        <col style="width:11%" class="sm:!w-[10%] md:!w-[10%]">
+        <col style="width:11%" class="sm:!w-[10%] md:!w-[10%]">
+        <col style="width:14%" class="sm:!w-[14%] md:!w-[12%]">
+        <col style="width:14%" class="sm:!w-[13%] md:!w-[12%]">
       </colgroup>
       <thead><tr>
         <th style="text-align:left">Employé</th>
@@ -362,13 +362,14 @@ function makeTable(rows, colR, colC) {
 
           return `<tr data-nom="${escAttr(r.nom)}" data-prenom="${escAttr(r.prenom)}" title="Cliquer pour voir le calendrier">
             <td class="col-emp">
-              <div class="flex items-center gap-2">
-                ${getStaffAvatarHtml(r.nom, r.prenom, 'sm')}
+              <div class="flex items-center gap-2.5 sm:gap-3.5">
+                ${getStaffAvatarHtml(r.nom, r.prenom, 'table')}
                 <div class="min-w-0">
-                  <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span>
-                  <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744"> ${esc(titleCase(r.prenom))}</span>
-                  <br><span class="rc-poste-badge">${esc((r.poste || "").toLowerCase())}</span>
-                  <span style="font-size:9px;color:var(--muted3);margin-left:2px">📅</span>
+                  <div class="emp-name-main">${esc(r.nom)} <span class="emp-prenom-sub">${esc(titleCase(r.prenom))}</span></div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="rc-poste-badge">${esc((r.poste || "").toLowerCase())}</span>
+                    <span style="font-size:9px;color:var(--muted3);opacity:.75">📅</span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -377,7 +378,7 @@ function makeTable(rows, colR, colC) {
             <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
             <td style="text-align:center;font-weight:900">${soldeHtml}</td>
             <td style="text-align:center;font-weight:900;color:var(--crit)">
-              ${late ? `<span style="font-size:10px">${esc(late)}m</span>` : '<span class="muted-dash">—</span>'}
+              ${late ? `<span>${esc(late)}m</span>` : '<span class="muted-dash">—</span>'}
             </td>
           </tr>`;
         }).join("")}

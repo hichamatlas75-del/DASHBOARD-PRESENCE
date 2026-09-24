@@ -412,6 +412,7 @@ function getStaffAvatarHtml(nom, prenom, size = 'md') {
 
   let dimClass = 'w-9 h-9 text-[11px]';
   if (size === 'sm') dimClass = 'w-7 h-7 text-[9px]';
+  if (size === 'table') dimClass = 'w-8 h-8 sm:w-10 sm:h-10 text-[10px] sm:text-[12px]';
   if (size === 'lg') dimClass = 'w-12 h-12 text-[14px]';
 
   if (photoUrl) {
