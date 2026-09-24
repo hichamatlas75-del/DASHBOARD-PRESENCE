@@ -924,7 +924,7 @@
 
     function setEquipe(next){ equipe = Array.isArray(next) ? next.slice() : []; clearMonthCache(); }
 
-    const haOnlyIds  = new Set(["SBAI_HAKIMA","ABOUARSA_EDDRISSIA"]);
+    const haOnlyIds  = new Set(["SBAI_HAKIMA","ELGORRAMY_ANISSA","ELGORRAMY_SOUAD","ABOUARSA_EDDRISSIA"]);
     const noReposIds = new Set(["SALIL_HOUDA","BENKHADA_ABDESLAM"]);
 
     const EXCL_START = "2026-01-01";
@@ -985,7 +985,7 @@
 
     function getTimeDiff(a,p,id,dateISO){
       if(!a) return 0;
-      if(id && haOnlyIds.has(id)) return 0;
+      if(id && (haOnlyIds.has(id) || isMenageStaff(id))) return 0;
       const effectiveP = getEffectiveHP(p, id, dateISO);
       if(!effectiveP) return 0;
       const [ha,ma]=a.split(':').map(Number),[hp,mp]=effectiveP.split(':').map(Number);
@@ -1030,6 +1030,20 @@
     }
     function getEmpById(empId){
       return equipe.find(e=>empIdOf(e)===empId) || {nom:empId,prenom:"",poste:"",dateDebut:""};
+    }
+    function isMenageStaff(empOrId){
+      if(!empOrId) return false;
+      if(typeof empOrId === "object"){
+        const p = String(empOrId.poste || "").toUpperCase();
+        return p === "MENAGE" || p === "MÉNAGE";
+      }
+      const emp = getEmpById(empOrId);
+      if(emp && emp.poste){
+        const p = String(emp.poste).toUpperCase();
+        return p === "MENAGE" || p === "MÉNAGE";
+      }
+      const s = String(empOrId).toUpperCase();
+      return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA");
     }
     function normName(s){ return (s||"").trim().toUpperCase().replace(/\s+/g,' ').replace(/['']/g,"'"); }
     function makeEmpId(nom,prenom){ return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g,'_'); }
@@ -1496,6 +1510,7 @@
 
           const offDaysInWeek=[];
           let hadAnyActivity=false;
+          const isMenage=isMenageStaff(emp)||isMenageStaff(id);
 
           for(const d of weekDays){
             if(d<start||d>today||isExcluded(d)) continue;
@@ -1508,6 +1523,9 @@
             if(ha){
               hadAnyActivity=true;
             } else if(e&&e.off===true){
+              hadAnyActivity=true;
+              offDaysInWeek.push(d);
+            } else if(isMenage){
               hadAnyActivity=true;
               offDaysInWeek.push(d);
             }
@@ -1610,6 +1628,7 @@
           const isSec=(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ");
           const isCuisine=(emp.poste==="CUISINE");
           const isSoumia=isSoumiaStaff(id);
+          const isMenage=isMenageStaff(emp)||isMenageStaff(id);
           const caissePlan=(isSalilStaff(id)||isBenkhadaStaff(id))?getCaisseAlternance(id,selectedDay):null;
           const {y:ySel,m:mSel,d:dDay}=parseISO(selectedDay);
           const dtSel=new Date(Date.UTC(ySel,mSel-1,dDay));
@@ -1623,21 +1642,29 @@
           const sClass=getStatusClass(diff,!!d.off,!!ha);
           const dot=getDotColor(diff,!!d.off,!!ha);
 
-          // Absent non justifié : pas de hA, pas de off, pas lundi pour sécurité, pas repos planning cuisine/soumia, et jour déjà passé
+          // Absent non justifié : pas de hA, pas de off, pas lundi pour sécurité, pas repos planning cuisine/soumia, pas ménage, et jour déjà passé
           const isCuisinePlanOff=(isCuisine&&cuisinePlan?.off);
           const isSoumiaPlanOff=(isSoumia&&soumiaPlan?.off);
-          const isAbsent=(!ha&&!d.off&&isPastDay&&!(isSec&&isMonday)&&!isCuisinePlanOff&&!isSoumiaPlanOff);
-          const finalSClass=(isSec&&isMonday&&!ha||isCuisinePlanOff&&!ha||isSoumiaPlanOff&&!ha)?'status-off':(isAbsent?'status-absent':sClass);
-          const finalDot=(isSec&&isMonday&&!ha||isCuisinePlanOff&&!ha||isSoumiaPlanOff&&!ha)?'rgba(168,85,247,.80)':(isAbsent?'rgba(234,88,12,.80)':dot);
+          const isAbsent=(!ha&&!d.off&&isPastDay&&!(isSec&&isMonday)&&!isCuisinePlanOff&&!isSoumiaPlanOff&&!isMenage);
+          const finalSClass=(isSec&&isMonday&&!ha||isCuisinePlanOff&&!ha||isSoumiaPlanOff&&!ha||(isMenage&&!ha&&isPastDay))?'status-off':(isAbsent?'status-absent':sClass);
+          const finalDot=(isSec&&isMonday&&!ha||isCuisinePlanOff&&!ha||isSoumiaPlanOff&&!ha||(isMenage&&!ha&&isPastDay))?'rgba(168,85,247,.80)':(isAbsent?'rgba(234,88,12,.80)':dot);
 
           let statusText='Attente',statusColor='color:var(--muted3)';
           if(ha){
-            if(hp||isSec||cuisinePlan||soumiaPlan||caissePlan){
+            if(isMenage){
+              statusText="Présent"; statusColor='color:var(--ok)';
+            }else if(hp||isSec||cuisinePlan||soumiaPlan||caissePlan){
               if(diff>0){ statusText=`+${diff} min`; statusColor='color:var(--crit)'; }
               else { statusText="À l'heure"; statusColor='color:var(--ok)'; }
             }else{ statusText="OK"; statusColor='color:var(--ok)'; }
           }else if(d.off){
             statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
+          }else if(isMenage){
+            if(isPastDay){
+              statusText="Repos / Congé"; statusColor='color:var(--chip-r-fg)';
+            }else{
+              statusText="Saisie manuelle"; statusColor='color:var(--muted3)';
+            }
           }else if(isSoumia&&soumiaPlan?.off){
             statusText="OFF (Mardi)"; statusColor='color:rgba(168,85,247,.80)';
           }else if(caissePlan){
@@ -2114,6 +2141,7 @@
         const merged=mergeDay(presByDay[dayISO],punchByDay[dayISO]);
         const e=merged[empId]||null;
         const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
+        const isMenage=(emp&&(emp.poste==="MENAGE"||emp.poste==="MÉNAGE"))||isMenageStaff(empId);
         const [yY,mM,dD]=dayISO.split('-').map(Number);
         const dtD=new Date(Date.UTC(yY,mM-1,dD));
         const isMonday=(dtD.getUTCDay()===1);
@@ -2122,7 +2150,7 @@
         const ha=safeTime(e?.hA)||"";
         if(ha){
           const diff=diffFromEntry({hA:ha,hP:hp},empId,dayISO);
-          if(diff>0){ dayMap[dayISO]={type:'retard',ha,hp,diff}; nPresent++; }
+          if(diff>0 && !isMenage){ dayMap[dayISO]={type:'retard',ha,hp,diff}; nPresent++; }
           else       { dayMap[dayISO]={type:'present',ha,hp};     nPresent++; }
           return;
         }
@@ -2133,6 +2161,7 @@
         if(rc==='R'){      dayMap[dayISO]={type:'repos'}; nR++;      return; }
         if(rc==='C'){      dayMap[dayISO]={type:'conge'}; nC++;      return; }
         if(e&&e.off){      dayMap[dayISO]={type:'off'};   nOff++;    return; }
+        if(isMenage){      dayMap[dayISO]={type:'repos'}; nR++;      return; }
         dayMap[dayISO]={type:'absent'}; nAbsent++;
       });
 
@@ -2257,6 +2286,7 @@
         const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
         const isCuisine=(emp&&(emp.poste==="CUISINE"));
         const isSoumia=isSoumiaStaff(empId);
+        const isMenage=(emp&&(emp.poste==="MENAGE"||emp.poste==="MÉNAGE"))||isMenageStaff(empId);
         const caissePlan=(isSalilStaff(empId)||isBenkhadaStaff(empId))?getCaisseAlternance(empId,dayISO):null;
         const cuisinePlan=isCuisine?getCuisinePlanning(empId,dayISO):null;
         const soumiaPlan=isSoumia?getSoumiaPlanning(dayISO):null;
@@ -2265,7 +2295,7 @@
         const ha=safeTime(e?.hA)||"";
         if(ha){
           const diff=diffFromEntry({hA:ha,hP:hp},empId,dayISO);
-          if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
+          if(diff>0 && !isMenage) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
           else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
           return;
         }
@@ -2284,6 +2314,10 @@
         const rc=rcByEmpDay[empId]?.[dayISO];
         if(rc){
           html+=rowHistory(dayISO,rc==="R"?"Repos":"Congé",hp,ha,"","color:var(--muted2)",rc);
+        }else if(isMenage){
+          html+=rowHistory(dayISO,"Repos",hp,ha,"","color:var(--muted2)","R");
+        }else if(e&&e.off){
+          html+=rowHistory(dayISO,"OFF",hp,ha,"","color:var(--muted2)","OFF");
         }else{
           // Absent non justifié : ni hA, ni off coché → alerte orange
           absCount++;
