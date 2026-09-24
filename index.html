@@ -28,9 +28,9 @@
           <h1 class="hTitle text-4xl leading-tight">Connexion</h1>
           <div class="mt-1 text-[11px] font-bold" style="color:var(--accent);letter-spacing:.06em">GREY CORNER</div>
         </div>
-        <div class="w-10 h-10 rounded-2xl flex items-center justify-center"
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center overflow-hidden shadow-sm"
           style="background:var(--accentBg);border:1px solid var(--accentBdr)">
-          <span style="font-size:18px">🏠</span>
+          <img src="images/LOGO GREY CORNER.png" class="w-full h-full object-cover" alt="Grey Corner" onerror="this.outerHTML='<span style=\'font-size:18px\'>🏠</span>'" />
         </div>
       </div>
 
@@ -155,6 +155,7 @@
     <div class="modal-sheet w-full max-w-2xl rounded-t-[36px] sm:rounded-[32px] p-6 pb-12 shadow-2xl max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
       <div class="handle sm:hidden"></div>
       <div class="flex items-center gap-3 mb-4">
+        <div id="modalAvatarSlot" class="shrink-0"></div>
         <div class="flex-1 min-w-0">
           <div id="modalSubtitle" class="smallCaps">Historique</div>
           <h2 id="modalTitle" class="hTitle text-2xl leading-tight mt-0.5 truncate">—</h2>

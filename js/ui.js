@@ -60,12 +60,15 @@ function renderDayView(data) {
         const id = empIdOf(emp);
         const cardProps = calculateEmpCardProps(emp, id, data[id] || {}, selectedDay, isPastDay);
         html += `
-          <button id="card-${escAttr(id)}" data-empid="${escAttr(id)}" class="staff-card ${escAttr(cardProps.finalSClass)} glass-card p-4 rounded-2xl text-left flex flex-col justify-between" style="min-height:7rem">
+          <button id="card-${escAttr(id)}" data-empid="${escAttr(id)}" class="staff-card ${escAttr(cardProps.finalSClass)} glass-card p-3.5 rounded-2xl text-left flex flex-col justify-between" style="min-height:7.5rem">
             <span class="status-dot" style="background:${escAttr(cardProps.finalDot)}"></span>
             <div class="arrive-time">${esc(cardProps.ha)}</div>
-            <div>
-              <p class="text-[11px] font-extrabold uppercase truncate pr-4" style="color:#0f2744">${esc(emp.nom)}</p>
-              <p class="text-[10px] font-semibold mt-0.5" style="color:var(--muted3)">${esc(titleCase(emp.prenom))}</p>
+            <div class="flex items-center gap-2.5 min-w-0 pr-4">
+              ${getStaffAvatarHtml(emp.nom, emp.prenom, 'md')}
+              <div class="min-w-0">
+                <p class="text-[11px] font-extrabold uppercase truncate" style="color:#0f2744">${esc(emp.nom)}</p>
+                <p class="text-[10px] font-semibold truncate mt-0.5" style="color:var(--muted3)">${esc(titleCase(emp.prenom))}</p>
+              </div>
             </div>
             <p class="status-text text-[11px] font-extrabold mt-2" style="${escAttr(cardProps.statusColor)}">${esc(cardProps.statusText)}</p>
           </button>`;
@@ -281,9 +284,12 @@ async function renderReportView() {
       const pct = maxLate ? Math.max(6, Math.round((s.lateMin / maxLate) * 100)) : 0;
       html += `<div class="glass-card p-4 rounded-2xl mb-3">
         <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
-            <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+          <div class="flex items-center gap-2.5 min-w-0">
+            ${getStaffAvatarHtml(s.info.nom, s.info.prenom, 'sm')}
+            <div class="min-w-0">
+              <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+              <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full inline-block ml-1" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+            </div>
           </div>
           <span class="text-[12px] font-extrabold flex-shrink-0 ml-2" style="color:var(--crit)">${esc(s.lateMin)} min</span>
         </div>
@@ -305,9 +311,12 @@ async function renderReportView() {
   } else {
     goodList.slice(0, 6).forEach(s => {
       html += `<div class="glass-card p-4 rounded-2xl mb-3 flex justify-between items-center">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
-          <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+        <div class="flex items-center gap-2.5 min-w-0">
+          ${getStaffAvatarHtml(s.info.nom, s.info.prenom, 'sm')}
+          <div class="min-w-0">
+            <span class="text-[12px] font-extrabold truncate" style="color:#0f2744">${esc(s.info.nom)} <span style="opacity:.55;font-size:11px">${esc(titleCase(s.info.prenom))}</span></span>
+            <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full inline-block ml-1" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(s.info.poste)}</span>
+          </div>
         </div>
         <span class="text-[12px] font-extrabold flex-shrink-0 ml-2" style="color:var(--ok)">${esc(s.present)} j ✓</span>
       </div>`;
@@ -353,10 +362,15 @@ function makeTable(rows, colR, colC) {
 
           return `<tr data-nom="${escAttr(r.nom)}" data-prenom="${escAttr(r.prenom)}" title="Cliquer pour voir le calendrier">
             <td class="col-emp">
-              <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span><br>
-              <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744">${esc(titleCase(r.prenom))}</span>
-              <br><span class="rc-poste-badge">${esc((r.poste || "").toLowerCase())}</span>
-              <span style="font-size:9px;color:var(--muted3);margin-left:4px">📅</span>
+              <div class="flex items-center gap-2">
+                ${getStaffAvatarHtml(r.nom, r.prenom, 'sm')}
+                <div class="min-w-0">
+                  <span style="font-weight:900;font-size:11px;color:#0f2744">${esc(r.nom)}</span>
+                  <span style="opacity:.55;font-weight:700;font-size:10px;color:#0f2744"> ${esc(titleCase(r.prenom))}</span>
+                  <br><span class="rc-poste-badge">${esc((r.poste || "").toLowerCase())}</span>
+                  <span style="font-size:9px;color:var(--muted3);margin-left:2px">📅</span>
+                </div>
+              </div>
             </td>
             <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
             <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
@@ -459,6 +473,8 @@ async function openCalendarModal(nom, prenom, mk) {
   modal.classList.add('modal-active');
   document.getElementById('modalSubtitle').textContent = 'Calendrier';
   document.getElementById('modalTitle').innerText = nom + " " + titleCase(prenom);
+  const calAvatarSlot = document.getElementById('modalAvatarSlot');
+  if (calAvatarSlot) calAvatarSlot.innerHTML = getStaffAvatarHtml(nom, prenom, 'lg');
   document.getElementById('modalMonthPicker').value = mk;
   document.getElementById('modalList').innerHTML = loadingCard("Chargement calendrier…");
 
@@ -608,6 +624,8 @@ async function openHistory(nom, prenom, mk) {
   modal.classList.add('modal-active');
   document.getElementById('modalSubtitle').textContent = 'Historique';
   document.getElementById('modalTitle').innerText = nom + " " + titleCase(prenom);
+  const histAvatarSlot = document.getElementById('modalAvatarSlot');
+  if (histAvatarSlot) histAvatarSlot.innerHTML = getStaffAvatarHtml(nom, prenom, 'lg');
   document.getElementById('modalMonthPicker').value = mk;
   document.getElementById('modalList').innerHTML = loadingCard("Chargement historique…");
 
