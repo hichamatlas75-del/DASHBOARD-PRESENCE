@@ -1541,6 +1541,8 @@
           if(B==="BOUCHNAK_NAOUAL") return 1;
           return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
         }).forEach(emp=>{
+          const id=empIdOf(emp);
+          const d=data[id]||{};
           const isSec=(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ");
           const isCuisine=(emp.poste==="CUISINE");
           const isSoumia=isSoumiaStaff(id);
