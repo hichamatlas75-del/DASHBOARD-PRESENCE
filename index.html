@@ -764,6 +764,7 @@
     // 0 = Dimanche, 1 = Lundi, 2 = Mardi, 3 = Mercredi, 4 = Jeudi, 5 = Vendredi, 6 = Samedi
     const PLANNING_CUISINE = {
       1: { // Lundi
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 14h" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 14h" },
         JIHANE:  { hP: "12:00", off: false, shift: "12h — 21h" },
@@ -773,6 +774,7 @@
         SAAD:    { hP: "14:00", off: false, shift: "14h — F.S" }
       },
       2: { // Mardi
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "",      off: true,  shift: "OFF" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 14h" },
         JIHANE:  { hP: "15:00", off: false, shift: "15h — F.S" },
@@ -782,6 +784,7 @@
         SAAD:    { hP: "",      off: true,  shift: "OFF" }
       },
       3: { // Mercredi
+        NAOUAL:  { hP: "",      off: true,  shift: "OFF" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 14h" },
         FATIMA:  { hP: "",      off: true,  shift: "OFF" },
         JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
@@ -791,6 +794,7 @@
         SAAD:    { hP: "12:00", off: false, shift: "12h — 15h / 17h - F.S" }
       },
       4: { // Jeudi
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 14h" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 14h" },
         JIHANE:  { hP: "",      off: true,  shift: "OFF" },
@@ -800,6 +804,7 @@
         SAAD:    { hP: "14:00", off: false, shift: "14h — F.S" }
       },
       5: { // Vendredi
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 14h" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 14h" },
         JIHANE:  { hP: "12:00", off: false, shift: "12h — 15h / 17h - F.S" },
@@ -809,6 +814,7 @@
         SAAD:    { hP: "15:00", off: false, shift: "15h — F.S" }
       },
       6: { // Samedi
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
         JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
@@ -818,6 +824,7 @@
         SAAD:    { hP: "13:00", off: false, shift: "13h — F.S" }
       },
       0: { // Dimanche
+        NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
         KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
         FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
         JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
@@ -831,6 +838,7 @@
     function matchCuisineStaffKey(nameOrKey) {
       if(!nameOrKey) return null;
       const s = String(nameOrKey).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if(s.includes("NAOUAL") || s.includes("BOUCHNAK")) return "NAOUAL";
       if(s.includes("KHAOULA") || s.includes("BELQAS")) return "KHAOULA";
       if(s.includes("FATIMA") || s.includes("ZAIR")) return "FATIMA";
       if(s.includes("JIHANE") || s.includes("MAJDOUB")) return "JIHANE";
@@ -872,9 +880,51 @@
       return { off: false, hP: "09:00", shift: "09:00" };
     }
 
+    // ─── PLANNING FIXE CAISSE (SALIL HOUDA & BENKHADA ABDESLAM) ───
+    // Travail continu sans repos 24h : alternance quotidienne entre 07:30 et 15:00
+    // Ancre : le 24 Septembre 2026, SALIL commence à 07:30 et BENKHADA à 15:00. Le lendemain l'inverse.
+    function isSalilStaff(idOrName) {
+      if(!idOrName) return false;
+      const s = String(idOrName).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return s.includes("SALIL") || s.includes("SALIH") || s.includes("HOUDA");
+    }
+
+    function isBenkhadaStaff(idOrName) {
+      if(!idOrName) return false;
+      const s = String(idOrName).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return s.includes("BENKHADA") || s.includes("ABDESLAM") || s.includes("ABDESSLAM") || s.includes("ABDELSSAM");
+    }
+
+    function getCaisseAlternance(idOrName, dateISO) {
+      if(!dateISO) return null;
+      const [yy, mm, dd] = String(dateISO).split("-").map(Number);
+      if(!yy || !mm || !dd) return null;
+      const isSal = isSalilStaff(idOrName);
+      const isBen = isBenkhadaStaff(idOrName);
+      if(!isSal && !isBen) return null;
+
+      // Ancre : 24 Septembre 2026 (mois 8 = Septembre)
+      const dAnchor = Date.UTC(2026, 8, 24);
+      const dTarget = Date.UTC(yy, mm - 1, dd);
+      const diffDays = Math.round((dTarget - dAnchor) / 86400000);
+      const mod = ((diffDays % 2) + 2) % 2;
+
+      // mod 0 (24 Sept) : Salil = 07:30, Benkhada = 15:00
+      // mod 1 (25 Sept) : Salil = 15:00, Benkhada = 07:30
+      if(mod === 0) {
+        return isSal
+          ? { hP: "07:30", off: false, shift: "07:30" }
+          : { hP: "15:00", off: false, shift: "15:00" };
+      } else {
+        return isSal
+          ? { hP: "15:00", off: false, shift: "15:00" }
+          : { hP: "07:30", off: false, shift: "07:30" };
+      }
+    }
+
     function setEquipe(next){ equipe = Array.isArray(next) ? next.slice() : []; clearMonthCache(); }
 
-    const haOnlyIds  = new Set(["BOUCHNAK_NAOUAL","SBAI_HAKIMA","ABOUARSA_EDDRISSIA"]);
+    const haOnlyIds  = new Set(["SBAI_HAKIMA","ABOUARSA_EDDRISSIA"]);
     const noReposIds = new Set(["SALIL_HOUDA","BENKHADA_ABDESLAM"]);
 
     const EXCL_START = "2026-01-01";
@@ -912,23 +962,37 @@
       return t ? t.charAt(0).toUpperCase()+t.slice(1) : "";
     }
 
-    function getEffectiveHP(hp, empId){
+    function getEffectiveHP(hp, empId, dateISO){
       if(hp) return hp;
       const emp = getEmpById(empId);
       if(emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ")) return "09:00";
+      if(dateISO) {
+        if(isSoumiaStaff(empId)) {
+          const sp = getSoumiaPlanning(dateISO);
+          if(sp && !sp.off && sp.hP) return sp.hP;
+        }
+        if(isSalilStaff(empId) || isBenkhadaStaff(empId)) {
+          const cp = getCaisseAlternance(empId, dateISO);
+          if(cp && cp.hP) return cp.hP;
+        }
+        if(emp && emp.poste === "CUISINE") {
+          const cp = getCuisinePlanning(empId, dateISO);
+          if(cp && !cp.off && cp.hP) return cp.hP;
+        }
+      }
       return "";
     }
 
-    function getTimeDiff(a,p,id){
+    function getTimeDiff(a,p,id,dateISO){
       if(!a) return 0;
       if(id && haOnlyIds.has(id)) return 0;
-      const effectiveP = getEffectiveHP(p, id);
+      const effectiveP = getEffectiveHP(p, id, dateISO);
       if(!effectiveP) return 0;
       const [ha,ma]=a.split(':').map(Number),[hp,mp]=effectiveP.split(':').map(Number);
       const d=(ha*60+ma)-(hp*60+mp);
       return d>0?d:0;
     }
-    function diffFromEntry(entry,empId){ return entry ? getTimeDiff(entry.hA,entry.hP,empId) : 0; }
+    function diffFromEntry(entry,empId,dateISO){ return entry ? getTimeDiff(entry.hA,entry.hP,empId,dateISO) : 0; }
 
     function getStatusClass(diff,isOff,hasArrived){
       if(hasArrived){
@@ -1546,15 +1610,16 @@
           const isSec=(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ");
           const isCuisine=(emp.poste==="CUISINE");
           const isSoumia=isSoumiaStaff(id);
+          const caissePlan=(isSalilStaff(id)||isBenkhadaStaff(id))?getCaisseAlternance(id,selectedDay):null;
           const {y:ySel,m:mSel,d:dDay}=parseISO(selectedDay);
           const dtSel=new Date(Date.UTC(ySel,mSel-1,dDay));
           const isMonday=(dtSel.getUTCDay()===1);
           const cuisinePlan=isCuisine?getCuisinePlanning(id,selectedDay):null;
           const soumiaPlan=isSoumia?getSoumiaPlanning(selectedDay):null;
 
-          const hp=safeTime(d.hP)||(soumiaPlan&&!soumiaPlan.off?soumiaPlan.hP:(isSec?"09:00":(cuisinePlan&&!cuisinePlan.off?cuisinePlan.hP:"")));
+          const hp=safeTime(d.hP)||(soumiaPlan&&!soumiaPlan.off?soumiaPlan.hP:(caissePlan?caissePlan.hP:(isSec?"09:00":(cuisinePlan&&!cuisinePlan.off?cuisinePlan.hP:""))));
           const ha=safeTime(d.hA)||"";
-          const diff=diffFromEntry({hA:ha,hP:hp},id);
+          const diff=diffFromEntry({hA:ha,hP:hp},id,selectedDay);
           const sClass=getStatusClass(diff,!!d.off,!!ha);
           const dot=getDotColor(diff,!!d.off,!!ha);
 
@@ -1567,7 +1632,7 @@
 
           let statusText='Attente',statusColor='color:var(--muted3)';
           if(ha){
-            if(hp||isSec||cuisinePlan||soumiaPlan){
+            if(hp||isSec||cuisinePlan||soumiaPlan||caissePlan){
               if(diff>0){ statusText=`+${diff} min`; statusColor='color:var(--crit)'; }
               else { statusText="À l'heure"; statusColor='color:var(--ok)'; }
             }else{ statusText="OK"; statusColor='color:var(--ok)'; }
@@ -1575,6 +1640,8 @@
             statusText="OFF"; statusColor='color:rgba(148,163,184,.80)';
           }else if(isSoumia&&soumiaPlan?.off){
             statusText="OFF (Mardi)"; statusColor='color:rgba(168,85,247,.80)';
+          }else if(caissePlan){
+            statusText=`Rot. ${caissePlan.shift}`; statusColor='color:#4338ca';
           }else if(isSec&&isMonday){
             statusText="Repos Lundi"; statusColor='color:var(--chip-r-fg)';
           }else if(isCuisinePlanOff){
@@ -1706,7 +1773,7 @@
           const hp=safeTime(e?.hP)||"";
           const ha=safeTime(e?.hA)||"";
           if(ha){
-            const diff=diffFromEntry({hA:ha,hP:hp},id);
+            const diff=diffFromEntry({hA:ha,hP:hp},id,dayISO);
             stats[id].present++; stats[id].lateMin+=diff; tL+=diff; tP++;
             return;
           }
@@ -1803,7 +1870,7 @@
           const ha=safeTime(e?.hA)||"";
           if(ha){
             out[id].present++;
-            out[id].lateMin+=diffFromEntry({hA:ha,hP:hp},id);
+            out[id].lateMin+=diffFromEntry({hA:ha,hP:hp},id,dayISO);
             return;
           }
           const rc=rcByEmpDay[id]?.[dayISO];
@@ -2054,7 +2121,7 @@
         const hp=safeTime(e?.hP)||(isSec?"09:00":"");
         const ha=safeTime(e?.hA)||"";
         if(ha){
-          const diff=diffFromEntry({hA:ha,hP:hp},empId);
+          const diff=diffFromEntry({hA:ha,hP:hp},empId,dayISO);
           if(diff>0){ dayMap[dayISO]={type:'retard',ha,hp,diff}; nPresent++; }
           else       { dayMap[dayISO]={type:'present',ha,hp};     nPresent++; }
           return;
@@ -2190,13 +2257,14 @@
         const isSec=(emp&&(emp.poste==="SECURITE"||emp.poste==="SÉCURITÉ"));
         const isCuisine=(emp&&(emp.poste==="CUISINE"));
         const isSoumia=isSoumiaStaff(empId);
+        const caissePlan=(isSalilStaff(empId)||isBenkhadaStaff(empId))?getCaisseAlternance(empId,dayISO):null;
         const cuisinePlan=isCuisine?getCuisinePlanning(empId,dayISO):null;
         const soumiaPlan=isSoumia?getSoumiaPlanning(dayISO):null;
 
-        const hp=safeTime(e?.hP)||(soumiaPlan&&!soumiaPlan.off?soumiaPlan.hP:(isSec?"09:00":(cuisinePlan&&!cuisinePlan.off?cuisinePlan.hP:"")));
+        const hp=safeTime(e?.hP)||(soumiaPlan&&!soumiaPlan.off?soumiaPlan.hP:(caissePlan?caissePlan.hP:(isSec?"09:00":(cuisinePlan&&!cuisinePlan.off?cuisinePlan.hP:""))));
         const ha=safeTime(e?.hA)||"";
         if(ha){
-          const diff=diffFromEntry({hA:ha,hP:hp},empId);
+          const diff=diffFromEntry({hA:ha,hP:hp},empId,dayISO);
           if(diff>0) html+=rowHistory(dayISO,"Retard",hp,ha,`+${diff} min`,"color:var(--crit)");
           else html+=rowHistory(dayISO,"À l'heure",hp,ha,"0","color:var(--ok)");
           return;
