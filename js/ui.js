@@ -165,6 +165,51 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
   return { ha, diff, finalSClass, finalDot, statusText, statusColor };
 }
 
+let _currentBilanWeek = 'all';
+let _lastBilanMonth = null;
+const DOW_SHORT_FR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+function fmtShortDate(iso) {
+  if (!iso || !iso.includes("-")) return iso || "";
+  const parts = iso.split("-");
+  return `${parts[2]}/${parts[1]}`;
+}
+
+function formatMonthNameFR(mk) {
+  if (!mk) return "";
+  const [y, m] = mk.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, 1));
+  const name = dt.toLocaleDateString('fr-FR', { month: 'long', timeZone: 'UTC' });
+  return titleCase(name) + " " + y;
+}
+
+function getMonthWeeksList(monthDates) {
+  if (!monthDates || !monthDates.length) return [];
+  const weeksMap = new Map();
+  monthDates.forEach(dayISO => {
+    const monISO = weekStartMondayISO(dayISO);
+    if (!weeksMap.has(monISO)) {
+      const sunISO = addDaysISO(monISO, 6);
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        days.push(addDaysISO(monISO, i));
+      }
+      weeksMap.set(monISO, {
+        id: monISO,
+        monday: monISO,
+        sunday: sunISO,
+        days
+      });
+    }
+  });
+  return Array.from(weeksMap.values());
+}
+
+window.setBilanWeekFilter = function(weekId) {
+  _currentBilanWeek = weekId;
+  renderReportView();
+};
+
 /**
  * Réutilisation optimisée de l'instance Chart.js (évite recréation du canvas)
  */
@@ -172,11 +217,17 @@ function renderChart(labels, lates, presences) {
   const chartCanvas = document.getElementById('trendsChart');
   if (!chartCanvas) return;
   const ctx = chartCanvas.getContext('2d');
+  const ptRadius = labels.length <= 7 ? 4 : 0;
+  const ptHoverRadius = labels.length <= 7 ? 6 : 4;
 
   if (myChart) {
     myChart.data.labels = labels;
     myChart.data.datasets[0].data = lates;
     myChart.data.datasets[1].data = presences;
+    myChart.data.datasets[0].pointRadius = ptRadius;
+    myChart.data.datasets[0].pointHoverRadius = ptHoverRadius;
+    myChart.data.datasets[1].pointRadius = ptRadius;
+    myChart.data.datasets[1].pointHoverRadius = ptHoverRadius;
     myChart.update();
     return;
   }
@@ -189,12 +240,12 @@ function renderChart(labels, lates, presences) {
         {
           label: "Retards (min)", data: lates,
           borderColor: 'rgba(245,158,11,.95)', backgroundColor: 'rgba(245,158,11,.08)',
-          tension: .38, borderWidth: 2.5, pointRadius: 0, fill: true
+          tension: .38, borderWidth: 2.5, pointRadius: ptRadius, pointHoverRadius: ptHoverRadius, fill: true
         },
         {
           label: "Présences (nb)", data: presences,
           borderColor: 'rgba(5,150,105,.90)', backgroundColor: 'rgba(5,150,105,.08)',
-          tension: .38, borderWidth: 2, pointRadius: 0, fill: false
+          tension: .38, borderWidth: 2, pointRadius: ptRadius, pointHoverRadius: ptHoverRadius, fill: false
         }
       ]
     },
@@ -215,7 +266,7 @@ function renderChart(labels, lates, presences) {
       },
       scales: {
         y: { display: false },
-        x: { grid: { display: false }, ticks: { font: { size: 8, weight: '600' }, color: 'var(--muted2)' } }
+        x: { grid: { display: false }, ticks: { font: { size: 9, weight: '700' }, color: 'var(--muted2)' } }
       }
     }
   });
@@ -224,38 +275,140 @@ function renderChart(labels, lates, presences) {
 async function renderReportView() {
   const dateInput = document.getElementById('dashDate');
   const mk = monthKeyFromISO(dateInput.value);
+  if (_lastBilanMonth !== mk) {
+    _currentBilanWeek = 'all';
+    _lastBilanMonth = mk;
+  }
+
   const md = await getMonthData(mk);
   if (md.anyFail) {
     document.getElementById('dashBody').innerHTML = errorCard("Réseau instable : certaines journées manquantes. Change de mois puis reviens, ou vérifie ta connexion.");
     return;
   }
-  const { dates, presByDay, punchByDay } = md;
+
   const today = todayISO();
+  const weeksList = getMonthWeeksList(md.dates);
+
+  // Vérifier si la semaine existe toujours
+  if (_currentBilanWeek !== 'all' && !weeksList.some(w => w.id === _currentBilanWeek)) {
+    _currentBilanWeek = 'all';
+  }
+
+  // Affichage des filtres par semaine
+  const chipsContainer = document.getElementById('bilanWeekChips');
+  const activeBadge = document.getElementById('bilanFilterActiveBadge');
+  if (chipsContainer) {
+    const isAllActive = (_currentBilanWeek === 'all');
+    let chipsHtml = `
+      <button type="button" onclick="setBilanWeekFilter('all')"
+        class="bilan-week-btn ${isAllActive ? 'active' : ''}">
+        <span class="week-indicator"></span>
+        <span>Tout le mois</span>
+      </button>
+    `;
+    weeksList.forEach((w, idx) => {
+      const isActive = (_currentBilanWeek === w.id);
+      const isCurrent = (today >= w.monday && today <= w.sunday);
+      chipsHtml += `
+        <button type="button" onclick="setBilanWeekFilter('${w.id}')"
+          class="bilan-week-btn ${isActive ? 'active' : ''}"
+          title="Du Lundi ${fmtShortDate(w.monday)} au Dimanche ${fmtShortDate(w.sunday)}">
+          <span class="week-indicator"></span>
+          <span>Sem. ${idx + 1}</span>
+          <span class="text-[9.5px] opacity-75 font-semibold">(${fmtShortDate(w.monday)}–${fmtShortDate(w.sunday)})</span>
+          ${isCurrent ? '<span class="text-[8px] uppercase tracking-wider px-1.5 py-0.2 rounded-full font-black ml-0.5" style="background:rgba(5,150,105,.15);color:#065f46">En cours</span>' : ''}
+        </button>
+      `;
+    });
+    chipsContainer.innerHTML = chipsHtml;
+  }
+
+  let targetDays = md.dates;
+  let labels = [];
+  let chartTitleText = `Tendances du mois (${formatMonthNameFR(mk)})`;
+  let rankingPeriodLabel = `Tout le mois`;
+  let rankingPeriodSub = formatMonthNameFR(mk);
+
+  if (_currentBilanWeek !== 'all') {
+    const curW = weeksList.find(w => w.id === _currentBilanWeek);
+    const curIdx = weeksList.findIndex(w => w.id === _currentBilanWeek);
+    if (curW) {
+      targetDays = curW.days;
+      labels = curW.days.map(d => {
+        const { y, m, d: day } = parseISO(d);
+        const dt = new Date(Date.UTC(y, m - 1, day));
+        return `${DOW_SHORT_FR[dt.getUTCDay()]} ${String(day).padStart(2, '0')}`;
+      });
+      chartTitleText = `Tendances · Semaine ${curIdx + 1} (Lun ${fmtShortDate(curW.monday)} ➔ Dim ${fmtShortDate(curW.sunday)})`;
+      rankingPeriodLabel = `Semaine ${curIdx + 1}`;
+      rankingPeriodSub = `Lun ${fmtShortDate(curW.monday)} – Dim ${fmtShortDate(curW.sunday)}`;
+    }
+  } else {
+    labels = md.dates.map(d => d.split('-')[2]);
+  }
+
+  const chartTitleEl = document.getElementById('chartTitle');
+  if (chartTitleEl) chartTitleEl.textContent = chartTitleText;
+
+  if (activeBadge) {
+    activeBadge.textContent = (_currentBilanWeek === 'all')
+      ? "Tout le mois"
+      : `${rankingPeriodLabel} (${rankingPeriodSub})`;
+  }
+
+  // Pré-charger mois et timelines nécessaires pour targetDays
+  const monthsNeeded = new Set([mk]);
+  targetDays.forEach(d => monthsNeeded.add(monthKeyFromISO(d)));
+  const monthDataPacks = {};
+  for (const m of monthsNeeded) {
+    monthDataPacks[m] = (m === mk) ? md : await getMonthData(m);
+  }
+
+  const yearsNeeded = new Set([mk.slice(0, 4)]);
+  targetDays.forEach(d => yearsNeeded.add(d.slice(0, 4)));
+  const yearTimelinePacks = {};
+  for (const y of yearsNeeded) {
+    yearTimelinePacks[y] = await getMonthRCMap(y + '-01');
+  }
+
   const stats = {};
   equipe.forEach(e => { const id = empIdOf(e); stats[id] = { info: e, present: 0, lateMin: 0, R: 0, C: 0 }; });
-  const { rcByEmpDay, startMap } = await getMonthRCMap(mk);
-  const dailyLates = [], dailyPresence = [], labels = [];
+  const dailyLates = [], dailyPresence = [];
 
-  dates.forEach(dayISO => {
-    labels.push(dayISO.split('-')[2]);
-    if (dayISO > today || isExcluded(dayISO)) { dailyLates.push(0); dailyPresence.push(0); return; }
-    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+  targetDays.forEach(dayISO => {
+    if (dayISO > today || isExcluded(dayISO)) {
+      dailyLates.push(0);
+      dailyPresence.push(0);
+      return;
+    }
+    const dMk = monthKeyFromISO(dayISO);
+    const dYr = dayISO.slice(0, 4);
+    const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {} };
+    const curTimeline = yearTimelinePacks[dYr] || { rcByEmpDay: {}, startMap: {} };
+
+    const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO]);
     let tL = 0, tP = 0;
+
     Object.keys(stats).forEach(id => {
-      const start = startMap[id];
+      const start = curTimeline.startMap?.[id];
       if (!start || dayISO < start) return;
       const e = merged[id] || null;
       const hp = safeTime(e?.hP) || "";
       const ha = safeTime(e?.hA) || "";
       if (ha) {
         const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
-        stats[id].present++; stats[id].lateMin += diff; tL += diff; tP++;
+        stats[id].present++;
+        stats[id].lateMin += diff;
+        tL += diff;
+        tP++;
         return;
       }
-      const rc = rcByEmpDay[id]?.[dayISO];
+      const rc = curTimeline.rcByEmpDay?.[id]?.[dayISO];
       if (rc) stats[id][rc]++;
     });
-    dailyLates.push(tL); dailyPresence.push(tP);
+
+    dailyLates.push(tL);
+    dailyPresence.push(tP);
   });
 
   renderChart(labels, dailyLates, dailyPresence);
@@ -273,12 +426,19 @@ async function renderReportView() {
   let html = '<div class="space-y-6">';
 
   html += `<div>
-    <div class="flex items-center gap-3 mb-3">
-      <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires · Service & Bar</div>
-      <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(220,38,38,.40),transparent)"></div>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="smallCaps" style="color:rgba(220,38,38,.80)">Top retardataires · Service & Bar</div>
+        <div style="width:20px;height:2px;border-radius:999px;background:rgba(220,38,38,.40)"></div>
+      </div>
+      <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full" style="background:rgba(220,38,38,.10);color:var(--crit)">
+        ${esc(rankingPeriodLabel)} · ${esc(rankingPeriodSub)}
+      </span>
     </div>`;
   if (!lateList.length) {
-    html += `<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucun retard enregistré 🎉</div>`;
+    html += `<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">
+      ${_currentBilanWeek === 'all' ? 'Aucun retard enregistré ce mois 🎉' : 'Aucun retard enregistré cette semaine 🎉'}
+    </div>`;
   } else {
     lateList.slice(0, 6).forEach(s => {
       const pct = maxLate ? Math.max(6, Math.round((s.lateMin / maxLate) * 100)) : 0;
@@ -302,12 +462,19 @@ async function renderReportView() {
   html += `</div>`;
 
   html += `<div>
-    <div class="flex items-center gap-3 mb-3">
-      <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus disciplinés · Service & Bar</div>
-      <div style="flex:1;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(5,150,105,.40),transparent)"></div>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="smallCaps" style="color:rgba(5,150,105,.85)">Les plus disciplinés · Service & Bar</div>
+        <div style="width:20px;height:2px;border-radius:999px;background:rgba(5,150,105,.40)"></div>
+      </div>
+      <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full" style="background:rgba(5,150,105,.10);color:var(--ok)">
+        ${esc(rankingPeriodLabel)} · ${esc(rankingPeriodSub)}
+      </span>
     </div>`;
   if (!goodList.length) {
-    html += `<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">Aucune présence "OK" trouvée</div>`;
+    html += `<div class="glass-card p-5 rounded-2xl text-center text-[12px] font-extrabold" style="color:var(--muted3)">
+      ${_currentBilanWeek === 'all' ? 'Aucune présence "OK" trouvée ce mois' : 'Aucune présence "OK" trouvée cette semaine'}
+    </div>`;
   } else {
     goodList.slice(0, 6).forEach(s => {
       html += `<div class="glass-card p-4 rounded-2xl mb-3 flex justify-between items-center">

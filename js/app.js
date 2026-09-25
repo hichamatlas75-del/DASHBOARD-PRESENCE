@@ -63,6 +63,8 @@ function switchMode(mode, btn) {
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('chartContainer').classList.toggle('hidden', mode !== 'report');
+  const bilanFilterWrap = document.getElementById('bilanFilterWrap');
+  if (bilanFilterWrap) bilanFilterWrap.classList.toggle('hidden', mode !== 'report');
   document.getElementById('dayPickWrap').classList.toggle('hidden', mode !== 'day');
   document.getElementById('monthPickWrap').classList.toggle('hidden', mode === 'day');
   updateDashboard();
@@ -403,6 +405,8 @@ async function bootDashboard() {
   } catch (e) {}
 
   await initStaffAdminUI();
+  const bilanFilterWrap = document.getElementById('bilanFilterWrap');
+  if (bilanFilterWrap) bilanFilterWrap.classList.toggle('hidden', currentMode !== 'report');
   await updateDashboard();
   startMidnightWatcher();
 }

@@ -490,6 +490,54 @@ body::before, body::after { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .staff-card, .view-btn, .btn-action, .btn-login { transition: none; }
+  .staff-card, .view-btn, .btn-action, .btn-login, .bilan-week-btn { transition: none; }
   .anim-in { animation: none; }
+}
+
+/* ─── Filtre hebdomadaire Bilan (Lundi au Dimanche) ─── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.bilan-week-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 6px 13px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted2);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--stroke-med);
+  cursor: pointer;
+  transition: all .2s ease;
+  user-select: none;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.04);
+}
+.bilan-week-btn:hover:not(.active) {
+  background: rgba(29, 78, 216, 0.08);
+  color: var(--muted);
+  border-color: rgba(29, 78, 216, 0.25);
+  transform: translateY(-1px);
+}
+.bilan-week-btn.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.10) 100%);
+  color: #78350f;
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.16), inset 0 0 0 1px rgba(245, 158, 11, 0.12);
+  transform: translateY(-1px);
+}
+.bilan-week-btn .week-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(29, 78, 216, 0.35);
+  transition: all .2s ease;
+}
+.bilan-week-btn.active .week-indicator {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
 }
