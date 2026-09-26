@@ -61,7 +61,7 @@ const PLANNING_CUISINE = {
     KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
     FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
     JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
-    IMANE:   { hP: "10:00", off: false, shift: "10h — 18h" },
+    IMANE:   { hP: "11:00", off: false, shift: "10h — 18h" },
     ANAS:    { hP: "14:00", off: false, shift: "14h — F.S" },
     JAWAD:   { hP: "14:00", off: false, shift: "14h — F.S" },
     SAAD:    { hP: "13:00", off: false, shift: "13h — F.S" }
@@ -71,7 +71,7 @@ const PLANNING_CUISINE = {
     KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
     FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
     JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
-    IMANE:   { hP: "10:00", off: false, shift: "10h — 18h" },
+    IMANE:   { hP: "11:00", off: false, shift: "10h — 18h" },
     ANAS:    { hP: "14:00", off: false, shift: "14h — F.S" },
     JAWAD:   { hP: "14:00", off: false, shift: "14h — F.S" },
     SAAD:    { hP: "14:00", off: false, shift: "14h — 21h" }
