@@ -24,7 +24,18 @@ const auth     = firebase.auth();
 // Constantes
 const EQUIPE_PATH        = "settings/equipe";
 const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
-const SHEETS_SECRET      = "GC_SECRET_2026";
+// SÉCURITÉ : Authentification dynamique par Firebase ID Token (secret statique conservé en secours de transition)
+const LEGACY_SHEETS_SECRET = "GC_SECRET_2026";
+
+async function getAuthToken() {
+  try {
+    if (auth && auth.currentUser) {
+      return await auth.currentUser.getIdToken(false);
+    }
+  } catch (e) {}
+  return "";
+}
+
 const EXCL_START         = "2026-01-01";
 const EXCL_END           = "2026-01-31";
 

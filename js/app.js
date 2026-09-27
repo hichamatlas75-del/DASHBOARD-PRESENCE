@@ -123,9 +123,10 @@ async function exportYear_ToSheets() {
       }));
 
     if (syncLine) syncLine.textContent = "Sheets : envoi…";
+    const idToken = await getAuthToken();
     const res = await fetch(SHEETS_WEBHOOK_URL, {
       method: "POST",
-      body: JSON.stringify({ year, rows, secret: SHEETS_SECRET })
+      body: JSON.stringify({ year, rows, idToken, secret: LEGACY_SHEETS_SECRET })
     });
     const raw = await res.text();
     let json;
@@ -312,30 +313,17 @@ document.getElementById("btnLogout")?.addEventListener('click', async () => {
 auth.onAuthStateChanged(async (user) => {
   if (!user) { showLoginUI(""); return; }
   try {
+    // SÉCURITÉ : Le rôle est attribué exclusivement depuis Firebase RTDB (/users/{uid})
     role = await fetchRole(user.uid);
-    const isMasterGrt = (user.email || "").toLowerCase().includes("hicham");
-    if (!role && isMasterGrt) {
-      role = "gerant";
-      try { await database.ref("users/" + user.uid).set("gerant"); } catch (_) {}
-    }
     if (role !== "gerant") {
-      if (isMasterGrt) {
-        role = "gerant";
-        try { await database.ref("users/" + user.uid).set("gerant"); } catch (_) {}
-      } else {
-        await auth.signOut();
-        showLoginUI("Accès refusé : compte non gérant.");
-        return;
-      }
-    }
-  } catch (e) {
-    if ((user.email || "").toLowerCase().includes("hicham")) {
-      role = "gerant";
-    } else {
-      try { await auth.signOut(); } catch (_) {}
-      showLoginUI("Erreur d'accès.");
+      await auth.signOut();
+      showLoginUI("Accès refusé : compte non gérant.");
       return;
     }
+  } catch (e) {
+    try { await auth.signOut(); } catch (_) {}
+    showLoginUI("Erreur d'accès.");
+    return;
   }
   showAppUI();
   bootDashboard();

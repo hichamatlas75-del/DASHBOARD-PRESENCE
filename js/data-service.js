@@ -35,8 +35,13 @@ function mergeDay(pres, punches) {
       if (Object.prototype.hasOwnProperty.call(punches, id)) {
         if (!merged[id]) merged[id] = {};
         const pe = punches[id];
-        if (pe && pe.hA) merged[id].hA = pe.hA;
-        if (merged[id].hA && merged[id].off === true) merged[id].off = false;
+        const isManualOverride = !!(pres && pres[id] && (pres[id].manual === true || pres[id].hAManual));
+        if (pe && pe.hA && !isManualOverride) {
+          merged[id].hA = pe.hA;
+        }
+        if (merged[id].hA && merged[id].off === true && !merged[id].manualOff) {
+          merged[id].off = false;
+        }
       }
     }
   }

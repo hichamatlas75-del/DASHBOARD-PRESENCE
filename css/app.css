@@ -541,3 +541,23 @@ body::before, body::after { display: none; }
   background: var(--accent);
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
 }
+
+/* ─── Onglets de bascule modal collaborateur (Calendrier / Historique) ─── */
+.modal-tab-btn {
+  background: transparent;
+  color: var(--muted2);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: all .2s ease;
+}
+.modal-tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text);
+}
+.modal-tab-btn.active {
+  background: #ffffff;
+  color: #0f2744;
+  border-color: rgba(30, 64, 175, 0.16);
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+}

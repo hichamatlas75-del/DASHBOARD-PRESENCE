@@ -61,7 +61,7 @@ const PLANNING_CUISINE = {
     KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
     FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
     JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
-    IMANE:   { hP: "11:00", off: false, shift: "10h — 18h" },
+    IMANE:   { hP: "11:00", off: false, shift: "11h — 19h" },
     ANAS:    { hP: "14:00", off: false, shift: "14h — F.S" },
     JAWAD:   { hP: "14:00", off: false, shift: "14h — F.S" },
     SAAD:    { hP: "13:00", off: false, shift: "13h — F.S" }
@@ -71,7 +71,7 @@ const PLANNING_CUISINE = {
     KHAOULA: { hP: "07:00", off: false, shift: "07h — 15h" },
     FATIMA:  { hP: "07:00", off: false, shift: "07h — 15h" },
     JIHANE:  { hP: "14:00", off: false, shift: "14h — F.S" },
-    IMANE:   { hP: "11:00", off: false, shift: "10h — 18h" },
+    IMANE:   { hP: "11:00", off: false, shift: "11h — 19h" },
     ANAS:    { hP: "14:00", off: false, shift: "14h — F.S" },
     JAWAD:   { hP: "14:00", off: false, shift: "14h — F.S" },
     SAAD:    { hP: "14:00", off: false, shift: "14h — 21h" }
@@ -212,9 +212,9 @@ function diffFromEntry(entry, empId, dateISO) {
 
 function getStatusClass(diff, isOff, hasArrived) {
   if (hasArrived) {
-    if (diff <= 0)  return 'status-green';
-    if (diff < 30)  return 'status-orange';
-    if (diff < 60)  return 'status-red';
+    if (diff <= 0)   return 'status-green';
+    if (diff <= 15)  return 'status-orange';
+    if (diff < 60)   return 'status-red';
     return 'status-flash';
   }
   if (isOff) return 'status-off';
@@ -223,8 +223,8 @@ function getStatusClass(diff, isOff, hasArrived) {
 
 function getDotColor(diff, isOff, hasArrived) {
   if (hasArrived) {
-    if (diff <= 0)  return 'var(--ok)';
-    if (diff < 30)  return 'var(--amber)';
+    if (diff <= 0)   return 'var(--ok)';
+    if (diff <= 15)  return 'var(--amber)';
     return 'var(--crit)';
   }
   if (isOff) return 'rgba(148,163,184,.65)';

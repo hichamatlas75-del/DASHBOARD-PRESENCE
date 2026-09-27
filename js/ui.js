@@ -90,7 +90,7 @@ function renderDayView(data) {
       if (!card) return;
       const cardProps = calculateEmpCardProps(emp, id, data[id] || {}, selectedDay, isPastDay);
 
-      card.className = `staff-card ${cardProps.finalSClass} glass-card p-4 rounded-2xl text-left flex flex-col justify-between`;
+      card.className = `staff-card ${cardProps.finalSClass} glass-card p-3.5 rounded-2xl text-left flex flex-col justify-between`;
       const dot = card.querySelector('.status-dot');
       if (dot) dot.style.background = cardProps.finalDot;
 
@@ -628,14 +628,24 @@ async function renderRCView() {
 
 function _modalMonthChange(newMk) {
   if (!_modalState) return;
+  _modalState.mk = newMk;
   if (_modalState.mode === 'calendar') openCalendarModal(_modalState.nom, _modalState.prenom, newMk);
   else openHistory(_modalState.nom, _modalState.prenom, newMk);
 }
 
+window.switchModalTab = function(newMode) {
+  if (!_modalState) return;
+  if (newMode === 'calendar') {
+    openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
+  } else {
+    openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+  }
+};
+
 async function openCalendarModal(nom, prenom, mk) {
   const dateInput = document.getElementById('dashDate');
-  mk = mk || monthKeyFromISO(dateInput.value);
-  _modalState = { mode: 'calendar', nom, prenom };
+  mk = mk || _modalState?.mk || monthKeyFromISO(dateInput.value);
+  _modalState = { mode: 'calendar', nom, prenom, mk };
   const modal = document.getElementById('historyModal');
   modal.classList.remove("hidden", "modal-closing");
   modal.classList.add('modal-active');
@@ -644,6 +654,11 @@ async function openCalendarModal(nom, prenom, mk) {
   const calAvatarSlot = document.getElementById('modalAvatarSlot');
   if (calAvatarSlot) calAvatarSlot.innerHTML = getStaffAvatarHtml(nom, prenom, 'lg');
   document.getElementById('modalMonthPicker').value = mk;
+
+  // Mise à jour visuelle des onglets
+  document.getElementById('modalTabCal')?.classList.add('active');
+  document.getElementById('modalTabHist')?.classList.remove('active');
+
   document.getElementById('modalList').innerHTML = loadingCard("Chargement calendrier…");
 
   const md = await getMonthData(mk);
@@ -785,16 +800,21 @@ function rowHistory(dayISO, statut, hp, ha, retard, cls, rc) {
 
 async function openHistory(nom, prenom, mk) {
   const dateInput = document.getElementById('dashDate');
-  mk = mk || monthKeyFromISO(dateInput.value);
-  _modalState = { mode: 'history', nom, prenom };
+  mk = mk || _modalState?.mk || monthKeyFromISO(dateInput.value);
+  _modalState = { mode: 'history', nom, prenom, mk };
   const modal = document.getElementById('historyModal');
   modal.classList.remove("hidden", "modal-closing");
   modal.classList.add('modal-active');
-  document.getElementById('modalSubtitle').textContent = 'Historique';
+  document.getElementById('modalSubtitle').textContent = 'Historique détaillé';
   document.getElementById('modalTitle').innerText = nom + " " + titleCase(prenom);
   const histAvatarSlot = document.getElementById('modalAvatarSlot');
   if (histAvatarSlot) histAvatarSlot.innerHTML = getStaffAvatarHtml(nom, prenom, 'lg');
   document.getElementById('modalMonthPicker').value = mk;
+
+  // Mise à jour visuelle des onglets
+  document.getElementById('modalTabHist')?.classList.add('active');
+  document.getElementById('modalTabCal')?.classList.remove('active');
+
   document.getElementById('modalList').innerHTML = loadingCard("Chargement historique…");
 
   const md = await getMonthData(mk);

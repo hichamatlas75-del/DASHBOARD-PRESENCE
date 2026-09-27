@@ -186,6 +186,19 @@
         <button onclick="closeModal()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold flex-shrink-0"
           style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
       </div>
+      <!-- Onglets Calendrier / Historique -->
+      <div class="flex items-center gap-1.5 p-1 rounded-2xl mb-3.5" style="background:rgba(30,64,175,.07);border:1px solid var(--stroke-med)">
+        <button id="modalTabCal" type="button" onclick="switchModalTab('calendar')"
+          class="modal-tab-btn flex-1 py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all">
+          <span>📅</span>
+          <span>Calendrier</span>
+        </button>
+        <button id="modalTabHist" type="button" onclick="switchModalTab('history')"
+          class="modal-tab-btn flex-1 py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all">
+          <span>📋</span>
+          <span>Historique détaillé</span>
+        </button>
+      </div>
       <div id="modalList" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
     </div>
   </div>

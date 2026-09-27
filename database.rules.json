@@ -3,13 +3,13 @@
     "users": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && (root.child('users').child(auth.uid).val() === 'gerant' || !data.exists())"
       }
     },
     "presences": {
       ".indexOn": [".key"],
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && root.child('users').child(auth.uid).val() === 'gerant'"
     },
     "punches": {
       ".indexOn": [".key"],
@@ -18,7 +18,7 @@
     },
     "settings": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && root.child('users').child(auth.uid).val() === 'gerant'"
     }
   }
 }
