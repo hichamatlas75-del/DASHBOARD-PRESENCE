@@ -25,6 +25,157 @@ function currentDayForDayMode() {
   return dayPicker?.value || todayISO();
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// F1 : SERVICE D'ALERTE EN DIRECT (RETARDS IMPORTANTS & BIPS SONORES)
+// ─────────────────────────────────────────────────────────────────────────
+const LateAlertService = (() => {
+  const SEUIL_GRAVE = 15; // minutes de retard considérées comme graves
+  const _alertedToday = new Set();
+  let _soundEnabled = true;
+
+  try {
+    const s = localStorage.getItem("gc_dash_sound_alert");
+    if (s !== null) _soundEnabled = (s === "1");
+  } catch (e) {}
+
+  function isSoundEnabled() { return _soundEnabled; }
+
+  function toggleSound() {
+    _soundEnabled = !_soundEnabled;
+    try { localStorage.setItem("gc_dash_sound_alert", _soundEnabled ? "1" : "0"); } catch (e) {}
+    updateSoundBtnUI();
+    if (_soundEnabled) {
+      playBeep();
+      requestNotificationPermission();
+    }
+  }
+
+  function updateSoundBtnUI() {
+    const btn = document.getElementById("btnToggleSound");
+    if (!btn) return;
+    if (_soundEnabled) {
+      btn.innerHTML = `<span>🔊</span> Alertes ON`;
+      btn.style.color = "var(--ok)";
+      btn.style.borderColor = "rgba(5,150,105,.35)";
+      btn.style.background = "rgba(5,150,105,.08)";
+    } else {
+      btn.innerHTML = `<span>🔇</span> Alertes OFF`;
+      btn.style.color = "var(--muted3)";
+      btn.style.borderColor = "var(--stroke-med)";
+      btn.style.background = "rgba(255,255,255,.50)";
+    }
+  }
+
+  function playBeep() {
+    if (!_soundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.14);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.40);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.40);
+    } catch (e) {}
+  }
+
+  function requestNotificationPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+
+  function sendDesktopNotification(title, body) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    try {
+      new Notification(title, {
+        body,
+        icon: "images/LOGO GREY CORNER.png",
+        tag: "gc-late-alert"
+      });
+    } catch (e) {}
+  }
+
+  function checkAndAlert(data) {
+    const today = todayISO();
+    const latesGrave = [];
+
+    equipe.forEach(emp => {
+      const id = empIdOf(emp);
+      const d = data[id] || {};
+      const ha = safeTime(d.hA);
+      const hp = safeTime(d.hP);
+      if (!ha) return;
+
+      const diff = diffFromEntry({ hA: ha, hP: hp }, id, today);
+      if (diff >= SEUIL_GRAVE) {
+        latesGrave.push({ emp, diff, ha });
+        const keyAlert = `${today}_${id}_${diff}`;
+        if (!_alertedToday.has(keyAlert)) {
+          _alertedToday.add(keyAlert);
+          playBeep();
+          sendDesktopNotification(
+            "🚨 Alerte Retard — Grey Corner",
+            `${emp.nom} ${emp.prenom} (${emp.poste}) : arrivée à ${ha} (+${diff} min de retard)`
+          );
+        }
+      }
+    });
+
+    renderAlertBanner(latesGrave);
+  }
+
+  function renderAlertBanner(lates) {
+    const banner = document.getElementById("liveAlertBanner");
+    if (!banner) return;
+    if (!lates.length) {
+      banner.classList.add("hidden");
+      banner.innerHTML = "";
+      return;
+    }
+
+    banner.classList.remove("hidden");
+    const items = lates.map(l => `
+      <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
+           style="background:rgba(220,38,38,.12);color:var(--crit);border:1px solid rgba(220,38,38,.30)"
+           onclick="openHistory('${escAttr(l.emp.nom)}','${escAttr(l.emp.prenom)}')"
+           title="Cliquer pour inspecter l'historique">
+        <span class="animate-pulse">🚨</span>
+        <span>${esc(l.emp.nom)} ${esc(titleCase(l.emp.prenom))}</span>
+        <span class="px-1.5 py-0.5 rounded-md font-black" style="background:rgba(220,38,38,.18)">+${l.diff}m</span>
+        <span class="opacity-75 text-[10px]">(${esc(l.ha)})</span>
+      </div>
+    `).join("");
+
+    banner.innerHTML = `
+      <div class="glass-card p-3 rounded-2xl border-red-300" style="background:rgba(254,242,242,.92);border-color:rgba(239,68,68,.38);box-shadow:0 4px 14px rgba(220,38,38,.10)">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="text-sm animate-bounce">🔔</span>
+            <span class="smallCaps text-[10px]" style="color:var(--crit)">Retards importants en direct (${lates.length}) :</span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">${items}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  return {
+    checkAndAlert,
+    toggleSound,
+    updateSoundBtnUI,
+    isSoundEnabled,
+    requestNotificationPermission
+  };
+})();
+
 /**
  * Rendu ou mise à jour ciblée (in-place) de la vue du jour
  * Évite le re-rendu complet du DOM lors de chaque pointage temps réel
@@ -103,6 +254,13 @@ function renderDayView(data) {
         statusText.setAttribute('style', cardProps.statusColor);
       }
     });
+  }
+
+  // Déclenchement de la surveillance des alertes directes
+  if (selectedDay === todayISO()) {
+    LateAlertService.checkAndAlert(data || {});
+  } else {
+    LateAlertService.checkAndAlert({});
   }
 }
 
@@ -418,12 +576,167 @@ async function renderReportView() {
     return p === "SERVICE" || p === "BAR";
   }
 
+  // ─── F8 : CALCUL ET DÉTECTION DES ANOMALIES RH (ABSENCES & RETARDS CHRONIQUES) ───
+  const anomalies = [];
+  equipe.forEach(emp => {
+    const id = empIdOf(emp);
+    const isMenage = isMenageStaff(emp) || isMenageStaff(id);
+    const isSec = (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ");
+
+    let consecutiveAbsent = 0;
+    let maxConsecutiveAbsent = 0;
+    let presentCount = 0;
+    let lateCount = 0;
+    let totalLateMin = 0;
+
+    targetDays.forEach(dayISO => {
+      if (dayISO > today || isExcluded(dayISO)) return;
+      const dMk = monthKeyFromISO(dayISO);
+      const dYr = dayISO.slice(0, 4);
+      const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {} };
+      const curTimeline = yearTimelinePacks[dYr] || { rcByEmpDay: {}, startMap: {} };
+
+      const start = curTimeline.startMap?.[id];
+      if (!start || dayISO < start) return;
+
+      const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO]);
+      const e = merged[id] || null;
+      const hp = safeTime(e?.hP) || "";
+      const ha = safeTime(e?.hA) || "";
+      const isOff = e?.off === true;
+      const rc = curTimeline.rcByEmpDay?.[id]?.[dayISO];
+
+      // Cas Sécurité Lundi repos
+      const [yY, mM, dD] = dayISO.split('-').map(Number);
+      const dt = new Date(Date.UTC(yY, mM - 1, dD));
+      const isSecMonday = isSec && dt.getUTCDay() === 1;
+
+      if (ha) {
+        presentCount++;
+        consecutiveAbsent = 0;
+        const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
+        if (diff > 0 && !isMenage) {
+          lateCount++;
+          totalLateMin += diff;
+        }
+      } else if (isOff || rc || isSecMonday || isMenage) {
+        consecutiveAbsent = 0;
+      } else {
+        consecutiveAbsent++;
+        if (consecutiveAbsent > maxConsecutiveAbsent) {
+          maxConsecutiveAbsent = consecutiveAbsent;
+        }
+      }
+    });
+
+    // 1. Alerte Absences Consécutives / Inexpliquées (>= 2 jours)
+    if (maxConsecutiveAbsent >= 2) {
+      anomalies.push({
+        emp,
+        severity: maxConsecutiveAbsent >= 3 ? "crit" : "amber",
+        type: "absences",
+        title: `${maxConsecutiveAbsent} absences consécutives`,
+        detail: `Ni pointage ni repos posé sur ${maxConsecutiveAbsent} jours consécutifs`,
+        metric: `${maxConsecutiveAbsent} j`,
+        badgeText: maxConsecutiveAbsent >= 3 ? "🚨 Critique" : "⚠️ Attention"
+      });
+    }
+
+    // 2. Alerte Retard Chronique (Taux de retard >= 35% avec au moins 2 retards)
+    const lateRate = presentCount > 0 ? (lateCount / presentCount) : 0;
+    if (presentCount >= 3 && lateCount >= 2 && lateRate >= 0.35 && !isMenage) {
+      const pct = Math.round(lateRate * 100);
+      anomalies.push({
+        emp,
+        severity: lateRate >= 0.50 ? "crit" : "amber",
+        type: "retards",
+        title: `Retard chronique (${pct}%)`,
+        detail: `${lateCount} retards sur ${presentCount} présences (cumul +${totalLateMin}m)`,
+        metric: `+${totalLateMin}m`,
+        badgeText: lateRate >= 0.50 ? "🚨 Récidive" : "⚠️ À surveiller"
+      });
+    }
+  });
+
+  anomalies.sort((a, b) => (a.severity === "crit" ? -1 : 1));
+
   const rankedStats = Object.values(stats).filter(s => isRankedPoste(s.info?.poste));
   const lateList = rankedStats.filter(s => s.lateMin > 0).sort((a, b) => b.lateMin - a.lateMin);
   const goodList = rankedStats.filter(s => s.lateMin === 0 && s.present > 0).sort((a, b) => b.present - a.present);
   const maxLate = lateList.length ? lateList[0].lateMin : 0;
 
   let html = '<div class="space-y-6">';
+
+  // ─── AFFICHAGE EN-TÊTE F8 : DÉTECTION ANOMALIES RH ───
+  html += `<div>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="smallCaps" style="color:var(--text)">⚠️ Alertes RH & Détection d'Anomalies</div>
+        <div style="width:20px;height:2px;border-radius:999px;background:var(--accent)"></div>
+      </div>
+      <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full"
+            style="background:${anomalies.length ? 'rgba(220,38,38,.12)' : 'rgba(5,150,105,.12)'};color:${anomalies.length ? 'var(--crit)' : 'var(--ok)'}">
+        ${anomalies.length ? `${anomalies.length} alerte(s)` : 'Régulier ✓'}
+      </span>
+    </div>`;
+
+  if (!anomalies.length) {
+    html += `
+      <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm"
+           style="background:rgba(5,150,105,.06);border-color:rgba(5,150,105,.22);color:var(--ok)">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">✨</span>
+          <span class="text-[11px] font-extrabold">Aucune absence consécutive anormale ni retard chronique détecté sur cette période.</span>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-black shrink-0" style="background:rgba(5,150,105,.15)">Conforme</span>
+      </div>`;
+  } else {
+    html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
+    anomalies.forEach(a => {
+      const isCrit = (a.severity === "crit");
+      const bgCard = isCrit ? "rgba(254,242,242,.88)" : "rgba(255,251,235,.88)";
+      const bdrCard = isCrit ? "rgba(239,68,68,.32)" : "rgba(245,158,11,.32)";
+      const colorTitle = isCrit ? "var(--crit)" : "var(--amber)";
+      const badgeBg = isCrit ? "rgba(220,38,38,.14)" : "rgba(245,158,11,.14)";
+
+      html += `
+        <div class="glass-card p-3.5 rounded-2xl cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex flex-col justify-between"
+             style="background:${bgCard};border-color:${bdrCard};box-shadow:0 3px 12px rgba(0,0,0,.03)"
+             onclick="openCalendarModal('${escAttr(a.emp.nom)}','${escAttr(a.emp.prenom)}')"
+             title="Cliquer pour inspecter le calendrier">
+          <div class="flex items-start justify-between gap-2.5 mb-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${getStaffAvatarHtml(a.emp.nom, a.emp.prenom, 'sm')}
+              <div class="min-w-0">
+                <div class="text-[11px] font-extrabold truncate" style="color:#0f2744">
+                  ${esc(a.emp.nom)} <span style="opacity:.6;font-size:10.5px">${esc(titleCase(a.emp.prenom))}</span>
+                </div>
+                <div class="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-md inline-block mt-0.5" style="background:rgba(59,130,246,.10);color:#2563eb">
+                  ${esc(a.emp.poste)}
+                </div>
+              </div>
+            </div>
+            <span class="text-[9.5px] font-black px-2 py-0.5 rounded-full whitespace-nowrap" style="background:${badgeBg};color:${colorTitle}">
+              ${esc(a.badgeText)}
+            </span>
+          </div>
+
+          <div class="pt-2 border-t" style="border-color:${bdrCard}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10.5px] font-extrabold" style="color:${colorTitle}">
+                ${a.type === 'absences' ? '🛑' : '⏰'} ${esc(a.title)}
+              </span>
+              <span class="text-[11px] font-black" style="color:${colorTitle}">${esc(a.metric)}</span>
+            </div>
+            <div class="text-[9.5px] font-semibold mt-0.5 leading-snug" style="color:var(--muted3)">
+              ${esc(a.detail)}
+            </div>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
 
   html += `<div>
     <div class="flex items-center justify-between mb-3">
