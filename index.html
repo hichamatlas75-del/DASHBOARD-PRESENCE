@@ -56,10 +56,16 @@
             <div id="syncLine" class="text-[10px] font-bold" style="color:var(--muted2)">Sync : en attente…</div>
           </div>
         </div>
-        <button id="btnLogout" class="btn-action btn-neutral px-4 py-2 rounded-2xl text-[11px] font-extrabold"
-          style="background:rgba(255,255,255,.60);border:1px solid var(--stroke-med);color:var(--text)">
-          Déco.
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btnToggleSound" onclick="LateAlertService.toggleSound()" class="btn-action px-3 py-2 rounded-2xl text-[11px] font-extrabold flex items-center gap-1.5 transition-all shadow-sm"
+            style="background:rgba(255,255,255,.65);border:1px solid var(--stroke-med);color:var(--text)" title="Activer / désactiver les bips d'alerte de retard grave en direct">
+            <span>🔊</span> Alertes ON
+          </button>
+          <button id="btnLogout" class="btn-action btn-neutral px-4 py-2 rounded-2xl text-[11px] font-extrabold"
+            style="background:rgba(255,255,255,.60);border:1px solid var(--stroke-med);color:var(--text)">
+            Déco.
+          </button>
+        </div>
       </header>
 
       <!-- ─── Onglets mode ─── -->
@@ -143,6 +149,9 @@
           <canvas id="trendsChart"></canvas>
         </div>
       </div>
+
+      <!-- ─── Bandeau Alerte Retard en Direct ─── -->
+      <div id="liveAlertBanner" class="hidden anim-in anim-in-4 mb-4"></div>
 
       <!-- ─── Corps principal ─── -->
       <div id="dashBody" class="space-y-6 anim-in anim-in-4"></div>
