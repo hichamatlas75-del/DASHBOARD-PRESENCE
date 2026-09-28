@@ -38,6 +38,79 @@ const LateAlertService = (() => {
     if (s !== null) _soundEnabled = (s === "1");
   } catch (e) {}
 
+  let audioCtx = null;
+  let cachedBeepWav = null;
+
+  function makeBeepWav(freq1, freq2) {
+    try {
+      const sampleRate = 22050;
+      const duration = 0.35;
+      const numSamples = Math.floor(sampleRate * duration);
+      const buffer = new ArrayBuffer(44 + numSamples * 2);
+      const view = new DataView(buffer);
+      function writeStr(offset, str) {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      }
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numSamples * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, numSamples * 2, true);
+
+      const half = Math.floor(numSamples / 2);
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const f = i < half ? freq1 : freq2;
+        const envelope = Math.sin(Math.PI * (i / numSamples));
+        const sample = Math.sin(2 * Math.PI * f * t) * envelope * 0.75;
+        view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * 32767, true);
+      }
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      return 'data:audio/wav;base64,' + btoa(binary);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) audioCtx = new AudioCtxClass();
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  }
+
+  function unlock() {
+    try {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === "suspended") ctx.resume();
+      if (!cachedBeepWav) cachedBeepWav = makeBeepWav(880, 659.25);
+    } catch (e) {}
+  }
+
+  if (typeof document !== "undefined") {
+    const doUnlock = () => {
+      unlock();
+      document.removeEventListener("pointerdown", doUnlock);
+      document.removeEventListener("click", doUnlock);
+    };
+    document.addEventListener("pointerdown", doUnlock, { passive: true });
+    document.addEventListener("click", doUnlock, { passive: true });
+  }
+
   function isSoundEnabled() { return _soundEnabled; }
 
   function toggleSound() {
@@ -45,6 +118,7 @@ const LateAlertService = (() => {
     try { localStorage.setItem("gc_dash_sound_alert", _soundEnabled ? "1" : "0"); } catch (e) {}
     updateSoundBtnUI();
     if (_soundEnabled) {
+      unlock();
       playBeep();
       requestNotificationPermission();
     }
@@ -68,22 +142,37 @@ const LateAlertService = (() => {
 
   function playBeep() {
     if (!_soundEnabled) return;
+    let played = false;
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.14);
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.40);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.40);
+      const ctx = getAudioContext();
+      if (ctx && ctx.state !== "suspended") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sawtooth";
+        const t = ctx.currentTime;
+        osc.frequency.setValueAtTime(880, t);
+        osc.frequency.setValueAtTime(659.25, t + 0.14);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.linearRampToValueAtTime(0.01, t + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.35);
+        played = true;
+      }
     } catch (e) {}
+
+    if (!played) {
+      try {
+        if (!cachedBeepWav) cachedBeepWav = makeBeepWav(880, 659.25);
+        if (cachedBeepWav) {
+          const a = new Audio(cachedBeepWav);
+          a.volume = 1.0;
+          const p = a.play();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        }
+      } catch (e) {}
+    }
   }
 
   function requestNotificationPermission() {
