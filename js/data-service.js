@@ -20,8 +20,9 @@ function clearMonthCache() {
 
 /**
  * Fusion optimisée sans JSON.parse/stringify (gain 10-15x en CPU et allocation mémoire)
+ * Intègre les pointages, présences et motifs explicatifs de retard
  */
-function mergeDay(pres, punches) {
+function mergeDay(pres, punches, motifs) {
   const merged = {};
   if (pres && typeof pres === 'object') {
     for (const id in pres) {
@@ -39,8 +40,21 @@ function mergeDay(pres, punches) {
         if (pe && pe.hA && !isManualOverride) {
           merged[id].hA = pe.hA;
         }
+        if (pe && pe.motif && !merged[id].motif) {
+          merged[id].motif = pe.motif;
+        }
         if (merged[id].hA && merged[id].off === true && !merged[id].manualOff) {
           merged[id].off = false;
+        }
+      }
+    }
+  }
+  if (motifs && typeof motifs === 'object') {
+    for (const id in motifs) {
+      if (Object.prototype.hasOwnProperty.call(motifs, id)) {
+        if (!merged[id]) merged[id] = {};
+        if (motifs[id]?.motif) {
+          merged[id].motif = motifs[id].motif;
         }
       }
     }
@@ -66,27 +80,36 @@ function getDatesInMonthKey(mk) {
 }
 
 /**
- * Requête de plage ultra-rapide (2 requêtes parallèles)
+ * Requête de plage ultra-rapide (3 requêtes parallèles : présences, pointages, motifs)
  */
 async function fetchRangePresPunch(startDate, endDate) {
   try {
-    const [presSnap, punchSnap] = await Promise.all([
+    const results = await Promise.allSettled([
       database.ref('presences').orderByKey().startAt(startDate).endAt(endDate).once('value'),
-      database.ref('punches').orderByKey().startAt(startDate).endAt(endDate).once('value')
+      database.ref('punches').orderByKey().startAt(startDate).endAt(endDate).once('value'),
+      database.ref('broadcast/motifs').orderByKey().startAt(startDate).endAt(endDate).once('value')
     ]);
+
+    const presSnap   = results[0].status === "fulfilled" ? results[0].value : null;
+    const punchSnap  = results[1].status === "fulfilled" ? results[1].value : null;
+    const motifsSnap = results[2].status === "fulfilled" ? results[2].value : null;
+
+    const anyFail = (results[0].status === "rejected" && results[1].status === "rejected");
+
     return {
-      presByDay: presSnap.val() || {},
-      punchByDay: punchSnap.val() || {},
-      anyFail: false
+      presByDay: presSnap ? (presSnap.val() || {}) : {},
+      punchByDay: punchSnap ? (punchSnap.val() || {}) : {},
+      motifsByDay: motifsSnap ? (motifsSnap.val() || {}) : {},
+      anyFail
     };
   } catch (e) {
     console.error("fetchRangePresPunch error:", e);
-    return { presByDay: {}, punchByDay: {}, anyFail: true, fatal: true, err: e };
+    return { presByDay: {}, punchByDay: {}, motifsByDay: {}, anyFail: true, fatal: true, err: e };
   }
 }
 
 /**
- * Pré-chargement de l'année entière en seulement 2 requêtes globales
+ * Pré-chargement de l'année entière avec présences, pointages et motifs
  */
 async function prefetchYearData(year) {
   if (yearPrefetchedSet.has(year)) return;
@@ -98,16 +121,18 @@ async function prefetchYearData(year) {
     for (let i = 1; i <= 12; i++) {
       const mk = `${year}-${String(i).padStart(2, "0")}`;
       const dates = getDatesInMonthKey(mk);
-      const presByDay = {}, punchByDay = {};
+      const presByDay = {}, punchByDay = {}, motifsByDay = {};
       dates.forEach(d => {
         if (res.presByDay[d]) presByDay[d] = res.presByDay[d];
         if (res.punchByDay[d]) punchByDay[d] = res.punchByDay[d];
+        if (res.motifsByDay && res.motifsByDay[d]) motifsByDay[d] = res.motifsByDay[d];
       });
       monthDataCache.set(mk, {
         monthKey: mk,
         dates,
         presByDay,
         punchByDay,
+        motifsByDay,
         anyFail: false
       });
     }
@@ -119,10 +144,11 @@ async function getMonthData(mk) {
   const dates = getDatesInMonthKey(mk);
   const startDate = dates[0];
   const endDate = dates[dates.length - 1];
-  const pack = { monthKey: mk, dates, presByDay: {}, punchByDay: {}, anyFail: false };
+  const pack = { monthKey: mk, dates, presByDay: {}, punchByDay: {}, motifsByDay: {}, anyFail: false };
   const res = await fetchRangePresPunch(startDate, endDate);
   pack.presByDay = res.presByDay || {};
   pack.punchByDay = res.punchByDay || {};
+  pack.motifsByDay = res.motifsByDay || {};
   pack.anyFail = !!res.anyFail;
   monthDataCache.set(mk, pack);
   return pack;

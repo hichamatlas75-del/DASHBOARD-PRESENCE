@@ -7,8 +7,10 @@ let currentMode       = 'day';
 let role              = null;
 let activePresRef     = null;
 let activePunchRef    = null;
+let activeMotifsRef   = null;
 let presCache         = {};
 let punchCache        = {};
+let motifsCache       = {};
 let midnightTimer     = null;
 let sheetsSyncRunning = false;
 
@@ -16,14 +18,15 @@ let sheetsSyncRunning = false;
 
 function detachRealtime() {
   try {
-    if (activePresRef)  { activePresRef.off();  activePresRef = null; }
-    if (activePunchRef) { activePunchRef.off(); activePunchRef = null; }
+    if (activePresRef)   { activePresRef.off();   activePresRef = null; }
+    if (activePunchRef)  { activePunchRef.off();  activePunchRef = null; }
+    if (activeMotifsRef) { activeMotifsRef.off(); activeMotifsRef = null; }
   } catch (e) {}
-  presCache = {}; punchCache = {};
+  presCache = {}; punchCache = {}; motifsCache = {};
 }
 
 function mergedDayData() {
-  return mergeDay(presCache || {}, punchCache || {});
+  return mergeDay(presCache || {}, punchCache || {}, motifsCache || {});
 }
 
 function setSyncOK() {
@@ -56,6 +59,12 @@ function attachRealtimeForDate(dayISO, realtime) {
     if (currentMode === "day") renderDayView(mergedDayData());
     if (realtime) setSyncOK();
   }, () => setSyncError());
+
+  activeMotifsRef = database.ref('broadcast/motifs/' + dayISO);
+  activeMotifsRef.on('value', (snap) => {
+    motifsCache = snap.val() || {};
+    if (currentMode === "day") renderDayView(mergedDayData());
+  });
 }
 
 function switchMode(mode, btn) {

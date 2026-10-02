@@ -205,14 +205,17 @@ const LateAlertService = (() => {
 
       const diff = diffFromEntry({ hA: ha, hP: hp }, id, today);
       if (diff >= SEUIL_GRAVE) {
-        latesGrave.push({ emp, diff, ha });
+        const motif = String(d.motif || "").trim();
+        latesGrave.push({ emp, diff, ha, motif });
         const keyAlert = `${today}_${id}_${diff}`;
         if (!_alertedToday.has(keyAlert)) {
           _alertedToday.add(keyAlert);
           playBeep();
+          const notifMsg = `${emp.nom} ${emp.prenom} (${emp.poste}) : arrivée à ${ha} (+${diff} min de retard)` +
+            (motif ? `\nMotif : « ${motif} »` : '');
           sendDesktopNotification(
             "🚨 Alerte Retard — Grey Corner",
-            `${emp.nom} ${emp.prenom} (${emp.poste}) : arrivée à ${ha} (+${diff} min de retard)`
+            notifMsg
           );
         }
       }
@@ -235,11 +238,12 @@ const LateAlertService = (() => {
       <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
            style="background:rgba(220,38,38,.12);color:var(--crit);border:1px solid rgba(220,38,38,.30)"
            onclick="openHistory('${escAttr(l.emp.nom)}','${escAttr(l.emp.prenom)}')"
-           title="Cliquer pour inspecter l'historique">
+           title="${l.motif ? 'Motif : « ' + escAttr(l.motif) + ' »' : 'Cliquer pour inspecter l\'historique'}">
         <span class="animate-pulse">🚨</span>
         <span>${esc(l.emp.nom)} ${esc(titleCase(l.emp.prenom))}</span>
         <span class="px-1.5 py-0.5 rounded-md font-black" style="background:rgba(220,38,38,.18)">+${l.diff}m</span>
         <span class="opacity-75 text-[10px]">(${esc(l.ha)})</span>
+        ${l.motif ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold max-w-[170px] truncate" style="background:rgba(245,158,11,.22);color:#92400e" title="Motif : « ${escAttr(l.motif)} »">💬 ${esc(l.motif)}</span>` : ''}
       </div>
     `).join("");
 
@@ -299,6 +303,9 @@ function renderDayView(data) {
       }).forEach(emp => {
         const id = empIdOf(emp);
         const cardProps = calculateEmpCardProps(emp, id, data[id] || {}, selectedDay, isPastDay);
+        const motifBadgeHtml = cardProps.motif
+          ? `<div class="motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate" title="Motif : « ${escAttr(cardProps.motif)} »">💬 « ${esc(cardProps.motif)} »</div>`
+          : (cardProps.diff >= 15 ? `<div class="motif-badge text-[9px] font-semibold mt-1 px-1.5 py-0.5 rounded text-amber-700/70 italic">⚠️ Sans motif saisi</div>` : `<div class="motif-badge hidden"></div>`);
         html += `
           <button id="card-${escAttr(id)}" data-empid="${escAttr(id)}" class="staff-card ${escAttr(cardProps.finalSClass)} glass-card p-3.5 rounded-2xl text-left flex flex-col justify-between" style="min-height:7.5rem">
             <span class="status-dot" style="background:${escAttr(cardProps.finalDot)}"></span>
@@ -310,7 +317,10 @@ function renderDayView(data) {
                 <p class="text-[10px] font-semibold truncate mt-0.5" style="color:var(--muted3)">${esc(titleCase(emp.prenom))}</p>
               </div>
             </div>
-            <p class="status-text text-[11px] font-extrabold mt-2" style="${escAttr(cardProps.statusColor)}">${esc(cardProps.statusText)}</p>
+            <div>
+              <p class="status-text text-[11px] font-extrabold mt-2" style="${escAttr(cardProps.statusColor)}">${esc(cardProps.statusText)}</p>
+              ${motifBadgeHtml}
+            </div>
           </button>`;
       });
       html += `</div></div>`;
@@ -341,6 +351,23 @@ function renderDayView(data) {
       if (statusText) {
         statusText.textContent = cardProps.statusText;
         statusText.setAttribute('style', cardProps.statusColor);
+      }
+
+      const motifEl = card.querySelector('.motif-badge');
+      if (motifEl) {
+        if (cardProps.motif) {
+          motifEl.className = 'motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate';
+          motifEl.setAttribute('title', `Motif : « ${cardProps.motif} »`);
+          motifEl.textContent = `💬 « ${cardProps.motif} »`;
+        } else if (cardProps.diff >= 15) {
+          motifEl.className = 'motif-badge text-[9px] font-semibold mt-1 px-1.5 py-0.5 rounded text-amber-700/70 italic';
+          motifEl.removeAttribute('title');
+          motifEl.textContent = '⚠️ Sans motif saisi';
+        } else {
+          motifEl.className = 'motif-badge hidden';
+          motifEl.textContent = '';
+          motifEl.removeAttribute('title');
+        }
       }
     });
   }
@@ -409,7 +436,9 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
     statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
   }
 
-  return { ha, diff, finalSClass, finalDot, statusText, statusColor };
+  const motif = String(d.motif || "").trim();
+
+  return { ha, diff, finalSClass, finalDot, statusText, statusColor, motif };
 }
 
 let _currentBilanWeek = 'all';
@@ -1096,7 +1125,7 @@ async function openCalendarModal(nom, prenom, mk) {
     if (dayISO > today) { dayMap[dayISO] = { type: 'future' }; return; }
     if (isExcluded(dayISO)) { dayMap[dayISO] = { type: 'exclu' }; return; }
     if (!empStart || dayISO < empStart) { dayMap[dayISO] = { type: 'avant' }; return; }
-    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], md.motifsByDay?.[dayISO]);
     const e = merged[empId] || null;
     const isSec = (emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ"));
     const isMenage = (emp && (emp.poste === "MENAGE" || emp.poste === "MÉNAGE")) || isMenageStaff(empId);
@@ -1106,10 +1135,11 @@ async function openCalendarModal(nom, prenom, mk) {
 
     const hp = safeTime(e?.hP) || (isSec ? "09:00" : "");
     const ha = safeTime(e?.hA) || "";
+    const motif = String(e?.motif || "").trim();
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
-      if (diff > 0 && !isMenage) { dayMap[dayISO] = { type: 'retard', ha, hp, diff }; nPresent++; }
-      else { dayMap[dayISO] = { type: 'present', ha, hp }; nPresent++; }
+      if (diff > 0 && !isMenage) { dayMap[dayISO] = { type: 'retard', ha, hp, diff, motif }; nPresent++; }
+      else { dayMap[dayISO] = { type: 'present', ha, hp, motif }; nPresent++; }
       return;
     }
     if (isSec && isMonday) {
@@ -1162,9 +1192,13 @@ async function openCalendarModal(nom, prenom, mk) {
         let sub = t.label;
         if (info.type === 'present') sub = info.ha || '✓';
         if (info.type === 'retard')  sub = `+${info.diff}m`;
-        calHtml += `<div class="cal-cell${isToday ? ' cal-today' : ''}" style="background:${t.bg};border-color:${isToday ? 'rgba(245,158,11,.65)' : 'rgba(148,163,184,.10)'}">
+        const cellTitle = (info.type === 'retard' && info.motif)
+          ? `title="${cursor} · Retard +${info.diff}m · Motif : « ${escAttr(info.motif)} »"`
+          : (info.motif ? `title="${cursor} · Motif : « ${escAttr(info.motif)} »"` : '');
+        calHtml += `<div class="cal-cell${isToday ? ' cal-today' : ''}" ${cellTitle} style="background:${t.bg};border-color:${isToday ? 'rgba(245,158,11,.65)' : 'rgba(148,163,184,.10)'}">
           <div style="font-size:11px;font-weight:900;color:#0f2744">${d}</div>
           <div style="font-size:9px;font-weight:800;color:${t.color};text-align:center;line-height:1.1">${sub}</div>
+          ${info.motif ? `<div style="font-size:7.5px;line-height:1;margin-top:1px;color:#b45309" title="Motif : « ${escAttr(info.motif)} »">💬</div>` : ''}
         </div>`;
       }
       cursor = addDaysISO(cursor, 1);
@@ -1185,8 +1219,14 @@ async function openCalendarModal(nom, prenom, mk) {
   document.getElementById('modalList').innerHTML = recapHtml + calHtml + legHtml;
 }
 
-function rowHistory(dayISO, statut, hp, ha, retard, cls, rc) {
+function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif) {
   const rcTxt = rc ? ` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>` : "";
+  const motifHtml = motif ? `
+    <div class="mt-2.5 p-2 px-3 rounded-xl text-[11px] font-bold flex items-start gap-1.5" style="background:rgba(245,158,11,.10);border-left:3px solid var(--accent);color:#78350f">
+      <span>💬</span>
+      <span class="italic font-semibold break-words">« ${esc(motif)} »</span>
+    </div>
+  ` : "";
   return `<div class="p-4 rounded-2xl" style="background:rgba(255,255,255,.50);border:1px solid var(--stroke-med)">
     <div class="flex justify-between items-center">
       <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
@@ -1197,6 +1237,7 @@ function rowHistory(dayISO, statut, hp, ha, retard, cls, rc) {
       <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha || "—")}</span></div>
       <div class="text-[10px] font-bold" style="color:var(--muted3)">Ret <span style="color:#0f2744;font-weight:900">${esc(retard || "—")}</span></div>
     </div>
+    ${motifHtml}
   </div>`;
 }
 
@@ -1224,7 +1265,7 @@ async function openHistory(nom, prenom, mk) {
     document.getElementById('modalList').innerHTML = errorCard("Réseau instable : historique partiel.");
     return;
   }
-  const { dates, presByDay, punchByDay } = md;
+  const { dates, presByDay, punchByDay, motifsByDay } = md;
   const { rcByEmpDay, startMap } = await getMonthRCMap(mk);
   const today = todayISO();
   const emp = equipe.find(e => e.nom === nom && e.prenom === prenom);
@@ -1237,8 +1278,9 @@ async function openHistory(nom, prenom, mk) {
     if (isExcluded(dayISO)) { html += rowHistory(dayISO, "Exclu", "", "", "", "color:var(--muted3)"); return; }
     const empStart = startMap[empId];
     if (!empStart || dayISO < empStart) { html += rowHistory(dayISO, "Non commencé", "", "", "", "color:var(--muted3)"); return; }
-    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
     const e = merged[empId] || null;
+    const motif = String(e?.motif || "").trim();
     const [yY, mM, dD] = dayISO.split('-').map(Number);
     const dtD = new Date(Date.UTC(yY, mM - 1, dD));
     const isMonday = (dtD.getUTCDay() === 1);
@@ -1255,32 +1297,32 @@ async function openHistory(nom, prenom, mk) {
     const ha = safeTime(e?.hA) || "";
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
-      if (diff > 0 && !isMenage) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)");
-      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)");
+      if (diff > 0 && !isMenage) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)", "", motif);
+      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)", "", motif);
       return;
     }
     if (isSoumia && soumiaPlan?.off) {
-      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R");
+      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
       return;
     }
     if (isSec && isMonday) {
-      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R");
+      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
       return;
     }
     if (isCuisine && cuisinePlan?.off) {
-      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R");
+      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
       return;
     }
     const rc = rcByEmpDay[empId]?.[dayISO];
     if (rc) {
-      html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc);
+      html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc, motif);
     } else if (isMenage) {
-      html += rowHistory(dayISO, "Repos", hp, ha, "", "color:var(--muted2)", "R");
+      html += rowHistory(dayISO, "Repos", hp, ha, "", "color:var(--muted2)", "R", motif);
     } else if (e && e.off) {
-      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF");
+      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", motif);
     } else {
       absCount++;
-      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)");
+      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", motif);
     }
   });
 
