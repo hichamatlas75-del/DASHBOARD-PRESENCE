@@ -18,9 +18,44 @@ function clearMonthCache() {
   yearPrefetchedSet.clear();
 }
 
+function extractMotif(val) {
+  if (!val) return "";
+  if (typeof val === "string") return val.trim();
+  if (typeof val === "object") {
+    return String(val.motif || val.reason || val.texte || val.explication || val.msg || "").trim();
+  }
+  return "";
+}
+
+function findEmpRecord(map, emp) {
+  if (!map || typeof map !== "object") return null;
+  const id = (typeof empIdOf === "function") ? empIdOf(emp) : "";
+  if (id && map[id] !== undefined) return map[id];
+
+  const nom = String(emp?.nom || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const prenom = String(emp?.prenom || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const k1 = `${nom}_${prenom}`.replace(/\s+/g, "_");
+  if (map[k1] !== undefined) return map[k1];
+  const k2 = `${prenom}_${nom}`.replace(/\s+/g, "_");
+  if (map[k2] !== undefined) return map[k2];
+  const k3 = `${nom} ${prenom}`.replace(/\s+/g, "_");
+  if (map[k3] !== undefined) return map[k3];
+
+  const keys = Object.keys(map);
+  for (const k of keys) {
+    const normK = String(k).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+    const normNom = nom.replace(/[^A-Z0-9]/g, "");
+    const normPrenom = prenom.replace(/[^A-Z0-9]/g, "");
+    if (normNom && normPrenom && normK.includes(normNom) && normK.includes(normPrenom)) {
+      return map[k];
+    }
+  }
+  return null;
+}
+
 /**
  * Fusion optimisée sans JSON.parse/stringify (gain 10-15x en CPU et allocation mémoire)
- * Intègre les pointages, présences et motifs explicatifs de retard
+ * Intègre les pointages, présences et motifs explicatifs de retard avec réconciliation intelligente
  */
 function mergeDay(pres, punches, motifs) {
   const merged = {};
@@ -40,8 +75,9 @@ function mergeDay(pres, punches, motifs) {
         if (pe && pe.hA && !isManualOverride) {
           merged[id].hA = pe.hA;
         }
-        if (pe && pe.motif && !merged[id].motif) {
-          merged[id].motif = pe.motif;
+        const m = extractMotif(pe);
+        if (m && !merged[id].motif) {
+          merged[id].motif = m;
         }
         if (merged[id].hA && merged[id].off === true && !merged[id].manualOff) {
           merged[id].off = false;
@@ -53,12 +89,36 @@ function mergeDay(pres, punches, motifs) {
     for (const id in motifs) {
       if (Object.prototype.hasOwnProperty.call(motifs, id)) {
         if (!merged[id]) merged[id] = {};
-        if (motifs[id]?.motif) {
-          merged[id].motif = motifs[id].motif;
+        const m = extractMotif(motifs[id]);
+        if (m) {
+          merged[id].motif = m;
         }
       }
     }
   }
+
+  // Réconciliation flexible pour chaque employé de l'équipe
+  if (typeof equipe !== 'undefined' && Array.isArray(equipe)) {
+    equipe.forEach(emp => {
+      const id = empIdOf(emp);
+      if (!merged[id]) merged[id] = {};
+      if (!merged[id].motif) {
+        const moRec = findEmpRecord(motifs, emp);
+        const m = extractMotif(moRec);
+        if (m) merged[id].motif = m;
+      }
+      if (!merged[id].motif) {
+        const puRec = findEmpRecord(punches, emp);
+        const m = extractMotif(puRec);
+        if (m) merged[id].motif = m;
+      }
+      if (!merged[id].hA) {
+        const puRec = findEmpRecord(punches, emp);
+        if (puRec && puRec.hA) merged[id].hA = puRec.hA;
+      }
+    });
+  }
+
   return merged;
 }
 
@@ -425,8 +485,12 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
 
 async function loadEquipeFromDB() {
   const snap = await database.ref(EQUIPE_PATH).once("value");
-  const arr = snap.val();
-  return (Array.isArray(arr) && arr.length) ? arr : equipe;
+  const val = snap.val();
+  if (!val) return equipe;
+  const arr = Array.isArray(val)
+    ? val.filter(Boolean)
+    : Object.keys(val).sort((a, b) => Number(a) - Number(b)).map(k => val[k]).filter(Boolean);
+  return (arr && arr.length) ? arr : equipe;
 }
 
 async function saveEquipeToDB(list) {
