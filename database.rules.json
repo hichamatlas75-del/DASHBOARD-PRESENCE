@@ -1,24 +1,166 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
+
     "users": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
       "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && (root.child('users').child(auth.uid).val() === 'gerant' || !data.exists())"
+        ".validate": "newData.isString() && (newData.val() == 'gerant' || newData.val() == 'equipe')"
       }
     },
+
     "presences": {
-      ".indexOn": [".key"],
-      ".read": "auth != null",
-      ".write": "auth != null && root.child('users').child(auth.uid).val() === 'gerant'"
+      ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+      "$date": {
+        "$emp": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || (root.child('users').child(auth.uid).val() == 'equipe' && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA'))",
+          "on": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "off": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
+          "hA": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
+          "retard": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "retardMin": { ".validate": "newData.val() === null || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 360)" },
+          "timestamp": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "lastEditAt": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "lastEditByAdmin": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "$other": { ".validate": false },
+          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && ((!newData.child('hA').exists() && !newData.child('retard').exists() && !newData.child('retardMin').exists() && !newData.child('timestamp').exists() && !newData.child('lastEditAt').exists() && !newData.child('lastEditByAdmin').exists()) || (($emp == 'ELMCHAOURI_SOUAD' || $emp == 'SBAI_HAKIMA') && (!data.child('hA').exists() || data.child('hA').val() == null || newData.child('hA').val() == null) && newData.child('hA').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists() && newData.child('lastEditAt').exists() && newData.child('lastEditByAdmin').exists() && newData.child('lastEditByAdmin').val() == false))))"
+        }
+      }
     },
+
     "punches": {
-      ".indexOn": [".key"],
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+      "$date": {
+        "$emp": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || (root.child('users').child(auth.uid).val() == 'equipe' && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA'))",
+          "empKey": { ".validate": "newData.isString() && newData.val() == $emp" },
+          "hA": { ".validate": "newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/)" },
+          "retard": { ".validate": "newData.isBoolean()" },
+          "retardMin": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 360" },
+          "timestamp": { ".validate": "newData.isNumber()" },
+          "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
+          "motif": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "$other": { ".validate": false },
+          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && (!data.child('hA').exists() || data.child('hA').val() == null) && newData.child('hA').exists() && newData.child('empKey').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists()))"
+        }
+      }
     },
+
+    "system_control": {
+      ".read": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "$other": { ".validate": false }
+    },
+
+    "broadcast": {
+      ".read": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "resetPunchesAt": { ".validate": "newData.isNumber()" },
+      "resetPinsAt": { ".validate": "newData.isNumber()" },
+      "resets": {
+        "$emp": { ".validate": "newData.isNumber()" }
+      },
+      "motifs": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+        "$date": {
+          "$emp": {
+            ".write": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+            ".validate": "newData.val() === null || newData.hasChildren(['motif'])",
+            "empKey": { ".validate": "newData.isString() && newData.val() == $emp" },
+            "motif": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "hA": { ".validate": "newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/)" },
+            "retardMin": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 360" },
+            "timestamp": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
+      },
+      "$other": { ".validate": false }
+    },
+
+    "exports": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "daily": {
+        "$date": {
+          "$emp": {
+            ".validate": "newData.val() === null || newData.hasChildren(['empKey'])",
+            "empKey": { ".validate": "newData.val() === null || (newData.isString() && newData.val() == $emp)" },
+            "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
+            "hA": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
+            "off": { ".validate": "newData.val() === null || newData.isBoolean()" },
+            "retard": { ".validate": "newData.val() === null || newData.isBoolean()" },
+            "retardMin": { ".validate": "newData.val() === null || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 360)" },
+            "timestamp": { ".validate": "newData.val() === null || newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
+      },
+      "$other": { ".validate": false }
+    },
+
+    "rh_data": {
+      ".read": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "employees": {
+        "$cin": {
+          ".validate": "newData.hasChildren(['name','role','dept','cin','salary','contract'])",
+          "name":     { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+          "role":     { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "dept":     { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "phone":    { ".validate": "newData.val() === null || newData.isString()" },
+          "date":     { ".validate": "newData.val() === null || newData.isString()" },
+          "cin":      { ".validate": "newData.isString() && newData.val() == $cin" },
+          "cnss":     { ".validate": "newData.val() === null || newData.isString()" },
+          "salary":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000" },
+          "family":   { ".validate": "newData.val() === null || newData.isString()" },
+          "contract": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30" },
+          "sanitary": { ".validate": "newData.val() === null || newData.isString()" },
+          "img":      { ".validate": "newData.val() === null || newData.isString()" },
+
+          "_nom":    { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 80)" },
+          "_prenom": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 80)" },
+
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
     "settings": {
-      ".read": "auth != null",
-      ".write": "auth != null && root.child('users').child(auth.uid).val() === 'gerant'"
+      ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "equipe": {
+        "$index": {
+          ".validate": "newData.hasChildren(['nom','prenom','poste']) && newData.child('nom').isString() && newData.child('nom').val().length > 0 && newData.child('nom').val().length <= 80 && newData.child('prenom').isString() && newData.child('prenom').val().length > 0 && newData.child('prenom').val().length <= 80 && newData.child('poste').isString() && newData.child('poste').val().length > 0 && newData.child('poste').val().length <= 40"
+        }
+      },
+      "$other": { ".validate": false }
+    },
+
+    "conges": {
+      ".read":  "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'",
+      "$cin": {
+        "$congeId": {
+          ".validate": "newData.hasChildren(['type','dateDebut','dateFin','jours','statut'])",
+          "type":       { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60" },
+          "dateDebut":  { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+          "dateFin":    { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+          "jours":      { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 365" },
+          "statut":     { ".validate": "newData.isString() && (newData.val() == 'approuvé' || newData.val() == 'en_attente' || newData.val() == 'refusé')" },
+          "note":       { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "empId":      { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 80)" },
+          "empNom":     { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 80)" },
+          "empPrenom":  { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 80)" },
+          "empDept":    { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 40)" },
+          "createdAt":  { ".validate": "newData.val() === null || newData.isNumber()" },
+          "_autoSync":  { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "$other":     { ".validate": false }
+        }
+      }
     }
   }
 }
