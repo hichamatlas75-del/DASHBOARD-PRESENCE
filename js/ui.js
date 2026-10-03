@@ -303,7 +303,7 @@ function renderDayView(data) {
       }).forEach(emp => {
         const id = empIdOf(emp);
         const cardProps = calculateEmpCardProps(emp, id, data[id] || {}, selectedDay, isPastDay);
-        const motifBadgeHtml = cardProps.motif
+        const motifBadgeHtml = (cardProps.diff > 0 && cardProps.motif)
           ? `<div class="motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate" title="Motif : « ${escAttr(cardProps.motif)} »">💬 « ${esc(cardProps.motif)} »</div>`
           : (cardProps.diff >= 15 ? `<div class="motif-badge text-[9px] font-semibold mt-1 px-1.5 py-0.5 rounded text-amber-700/70 italic">⚠️ Sans motif saisi</div>` : `<div class="motif-badge hidden"></div>`);
         html += `
@@ -355,7 +355,7 @@ function renderDayView(data) {
 
       const motifEl = card.querySelector('.motif-badge');
       if (motifEl) {
-        if (cardProps.motif) {
+        if (cardProps.diff > 0 && cardProps.motif) {
           motifEl.className = 'motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate';
           motifEl.setAttribute('title', `Motif : « ${cardProps.motif} »`);
           motifEl.textContent = `💬 « ${cardProps.motif} »`;
@@ -436,7 +436,7 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
     statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
   }
 
-  const motif = String(d.motif || "").trim();
+  const motif = (diff > 0 && !isMenage) ? String(d.motif || "").trim() : "";
 
   return { ha, diff, finalSClass, finalDot, statusText, statusColor, motif };
 }
@@ -1135,11 +1135,12 @@ async function openCalendarModal(nom, prenom, mk) {
 
     const hp = safeTime(e?.hP) || (isSec ? "09:00" : "");
     const ha = safeTime(e?.hA) || "";
-    const motif = String(e?.motif || "").trim();
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
-      if (diff > 0 && !isMenage) { dayMap[dayISO] = { type: 'retard', ha, hp, diff, motif }; nPresent++; }
-      else { dayMap[dayISO] = { type: 'present', ha, hp, motif }; nPresent++; }
+      const isLateDiff = (diff > 0 && !isMenage);
+      const cleanMotif = isLateDiff ? String(e?.motif || "").trim() : "";
+      if (isLateDiff) { dayMap[dayISO] = { type: 'retard', ha, hp, diff, motif: cleanMotif }; nPresent++; }
+      else { dayMap[dayISO] = { type: 'present', ha, hp }; nPresent++; }
       return;
     }
     if (isSec && isMonday) {
@@ -1297,32 +1298,34 @@ async function openHistory(nom, prenom, mk) {
     const ha = safeTime(e?.hA) || "";
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
-      if (diff > 0 && !isMenage) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)", "", motif);
-      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)", "", motif);
+      const isLate = (diff > 0 && !isMenage);
+      const cleanMotif = isLate ? motif : "";
+      if (isLate) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)", "", cleanMotif);
+      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)", "", "");
       return;
     }
     if (isSoumia && soumiaPlan?.off) {
-      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
+      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
       return;
     }
     if (isSec && isMonday) {
-      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
+      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
       return;
     }
     if (isCuisine && cuisinePlan?.off) {
-      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", motif);
+      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
       return;
     }
     const rc = rcByEmpDay[empId]?.[dayISO];
     if (rc) {
-      html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc, motif);
+      html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc, "");
     } else if (isMenage) {
-      html += rowHistory(dayISO, "Repos", hp, ha, "", "color:var(--muted2)", "R", motif);
+      html += rowHistory(dayISO, "Repos", hp, ha, "", "color:var(--muted2)", "R", "");
     } else if (e && e.off) {
-      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", motif);
+      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", "");
     } else {
       absCount++;
-      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", motif);
+      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "");
     }
   });
 
