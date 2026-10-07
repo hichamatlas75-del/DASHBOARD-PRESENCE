@@ -159,6 +159,135 @@ function getCaisseAlternance(idOrName, dateISO) {
   }
 }
 
+// ─── PLANNING FIXE MÉNAGE (Alternance 2 semaines S1 / S2) ───
+const MENAGE_PLANNING_DATA = {
+  S1: {
+    title: 'Semaine 01',
+    schedules: [
+      { day: 'lundi', matin: { staff: 'FOUZIA' }, soir: { staff: 'Khalissa / fatimzahra' } },
+      { day: 'mardi', matin: { staff: 'fatimzahra' }, soir: { staff: 'fatimzahra / FOUZIA' } },
+      { day: 'mercredi', matin: { staff: 'HAKIMA' }, soir: { staff: 'Khalissa / fatimzahra' } },
+      { day: 'jeudi', matin: { staff: 'Khalissa' }, soir: { staff: 'Hakima / FOUZIA' } },
+      { day: 'vendredi', matin: { staff: 'Hakima / FOUZIA' }, soir: { staff: 'Khalissa / fatimzahra' } },
+      { day: 'samedi', matin: { staff: 'Khalissa / fatimzahra' }, soir: { staff: 'Hakima / FOUZIA' } },
+      { day: 'dimanche', matin: { staff: 'Hakima / FOUZIA' }, soir: { staff: 'Khalissa / fatimzahra' } },
+    ]
+  },
+  S2: {
+    title: 'Semaine 02',
+    schedules: [
+      { day: 'lundi', matin: { staff: 'FATIMZAHRA' }, soir: { staff: 'Hakima / FOUZIA' } },
+      { day: 'mardi', matin: { staff: 'FOUZIA' }, soir: { staff: 'FATIMZAHRA / Khalissa' } },
+      { day: 'mercredi', matin: { staff: 'Khalissa' }, soir: { staff: 'Hakima / FOUZIA' } },
+      { day: 'jeudi', matin: { staff: 'Hakima' }, soir: { staff: 'FATIMZAHRA / Khalissa' } },
+      { day: 'vendredi', matin: { staff: 'FATIMZAHRA / Khalissa' }, soir: { staff: 'Hakima / FOUZIA' } },
+      { day: 'samedi', matin: { staff: 'Hakima / FOUZIA' }, soir: { staff: 'FATIMZAHRA / Khalissa' } },
+      { day: 'dimanche', matin: { staff: 'FATIMZAHRA / Khalissa' }, soir: { staff: 'Hakima / FOUZIA' } },
+    ]
+  }
+};
+
+function getMenageWeekKey(dateISO) {
+  if (!dateISO) dateISO = (typeof todayISO === "function" ? todayISO() : new Date().toISOString().slice(0, 10));
+  const [yy, mm, dd] = String(dateISO).split('-').map(Number);
+  if (!yy || !mm || !dd) return 'S2';
+  const cur = new Date(Date.UTC(yy, mm - 1, dd));
+  const dayOfWeek = cur.getUTCDay();
+  const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+  const curMonday = new Date(cur);
+  curMonday.setUTCDate(cur.getUTCDate() + diffToMonday);
+
+  // Ancre de calibration : Semaine du Lundi 5 Octobre 2026 = Semaine 02 (S2)
+  const anchorMonday = new Date(Date.UTC(2026, 9, 5)); // 9 = Octobre (0-indexé)
+  const diffWeeks = Math.round((curMonday - anchorMonday) / (7 * 86400000));
+  const mod = ((diffWeeks % 2) + 2) % 2;
+  return (mod === 0) ? 'S2' : 'S1';
+}
+
+function getMenageStaffKey(empOrId) {
+  if (!empOrId) return null;
+  const s = (typeof empOrId === "object"
+    ? `${empOrId.nom || ""} ${empOrId.prenom || ""}`
+    : String(empOrId)
+  ).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  if (s.includes("HAKIMA") || s.includes("SBAI")) return "HAKIMA";
+  if (s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR")) return "FOUZIA";
+  if (s.includes("KHALISSA") || s.includes("KHALISA")) return "KHALISSA";
+  if (s.includes("FATIMZAHRA") || s.includes("FATIM") || s.includes("ZAHRA")) return "FATIMZAHRA";
+  return null;
+}
+
+function isStaffInMenageShift(shiftStaffStr, empOrId) {
+  if (!shiftStaffStr) return false;
+  const staffKey = getMenageStaffKey(empOrId);
+  if (!staffKey) return false;
+  const s = String(shiftStaffStr).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (staffKey === "HAKIMA") return s.includes("HAKIMA");
+  if (staffKey === "FOUZIA") return s.includes("FOUZIA");
+  if (staffKey === "KHALISSA") return s.includes("KHALISSA") || s.includes("KHALISA");
+  if (staffKey === "FATIMZAHRA") return s.includes("FATIM") || s.includes("ZAHRA");
+  return false;
+}
+
+function getMenagePlanningInfo(empOrId, dateISO) {
+  if (!dateISO || !empOrId) return null;
+  const staffKey = getMenageStaffKey(empOrId);
+  if (!staffKey) return null;
+
+  const [yy, mm, dd] = String(dateISO).split('-').map(Number);
+  if (!yy || !mm || !dd) return null;
+  const dt = new Date(Date.UTC(yy, mm - 1, dd));
+  const dayOfWeek = dt.getUTCDay();
+
+  const DAYS_MAP = { 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi', 0: 'dimanche' };
+  const dayName = DAYS_MAP[dayOfWeek];
+  if (!dayName) return null;
+
+  const weekKey = getMenageWeekKey(dateISO);
+  const weekData = MENAGE_PLANNING_DATA[weekKey];
+  if (!weekData) return null;
+
+  const daySchedule = weekData.schedules.find(s => s.day === dayName);
+  if (!daySchedule) return null;
+
+  const inMatin = isStaffInMenageShift(daySchedule.matin.staff, empOrId);
+  const inSoir = isStaffInMenageShift(daySchedule.soir.staff, empOrId);
+
+  const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0);
+  const matinTime = "06:30";
+  const soirTime = isWeekend ? "14:00" : "12:00";
+
+  let shiftLabel = "Repos (OFF)";
+  let hA = null;
+  const off = !inMatin && !inSoir;
+
+  if (inMatin && inSoir) {
+    shiftLabel = `Double (${matinTime} + ${soirTime})`;
+    hA = matinTime;
+  } else if (inMatin) {
+    shiftLabel = `Matin (${matinTime})`;
+    hA = matinTime;
+  } else if (inSoir) {
+    shiftLabel = `Soir (${soirTime})`;
+    hA = soirTime;
+  }
+
+  return {
+    week: weekKey,
+    title: weekData.title,
+    day: dayName,
+    staffKey,
+    inMatin,
+    inSoir,
+    off,
+    hA,
+    hP: hA,
+    shift: shiftLabel,
+    isWeekend
+  };
+}
+
 function isMenageStaff(empOrId) {
   if (!empOrId) return false;
   if (typeof empOrId === "object") {
@@ -171,7 +300,8 @@ function isMenageStaff(empOrId) {
     return p === "MENAGE" || p === "MÉNAGE";
   }
   const s = String(empOrId).toUpperCase();
-  return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA");
+  return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA") ||
+         s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("KHALISSA") || s.includes("FATIMZAHRA");
 }
 
 function getEffectiveHP(hp, empId, dateISO) {
@@ -344,7 +474,8 @@ const StaffPhotoService = (() => {
     "FOUZIA": "images/FOUZIA.jpg",
     "FOUZIA6ZHAR": "images/FOUZIA6ZHAR.jpg",
     "FOUZIA_ZHAR": "images/FOUZIA6ZHAR.jpg",
-    "FOUZIA_EZHAR": "images/FOUZIA6ZHAR.jpg"
+    "FOUZIA_EZHAR": "images/FOUZIA6ZHAR.jpg",
+    "EZHAR_FOUZIA": "images/FOUZIA.jpg"
   };
 
   function normalize(str) {

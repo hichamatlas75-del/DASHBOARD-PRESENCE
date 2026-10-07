@@ -40,7 +40,10 @@ const EXCL_START         = "2026-01-01";
 const EXCL_END           = "2026-01-31";
 
 const POSTES_ORDER = ['SERVICE', 'BAR', 'CUISINE', 'CAISSE', 'MENAGE', 'SECURITE', 'ECONOMAT'];
-const haOnlyIds    = new Set(["SBAI_HAKIMA", "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD", "ABOUARSA_EDDRISSIA"]);
+const haOnlyIds    = new Set([
+  "SBAI_HAKIMA", "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD", "ABOUARSA_EDDRISSIA",
+  "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "KHALISSA_KHALISSA", "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA"
+]);
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
 /* ─── Utilitaires sécurité & sanitisation ─── */
@@ -147,6 +150,9 @@ let equipe = [
   { nom: 'MOUJAHID',   prenom: 'IMANE',     poste: 'CUISINE' },
   { nom: 'SALIL',      prenom: 'HOUDA',     poste: 'CAISSE' },
   { nom: 'SBAI',       prenom: 'HAKIMA',    poste: 'MENAGE' },
+  { nom: 'EZHAR',      prenom: 'FOUZIA',    poste: 'MENAGE' },
+  { nom: 'KHALISSA',   prenom: 'KHALISSA',  poste: 'MENAGE' },
+  { nom: 'FATIMZAHRA', prenom: 'FATIMA',    poste: 'MENAGE' },
   { nom: 'ZAIR',       prenom: 'FATIMA',    poste: 'CUISINE' }
 ];
 
