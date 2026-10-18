@@ -161,6 +161,28 @@
           "$other":     { ".validate": false }
         }
       }
+    },
+
+    "avances": {
+      ".read": true,
+      "$mois": {
+        ".validate": "$mois.matches(/^\\d{4}-\\d{2}$/)",
+        "$demandeId": {
+          ".write": true,
+          ".validate": "newData.val() === null || newData.hasChildren(['empKey', 'nomComplet', 'montant', 'dateDemande', 'timestamp', 'statut'])",
+          "empKey":       { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+          "nomComplet":   { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+          "cin":          { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 30)" },
+          "montant":      { ".validate": "newData.isNumber() && newData.val() >= 50 && newData.val() <= 30000" },
+          "motif":        { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "dateDemande":  { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+          "timestamp":    { ".validate": "newData.isNumber()" },
+          "statut":       { ".validate": "newData.isString() && (newData.val() == 'EN_ATTENTE' || newData.val() == 'VALIDEE' || newData.val() == 'REFUSEE')" },
+          "modePaiement": { ".validate": "newData.val() === null || (newData.isString() && (newData.val() == 'ESPECE' || newData.val() == 'VIREMENT'))" },
+          "traiteLe":     { ".validate": "newData.val() === null || newData.isString() || newData.isNumber()" },
+          "$other":       { ".validate": false }
+        }
+      }
     }
   }
 }
