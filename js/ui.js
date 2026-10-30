@@ -404,21 +404,67 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
   const isCuisinePlanOff = (isCuisine && cuisinePlan?.off);
   const isSoumiaPlanOff = (isSoumia && soumiaPlan?.off);
   const isMenagePlanOff = (isMenage && menagePlan?.off);
-  const isAbsent = (isMenage && isExplicitOut) || (!ha && !d.off && isPastDay && !(isSec && isMonday) && !isCuisinePlanOff && !isSoumiaPlanOff && !isMenagePlanOff);
-  const finalSClass = (isMenage && isExplicitOut) ? 'status-absent'
-    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && isMenagePlanOff && !ha))
-    ? 'status-off' : (isAbsent ? 'status-absent' : sClass);
-  const finalDot = (isMenage && isExplicitOut) ? 'rgba(234,88,12,.90)'
-    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && isMenagePlanOff && !ha))
-    ? 'rgba(168,85,247,.80)' : (isAbsent ? 'rgba(234,88,12,.90)' : dot);
+
+  // Règle Ménage : exclure 1 jour de repos OFF par semaine
+  let menageIsRest = false;
+  let menageIsAbsent = false;
+  let menageStatusLabel = "";
+
+  if (isMenage) {
+    if (ha) {
+      // Présent
+    } else if (isMenagePlanOff) {
+      // Repos prévu au planning S1/S2
+      menageIsRest = true;
+      menageStatusLabel = "Repos (Plan)";
+    } else if (isExplicitOut) {
+      // Vérifier si un autre jour de la semaine est son repos prévu
+      const mon = weekStartMondayISO(selectedDay);
+      let otherPlannedRest = false;
+      for (let i = 0; i < 7; i++) {
+        const curD = addDaysISO(mon, i);
+        if (curD === selectedDay) continue;
+        const curPlan = typeof getMenagePlanningInfo === 'function' ? getMenagePlanningInfo(emp, curD) : null;
+        if (curPlan && curPlan.off) {
+          otherPlannedRest = true;
+          break;
+        }
+      }
+      if (otherPlannedRest) {
+        menageIsAbsent = true;
+        menageStatusLabel = "⚠ Absent";
+      } else {
+        menageIsRest = true;
+        menageStatusLabel = "Repos (OFF)";
+      }
+    } else if (isPastDay) {
+      menageIsAbsent = true;
+      menageStatusLabel = "⚠ Absent";
+    }
+  }
+
+  const isAbsent = isMenage ? menageIsAbsent : (!ha && !d.off && isPastDay && !(isSec && isMonday) && !isCuisinePlanOff && !isSoumiaPlanOff);
+  const finalSClass = isAbsent ? 'status-absent'
+    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && menageIsRest))
+    ? 'status-off' : sClass;
+  const finalDot = isAbsent ? 'rgba(234,88,12,.90)'
+    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && menageIsRest))
+    ? 'rgba(168,85,247,.80)' : dot;
 
   let statusText = 'Attente', statusColor = 'color:var(--muted3)';
-  if (isMenage && isExplicitOut) {
-    statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
-  } else if (ha) {
-    if (isMenage) {
+  if (isMenage) {
+    if (ha) {
       statusText = "Présent"; statusColor = 'color:var(--ok)';
-    } else if (hp || isSec || cuisinePlan || soumiaPlan || caissePlan) {
+    } else if (menageIsRest) {
+      statusText = menageStatusLabel; statusColor = 'color:var(--chip-r-fg)';
+    } else if (menageIsAbsent) {
+      statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
+    } else {
+      statusText = menagePlan?.hP ? `Prévu ${menagePlan.hP}` : "Saisie manuelle";
+      statusColor = 'color:var(--muted3)';
+    }
+  } else if (ha) {
+    if (hp || isSec || cuisinePlan || soumiaPlan || caissePlan) {
       if (diff > 0) { statusText = `+${diff} min`; statusColor = 'color:var(--crit)'; }
       else { statusText = "À l'heure"; statusColor = 'color:var(--ok)'; }
     } else {
@@ -743,8 +789,9 @@ async function renderReportView() {
       const isExplicitOut = isExplicitOffOrOut(e);
       const mPlan = isMenage ? getMenagePlanningInfo(emp, dayISO) : null;
       const isMenagePlannedOff = isMenage && mPlan?.off;
+      const isMenageWeeklyRest = isMenage && (rc === "R" || isMenagePlannedOff);
 
-      if (ha && !(isMenage && isExplicitOut)) {
+      if (ha && !isExplicitOut) {
         presentCount++;
         consecutiveAbsent = 0;
         const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
@@ -752,12 +799,8 @@ async function renderReportView() {
           lateCount++;
           totalLateMin += diff;
         }
-      } else if (isMenage && isExplicitOut) {
-        consecutiveAbsent++;
-        if (consecutiveAbsent > maxConsecutiveAbsent) {
-          maxConsecutiveAbsent = consecutiveAbsent;
-        }
-      } else if (isOff || rc || isSecMonday || isMenagePlannedOff) {
+      } else if (rc === "R" || rc === "C" || isSecMonday || isMenageWeeklyRest) {
+        // Le jour de repos OFF de la semaine réinitialise les absences consécutives
         consecutiveAbsent = 0;
       } else {
         consecutiveAbsent++;
@@ -1154,13 +1197,13 @@ async function openCalendarModal(nom, prenom, mk) {
     const isMonday = (dtD.getUTCDay() === 1);
 
     const isExplicitOut = isExplicitOffOrOut(e);
-    if (isMenage && isExplicitOut) {
-      dayMap[dayISO] = { type: 'absent' };
-      nAbsent++;
-      return;
-    }
+    const rc = rcByEmpDay[empId]?.[dayISO];
+    if (rc === 'R') { dayMap[dayISO] = { type: 'repos' }; nR++; return; }
+    if (rc === 'C') { dayMap[dayISO] = { type: 'conge' }; nC++; return; }
+    if (rc === 'ABSENT') { dayMap[dayISO] = { type: 'absent' }; nAbsent++; return; }
+
     const hp = safeTime(e?.hP) || (isSec ? "09:00" : "");
-    const ha = safeTime(e?.hA) || "";
+    const ha = isExplicitOut ? "" : (safeTime(e?.hA) || "");
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
       const isLateDiff = (diff > 0 && !isMenage);
@@ -1172,22 +1215,19 @@ async function openCalendarModal(nom, prenom, mk) {
     if (isSec && isMonday) {
       dayMap[dayISO] = { type: 'repos' }; nR++; return;
     }
-    const rc = rcByEmpDay[empId]?.[dayISO];
-    if (rc === 'R') { dayMap[dayISO] = { type: 'repos' }; nR++; return; }
-    if (rc === 'C') { dayMap[dayISO] = { type: 'conge' }; nC++; return; }
-    if (e && e.off) { dayMap[dayISO] = { type: 'off' }; nOff++; return; }
     if (isMenage) {
       const mPlan = getMenagePlanningInfo(empId, dayISO);
       if (mPlan?.off) {
         dayMap[dayISO] = { type: 'repos' };
         nR++;
         return;
-      } else {
+      } else if (isExplicitOut) {
         dayMap[dayISO] = { type: 'absent' };
         nAbsent++;
         return;
       }
     }
+    if (e && e.off) { dayMap[dayISO] = { type: 'off' }; nOff++; return; }
     dayMap[dayISO] = { type: 'absent' }; nAbsent++;
   });
 
@@ -1332,13 +1372,23 @@ async function openHistory(nom, prenom, mk) {
     const soumiaPlan = isSoumia ? getSoumiaPlanning(dayISO) : null;
 
     const isExplicitOut = isExplicitOffOrOut(e);
-    if (isMenage && isExplicitOut) {
+    const rc = rcByEmpDay[empId]?.[dayISO];
+    if (rc === "R") {
+      html += rowHistory(dayISO, "Repos", hp, "", "", "color:var(--chip-r-fg)", "R", "");
+      return;
+    }
+    if (rc === "C") {
+      html += rowHistory(dayISO, "Congé", hp, "", "", "color:var(--amber)", "C", "");
+      return;
+    }
+    if (rc === "ABSENT") {
       absCount++;
       html += rowHistory(dayISO, "⚠ Absent (OUT)", hp, "", "", "color:rgba(234,88,12,.90)", "", "");
       return;
     }
+
     const hp = safeTime(e?.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
-    const ha = safeTime(e?.hA) || "";
+    const ha = isExplicitOut ? "" : (safeTime(e?.hA) || "");
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
       const isLate = (diff > 0 && !isMenage);
@@ -1359,18 +1409,17 @@ async function openHistory(nom, prenom, mk) {
       html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
       return;
     }
-    const rc = rcByEmpDay[empId]?.[dayISO];
-    if (rc) {
-      html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc, "");
-    } else if (isMenage) {
+    if (isMenage) {
       const mPlan = getMenagePlanningInfo(empId, dayISO);
       if (mPlan?.off) {
-        html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--muted2)", "R", "");
+        html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
       } else {
         absCount++;
         html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "");
       }
-    } else if (e && e.off) {
+      return;
+    }
+    if (e && e.off) {
       html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", "");
     } else {
       absCount++;

@@ -317,46 +317,23 @@ async function getYearTimeline(year) {
 
     // Pré-calculer la fusion des 7 jours de la semaine une seule fois
     for (const d of weekDays) {
-      if (!dayMergedMap[d] && d <= today) {
-        const mk = monthKeyFromISO(d);
-        const md = monthDataCache.get(mk);
-        dayMergedMap[d] = md ? mergeDay(md.presByDay[d] || {}, md.punchByDay[d] || {}) : {};
-      }
-    }
-
-    for (const emp of equipe) {
-      const id = empIdOf(emp);
-      const start = startMap[id];
-      if (!start) continue;
-
-      const isSpecialNoRepos = noReposIds.has(id);
-      if (sundayOfCurWeek < start) continue;
-
-      const offDaysInWeek = [];
-      let hadAnyActivity = false;
-      const isMenage = isMenageStaff(emp) || isMenageStaff(id);
-
-      for (const d of weekDays) {
         if (d < start || d > today || isExcluded(d)) continue;
         const merged = dayMergedMap[d] || {};
         const e = merged[id] || null;
         const ha = safeTime(e?.hA);
-                const isExplicitOff = isExplicitOffOrOut(e);
+        const isExplicitOff = isExplicitOffOrOut(e);
+
         if (ha) {
           hadAnyActivity = true;
-        } else if (isMenage) {
-          hadAnyActivity = true;
-          if (isExplicitOff) {
-            // OUT coché dans feuille de présence = ABSENCE, ne compte pas comme repos légal
-          } else {
-            const mPlan = typeof getMenagePlanningInfo === 'function' ? getMenagePlanningInfo(emp, d) : null;
-            if (mPlan && mPlan.off) {
-              offDaysInWeek.push(d);
-            }
-          }
-        } else if (e && e.off === true) {
+        } else if (isExplicitOff || (e && e.off === true)) {
           hadAnyActivity = true;
           offDaysInWeek.push(d);
+        } else if (isMenage) {
+          hadAnyActivity = true;
+          const mPlan = typeof getMenagePlanningInfo === 'function' ? getMenagePlanningInfo(emp, d) : null;
+          if (mPlan && mPlan.off) {
+            offDaysInWeek.push(d);
+          }
         }
       }
 
@@ -374,11 +351,22 @@ async function getYearTimeline(year) {
         continue;
       }
 
+      // Priorité au jour de repos officiel prévu au planning si présent parmi les jours OFF
+      if (offDaysInWeek.length > 1) {
+        offDaysInWeek.sort((a, b) => {
+          const planA = (isMenage && typeof getMenagePlanningInfo === 'function' && getMenagePlanningInfo(emp, a)?.off) ? 1 : 0;
+          const planB = (isMenage && typeof getMenagePlanningInfo === 'function' && getMenagePlanningInfo(emp, b)?.off) ? 1 : 0;
+          return planB - planA;
+        });
+      }
+
       const nOffs = offDaysInWeek.length;
       if (nOffs >= 1) {
+        // RÈGLE : 1 JOUR DE REPOS OFF PAR SEMAINE EXCLU DE L'ABSENCE (Repos légal R)
         rcByEmpDay[id][offDaysInWeek[0]] = "R";
         for (let k = 1; k < nOffs; k++) {
-          rcByEmpDay[id][offDaysInWeek[k]] = "C";
+          // Tout jour OFF supplémentaire dans la même semaine est une ABSENCE pour le ménage
+          rcByEmpDay[id][offDaysInWeek[k]] = isMenage ? "ABSENT" : "C";
         }
       }
 
