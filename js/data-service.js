@@ -317,6 +317,26 @@ async function getYearTimeline(year) {
 
     // Pré-calculer la fusion des 7 jours de la semaine une seule fois
     for (const d of weekDays) {
+      if (!dayMergedMap[d] && d <= today) {
+        const mk = monthKeyFromISO(d);
+        const md = monthDataCache.get(mk);
+        dayMergedMap[d] = md ? mergeDay(md.presByDay[d] || {}, md.punchByDay[d] || {}) : {};
+      }
+    }
+
+    for (const emp of equipe) {
+      const id = empIdOf(emp);
+      const start = startMap[id];
+      if (!start) continue;
+
+      const isSpecialNoRepos = noReposIds.has(id);
+      if (sundayOfCurWeek < start) continue;
+
+      const offDaysInWeek = [];
+      let hadAnyActivity = false;
+      const isMenage = isMenageStaff(emp) || isMenageStaff(id);
+
+      for (const d of weekDays) {
         if (d < start || d > today || isExcluded(d)) continue;
         const merged = dayMergedMap[d] || {};
         const e = merged[id] || null;
