@@ -213,8 +213,8 @@ function getMenageStaffKey(empOrId) {
 
   if (s.includes("HAKIMA") || s.includes("SBAI")) return "HAKIMA";
   if (s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR")) return "FOUZIA";
-  if (s.includes("KHALISSA") || s.includes("KHALISA")) return "KHALISSA";
-  if (s.includes("FATIMZAHRA") || s.includes("FATIM") || s.includes("ZAHRA")) return "FATIMZAHRA";
+  if (s.includes("KHALISSA") || s.includes("KHALISA") || s.includes("CHAOUI")) return "KHALISSA";
+  if (s.includes("FATIMZAHRA") || s.includes("FATIM") || s.includes("ZAHRA") || s.includes("OUAZZANI")) return "FATIMZAHRA";
   return null;
 }
 
@@ -223,10 +223,10 @@ function isStaffInMenageShift(shiftStaffStr, empOrId) {
   const staffKey = getMenageStaffKey(empOrId);
   if (!staffKey) return false;
   const s = String(shiftStaffStr).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (staffKey === "HAKIMA") return s.includes("HAKIMA");
-  if (staffKey === "FOUZIA") return s.includes("FOUZIA");
-  if (staffKey === "KHALISSA") return s.includes("KHALISSA") || s.includes("KHALISA");
-  if (staffKey === "FATIMZAHRA") return s.includes("FATIM") || s.includes("ZAHRA");
+  if (staffKey === "HAKIMA") return s.includes("HAKIMA") || s.includes("SBAI");
+  if (staffKey === "FOUZIA") return s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR");
+  if (staffKey === "KHALISSA") return s.includes("KHALISSA") || s.includes("KHALISA") || s.includes("CHAOUI");
+  if (staffKey === "FATIMZAHRA") return s.includes("FATIM") || s.includes("ZAHRA") || s.includes("OUAZZANI");
   return false;
 }
 
@@ -292,16 +292,18 @@ function isMenageStaff(empOrId) {
   if (!empOrId) return false;
   if (typeof empOrId === "object") {
     const p = String(empOrId.poste || "").toUpperCase();
-    return p === "MENAGE" || p === "MÉNAGE";
+    if (p === "MENAGE" || p === "MÉNAGE") return true;
   }
   const emp = getEmpById(empOrId);
   if (emp && emp.poste) {
     const p = String(emp.poste).toUpperCase();
-    return p === "MENAGE" || p === "MÉNAGE";
+    if (p === "MENAGE" || p === "MÉNAGE") return true;
   }
   const s = String(empOrId).toUpperCase();
   return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA") ||
-         s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("KHALISSA") || s.includes("FATIMZAHRA");
+         s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR") ||
+         s.includes("KHALISSA") || s.includes("CHAOUI") ||
+         s.includes("FATIMZAHRA") || s.includes("OUAZZANI");
 }
 
 function getEffectiveHP(hp, empId, dateISO) {

@@ -63,6 +63,11 @@ function mergeDay(pres, punches, motifs) {
     for (const id in pres) {
       if (Object.prototype.hasOwnProperty.call(pres, id)) {
         merged[id] = { ...pres[id] };
+        if (isExplicitOffOrOut(pres[id])) {
+          merged[id].off = true;
+          merged[id].manualOff = true;
+          merged[id].hA = "";
+        }
       }
     }
   }
@@ -72,15 +77,19 @@ function mergeDay(pres, punches, motifs) {
         if (!merged[id]) merged[id] = {};
         const pe = punches[id];
         const isManualOverride = !!(pres && pres[id] && (pres[id].manual === true || pres[id].hAManual));
-        if (pe && pe.hA && !isManualOverride) {
+        const isPresExplicitOff = !!(pres && pres[id] && isExplicitOffOrOut(pres[id]));
+        const isMergedExplicitOff = isExplicitOffOrOut(merged[id]);
+        if (pe && pe.hA && !isManualOverride && !isPresExplicitOff && !isMergedExplicitOff) {
           merged[id].hA = pe.hA;
         }
         const m = extractMotif(pe);
         if (m && !merged[id].motif) {
           merged[id].motif = m;
         }
-        if (merged[id].hA && merged[id].off === true && !merged[id].manualOff) {
-          merged[id].off = false;
+        if (isPresExplicitOff || isMergedExplicitOff) {
+          merged[id].off = true;
+          merged[id].manualOff = true;
+          merged[id].hA = "";
         }
       }
     }
@@ -102,6 +111,14 @@ function mergeDay(pres, punches, motifs) {
     equipe.forEach(emp => {
       const id = empIdOf(emp);
       if (!merged[id]) merged[id] = {};
+      const presRec = pres ? findEmpRecord(pres, emp) : null;
+      if (isExplicitOffOrOut(presRec) || isExplicitOffOrOut(merged[id])) {
+        merged[id].off = true;
+        merged[id].manualOff = true;
+        merged[id].hA = "";
+        if (presRec && presRec.statut) merged[id].statut = presRec.statut;
+        return;
+      }
       if (!merged[id].motif) {
         const moRec = findEmpRecord(motifs, emp);
         const m = extractMotif(moRec);
@@ -112,7 +129,7 @@ function mergeDay(pres, punches, motifs) {
         const m = extractMotif(puRec);
         if (m) merged[id].motif = m;
       }
-      if (!merged[id].hA) {
+      if (!merged[id].hA && !merged[id].off) {
         const puRec = findEmpRecord(punches, emp);
         if (puRec && puRec.hA) merged[id].hA = puRec.hA;
       }
@@ -324,12 +341,20 @@ async function getYearTimeline(year) {
         const merged = dayMergedMap[d] || {};
         const e = merged[id] || null;
         const ha = safeTime(e?.hA);
+                const isExplicitOff = isExplicitOffOrOut(e);
         if (ha) {
           hadAnyActivity = true;
-        } else if (e && e.off === true) {
-          hadAnyActivity = true;
-          offDaysInWeek.push(d);
         } else if (isMenage) {
+          hadAnyActivity = true;
+          if (isExplicitOff) {
+            // OUT coché dans feuille de présence = ABSENCE, ne compte pas comme repos légal
+          } else {
+            const mPlan = typeof getMenagePlanningInfo === 'function' ? getMenagePlanningInfo(emp, d) : null;
+            if (mPlan && mPlan.off) {
+              offDaysInWeek.push(d);
+            }
+          }
+        } else if (e && e.off === true) {
           hadAnyActivity = true;
           offDaysInWeek.push(d);
         }

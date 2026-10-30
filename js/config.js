@@ -42,11 +42,24 @@ const EXCL_END           = "2026-01-31";
 const POSTES_ORDER = ['SERVICE', 'BAR', 'CUISINE', 'CAISSE', 'MENAGE', 'SECURITE', 'ECONOMAT'];
 const haOnlyIds    = new Set([
   "SBAI_HAKIMA", "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD", "ABOUARSA_EDDRISSIA",
-  "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "KHALISSA_KHALISSA", "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA"
+  "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "ZHAR_FOUZIA",
+  "KHALISSA_KHALISSA", "CHAOUI_KHALISSA", "KHALISSA_CHAOUI",
+  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI"
 ]);
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
 /* ─── Utilitaires sécurité & sanitisation ─── */
+function isExplicitOffOrOut(rec) {
+  if (!rec || typeof rec !== 'object') return false;
+  const s = String(rec.statut || rec.status || '').trim().toUpperCase();
+  return rec.off === true ||
+         rec.out === true ||
+         rec.absent === true ||
+         s === 'OUT' ||
+         s === 'ABSENT' ||
+         s.includes('(OUT)');
+}
+
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')

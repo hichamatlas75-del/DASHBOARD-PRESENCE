@@ -391,23 +391,31 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
   const isMonday = (dtSel.getUTCDay() === 1);
   const cuisinePlan = isCuisine ? getCuisinePlanning(id, selectedDay) : null;
   const soumiaPlan = isSoumia ? getSoumiaPlanning(selectedDay) : null;
+  const menagePlan = isMenage ? getMenagePlanningInfo(emp, selectedDay) : null;
 
-  const hp = safeTime(d.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
-  const ha = safeTime(d.hA) || "";
+  const isExplicitOut = isExplicitOffOrOut(d);
+  const rawHa = (isMenage && isExplicitOut) ? "" : safeTime(d.hA);
+  const ha = rawHa || "";
+  const hp = safeTime(d.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : (menagePlan && !menagePlan.off ? menagePlan.hP : "")))));
   const diff = diffFromEntry({ hA: ha, hP: hp }, id, selectedDay);
   const sClass = getStatusClass(diff, !!d.off, !!ha);
   const dot = getDotColor(diff, !!d.off, !!ha);
 
   const isCuisinePlanOff = (isCuisine && cuisinePlan?.off);
   const isSoumiaPlanOff = (isSoumia && soumiaPlan?.off);
-  const isAbsent = (!ha && !d.off && isPastDay && !(isSec && isMonday) && !isCuisinePlanOff && !isSoumiaPlanOff && !isMenage);
-  const finalSClass = (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && !ha && isPastDay))
+  const isMenagePlanOff = (isMenage && menagePlan?.off);
+  const isAbsent = (isMenage && isExplicitOut) || (!ha && !d.off && isPastDay && !(isSec && isMonday) && !isCuisinePlanOff && !isSoumiaPlanOff && !isMenagePlanOff);
+  const finalSClass = (isMenage && isExplicitOut) ? 'status-absent'
+    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && isMenagePlanOff && !ha))
     ? 'status-off' : (isAbsent ? 'status-absent' : sClass);
-  const finalDot = (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && !ha && isPastDay))
-    ? 'rgba(168,85,247,.80)' : (isAbsent ? 'rgba(234,88,12,.80)' : dot);
+  const finalDot = (isMenage && isExplicitOut) ? 'rgba(234,88,12,.90)'
+    : (isSec && isMonday && !ha || isCuisinePlanOff && !ha || isSoumiaPlanOff && !ha || (isMenage && isMenagePlanOff && !ha))
+    ? 'rgba(168,85,247,.80)' : (isAbsent ? 'rgba(234,88,12,.90)' : dot);
 
   let statusText = 'Attente', statusColor = 'color:var(--muted3)';
-  if (ha) {
+  if (isMenage && isExplicitOut) {
+    statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
+  } else if (ha) {
     if (isMenage) {
       statusText = "Présent"; statusColor = 'color:var(--ok)';
     } else if (hp || isSec || cuisinePlan || soumiaPlan || caissePlan) {
@@ -419,10 +427,13 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
   } else if (d.off) {
     statusText = "OFF"; statusColor = 'color:rgba(148,163,184,.80)';
   } else if (isMenage) {
-    if (isPastDay) {
-      statusText = "Repos / Congé"; statusColor = 'color:var(--chip-r-fg)';
+    if (menagePlan && menagePlan.off) {
+      statusText = "Repos (Plan)"; statusColor = 'color:var(--chip-r-fg)';
+    } else if (isPastDay) {
+      statusText = "⚠ Absent"; statusColor = 'color:rgba(234,88,12,.90)';
     } else {
-      statusText = "Saisie manuelle"; statusColor = 'color:var(--muted3)';
+      statusText = menagePlan?.hP ? `Prévu ${menagePlan.hP}` : "Saisie manuelle";
+      statusColor = 'color:var(--muted3)';
     }
   } else if (isSoumia && soumiaPlan?.off) {
     statusText = "OFF (Mardi)"; statusColor = 'color:rgba(168,85,247,.80)';
@@ -729,7 +740,11 @@ async function renderReportView() {
       const dt = new Date(Date.UTC(yY, mM - 1, dD));
       const isSecMonday = isSec && dt.getUTCDay() === 1;
 
-      if (ha) {
+      const isExplicitOut = isExplicitOffOrOut(e);
+      const mPlan = isMenage ? getMenagePlanningInfo(emp, dayISO) : null;
+      const isMenagePlannedOff = isMenage && mPlan?.off;
+
+      if (ha && !(isMenage && isExplicitOut)) {
         presentCount++;
         consecutiveAbsent = 0;
         const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
@@ -737,7 +752,12 @@ async function renderReportView() {
           lateCount++;
           totalLateMin += diff;
         }
-      } else if (isOff || rc || isSecMonday || isMenage) {
+      } else if (isMenage && isExplicitOut) {
+        consecutiveAbsent++;
+        if (consecutiveAbsent > maxConsecutiveAbsent) {
+          maxConsecutiveAbsent = consecutiveAbsent;
+        }
+      } else if (isOff || rc || isSecMonday || isMenagePlannedOff) {
         consecutiveAbsent = 0;
       } else {
         consecutiveAbsent++;
@@ -1133,6 +1153,12 @@ async function openCalendarModal(nom, prenom, mk) {
     const dtD = new Date(Date.UTC(yY, mM - 1, dD));
     const isMonday = (dtD.getUTCDay() === 1);
 
+    const isExplicitOut = isExplicitOffOrOut(e);
+    if (isMenage && isExplicitOut) {
+      dayMap[dayISO] = { type: 'absent' };
+      nAbsent++;
+      return;
+    }
     const hp = safeTime(e?.hP) || (isSec ? "09:00" : "");
     const ha = safeTime(e?.hA) || "";
     if (ha) {
@@ -1150,7 +1176,18 @@ async function openCalendarModal(nom, prenom, mk) {
     if (rc === 'R') { dayMap[dayISO] = { type: 'repos' }; nR++; return; }
     if (rc === 'C') { dayMap[dayISO] = { type: 'conge' }; nC++; return; }
     if (e && e.off) { dayMap[dayISO] = { type: 'off' }; nOff++; return; }
-    if (isMenage) { dayMap[dayISO] = { type: 'repos' }; nR++; return; }
+    if (isMenage) {
+      const mPlan = getMenagePlanningInfo(empId, dayISO);
+      if (mPlan?.off) {
+        dayMap[dayISO] = { type: 'repos' };
+        nR++;
+        return;
+      } else {
+        dayMap[dayISO] = { type: 'absent' };
+        nAbsent++;
+        return;
+      }
+    }
     dayMap[dayISO] = { type: 'absent' }; nAbsent++;
   });
 
@@ -1294,6 +1331,12 @@ async function openHistory(nom, prenom, mk) {
     const cuisinePlan = isCuisine ? getCuisinePlanning(empId, dayISO) : null;
     const soumiaPlan = isSoumia ? getSoumiaPlanning(dayISO) : null;
 
+    const isExplicitOut = isExplicitOffOrOut(e);
+    if (isMenage && isExplicitOut) {
+      absCount++;
+      html += rowHistory(dayISO, "⚠ Absent (OUT)", hp, "", "", "color:rgba(234,88,12,.90)", "", "");
+      return;
+    }
     const hp = safeTime(e?.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
     const ha = safeTime(e?.hA) || "";
     if (ha) {
@@ -1320,7 +1363,13 @@ async function openHistory(nom, prenom, mk) {
     if (rc) {
       html += rowHistory(dayISO, rc === "R" ? "Repos" : "Congé", hp, ha, "", "color:var(--muted2)", rc, "");
     } else if (isMenage) {
-      html += rowHistory(dayISO, "Repos", hp, ha, "", "color:var(--muted2)", "R", "");
+      const mPlan = getMenagePlanningInfo(empId, dayISO);
+      if (mPlan?.off) {
+        html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--muted2)", "R", "");
+      } else {
+        absCount++;
+        html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "");
+      }
     } else if (e && e.off) {
       html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", "");
     } else {
