@@ -309,7 +309,10 @@ function renderDayView(data) {
         html += `
           <button id="card-${escAttr(id)}" data-empid="${escAttr(id)}" class="staff-card ${escAttr(cardProps.finalSClass)} glass-card p-3.5 rounded-2xl text-left flex flex-col justify-between" style="min-height:7.5rem">
             <span class="status-dot" style="background:${escAttr(cardProps.finalDot)}"></span>
-            <div class="arrive-time">${esc(cardProps.ha)}</div>
+            <div class="arrive-time flex items-center justify-end gap-1">
+              <span>${esc(cardProps.ha)}</span>
+              ${(cardProps.ha && cardProps.dist !== null) ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 border border-emerald-300/80 px-1 py-0.2 rounded" title="GPS certifié à ${cardProps.dist}m (±${cardProps.acc || 0}m)">📍${cardProps.dist}m</span>` : ""}
+            </div>
             <div class="flex items-center gap-2.5 min-w-0 pr-4">
               ${getStaffAvatarHtml(emp.nom, emp.prenom, 'md')}
               <div class="min-w-0">
@@ -1297,7 +1300,7 @@ async function openCalendarModal(nom, prenom, mk) {
   document.getElementById('modalList').innerHTML = recapHtml + calHtml + legHtml;
 }
 
-function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif) {
+function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif, dist) {
   const rcTxt = rc ? ` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>` : "";
   const motifHtml = motif ? `
     <div class="mt-2.5 p-2 px-3 rounded-xl text-[11px] font-bold flex items-start gap-1.5" style="background:rgba(245,158,11,.10);border-left:3px solid var(--accent);color:#78350f">
@@ -1312,7 +1315,7 @@ function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif) {
     </div>
     <div class="mt-3 grid grid-cols-3 gap-2">
       <div class="text-[10px] font-bold" style="color:var(--muted3)">HP <span style="color:#0f2744;font-weight:900">${esc(hp || "—")}</span></div>
-      <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha || "—")}</span></div>
+      <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha || "—")}</span>${(typeof dist === "number") ? `<span class="text-[8.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded ml-1" title="Pointé à ${dist}m du café">📍${dist}m</span>` : ""}</div>
       <div class="text-[10px] font-bold" style="color:var(--muted3)">Ret <span style="color:#0f2744;font-weight:900">${esc(retard || "—")}</span></div>
     </div>
     ${motifHtml}

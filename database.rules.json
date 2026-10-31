@@ -43,6 +43,10 @@
           "timestamp": { ".validate": "newData.isNumber()" },
           "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "motif": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "lat": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "lon": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "dist": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "acc": { ".validate": "newData.val() === null || newData.isNumber()" },
           "$other": { ".validate": false },
           ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && (!data.child('hA').exists() || data.child('hA').val() == null) && newData.child('hA').exists() && newData.child('empKey').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists()))"
         }

@@ -82,6 +82,12 @@ function mergeDay(pres, punches, motifs) {
         if (pe && pe.hA && !isManualOverride && !isPresExplicitOff && !isMergedExplicitOff) {
           merged[id].hA = pe.hA;
         }
+        if (pe && typeof pe.dist === 'number') {
+          merged[id].dist = pe.dist;
+          merged[id].acc = pe.acc;
+          merged[id].lat = pe.lat;
+          merged[id].lon = pe.lon;
+        }
         const m = extractMotif(pe);
         if (m && !merged[id].motif) {
           merged[id].motif = m;
@@ -132,6 +138,12 @@ function mergeDay(pres, punches, motifs) {
       if (!merged[id].hA && !merged[id].off) {
         const puRec = findEmpRecord(punches, emp);
         if (puRec && puRec.hA) merged[id].hA = puRec.hA;
+        if (merged[id].dist === undefined && puRec && typeof puRec.dist === 'number') {
+          merged[id].dist = puRec.dist;
+          merged[id].acc = puRec.acc;
+          merged[id].lat = puRec.lat;
+          merged[id].lon = puRec.lon;
+        }
       }
     });
   }
