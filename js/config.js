@@ -44,7 +44,8 @@ const haOnlyIds    = new Set([
   "SBAI_HAKIMA", "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD", "ABOUARSA_EDDRISSIA",
   "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "ZHAR_FOUZIA",
   "KHALISSA_KHALISSA", "CHAOUI_KHALISSA", "KHALISSA_CHAOUI",
-  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI"
+  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI",
+  "EL_AZHARY_NAJIA", "ELAZHARY_NAJIA", "AZHARY_NAJIA", "EL_AZHARY", "AZHARY", "NAJIA"
 ]);
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
@@ -166,6 +167,7 @@ let equipe = [
   { nom: 'EZHAR',      prenom: 'FOUZIA',    poste: 'MENAGE' },
   { nom: 'KHALISSA',   prenom: 'KHALISSA',  poste: 'MENAGE' },
   { nom: 'FATIMZAHRA', prenom: 'FATIMA',    poste: 'MENAGE' },
+  { nom: 'EL AZHARY',  prenom: 'NAJIA',     poste: 'MENAGE' },
   { nom: 'ZAIR',       prenom: 'FATIMA',    poste: 'CUISINE' }
 ];
 
