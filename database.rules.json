@@ -21,6 +21,7 @@
           "maladie": { ".validate": "newData.val() === null || newData.isBoolean()" },
           "statut": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 40)" },
           "motifMaladie": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "certificat": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 90000)" },
           "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "hA": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "retard": { ".validate": "newData.val() === null || newData.isBoolean()" },
@@ -29,7 +30,7 @@
           "lastEditAt": { ".validate": "newData.val() === null || newData.isNumber()" },
           "lastEditByAdmin": { ".validate": "newData.val() === null || newData.isBoolean()" },
           "$other": { ".validate": false },
-          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && !newData.child('maladie').exists() && !newData.child('motifMaladie').exists() && !newData.child('statut').exists() && ((!newData.child('hA').exists() && !newData.child('retard').exists() && !newData.child('retardMin').exists() && !newData.child('timestamp').exists() && !newData.child('lastEditAt').exists() && !newData.child('lastEditByAdmin').exists() && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA') || (($emp == 'ELMCHAOURI_SOUAD' || $emp == 'SBAI_HAKIMA') && (!data.child('hA').exists() || data.child('hA').val() == null || newData.child('hA').val() == null) && newData.child('hA').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists() && newData.child('lastEditAt').exists() && newData.child('lastEditByAdmin').exists() && newData.child('lastEditByAdmin').val() == false))))"
+          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && !newData.child('maladie').exists() && !newData.child('motifMaladie').exists() && !newData.child('certificat').exists() && !newData.child('statut').exists() && ((!newData.child('hA').exists() && !newData.child('retard').exists() && !newData.child('retardMin').exists() && !newData.child('timestamp').exists() && !newData.child('lastEditAt').exists() && !newData.child('lastEditByAdmin').exists() && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA' && $emp != 'ABOUARSA_EDDRISSIA' && $emp != 'EZHAR_FOUZIA' && $emp != 'CHAOUI_KHALISSA' && $emp != 'OUAZZANI_FATIMZAHRA' && $emp != 'EL_AZHARY_NAJIA') || (($emp == 'ELMCHAOURI_SOUAD' || $emp == 'SBAI_HAKIMA' || $emp == 'ABOUARSA_EDDRISSIA' || $emp == 'EZHAR_FOUZIA' || $emp == 'CHAOUI_KHALISSA' || $emp == 'OUAZZANI_FATIMZAHRA' || $emp == 'EL_AZHARY_NAJIA') && (!data.child('hA').exists() || data.child('hA').val() == null || newData.child('hA').val() == null) && newData.child('hA').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists() && newData.child('lastEditAt').exists() && newData.child('lastEditByAdmin').exists() && newData.child('lastEditByAdmin').val() == false))))"
         }
       }
     },
@@ -143,6 +144,10 @@
         "$index": {
           ".validate": "newData.hasChildren(['nom','prenom','poste']) && newData.child('nom').isString() && newData.child('nom').val().length > 0 && newData.child('nom').val().length <= 80 && newData.child('prenom').isString() && newData.child('prenom').val().length > 0 && newData.child('prenom').val().length <= 80 && newData.child('poste').isString() && newData.child('poste').val().length > 0 && newData.child('poste').val().length <= 40"
         }
+      },
+      "plannings": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
+        ".write": "auth != null && root.child('users').child(auth.uid).val() == 'gerant'"
       },
       "$other": { ".validate": false }
     },

@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Feuilles de style applicatives -->
+  <link rel="stylesheet" href="css/tailwind-compiled.css" />
   <link rel="stylesheet" href="css/app.css" />
 </head>
 
@@ -156,22 +157,26 @@
       <!-- ─── Corps principal ─── -->
       <div id="dashBody" class="space-y-6 anim-in anim-in-4"></div>
 
-      <!-- ─── Outils équipe ─── -->
+      <!-- ─── Outils équipe & Plannings ─── -->
       <div class="glass-card rounded-2xl p-4 mt-5 anim-in anim-in-4">
-        <div class="smallCaps mb-2">Collaborateurs</div>
+        <div class="smallCaps mb-2">Collaborateurs & Plannings</div>
         <div class="accent-bar-blue mb-3"></div>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btnOpenStaffAdmin" class="btn-action btn-neutral px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+        <div class="grid grid-cols-3 gap-2">
+          <button id="btnOpenStaffAdmin" class="btn-action btn-neutral px-3 py-3 rounded-2xl font-extrabold text-[11.5px]"
             style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">
-            Gérer équipe
+            👥 Équipe
           </button>
-          <button id="btnExportEquipe" class="btn-action px-4 py-3 rounded-2xl font-extrabold text-[12px]"
+          <button id="btnOpenPlanningAdmin" class="btn-action px-3 py-3 rounded-2xl font-extrabold text-[11.5px]"
+            style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.32);color:#1d4ed8">
+            📅 Plannings
+          </button>
+          <button id="btnExportEquipe" class="btn-action px-3 py-3 rounded-2xl font-extrabold text-[11.5px]"
             style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.30);color:#78350f">
             Export JSON
           </button>
         </div>
         <p id="teamPermHint" class="text-[10px] font-semibold mt-2 leading-snug" style="color:var(--muted3)">
-          Stocké dans Firebase: <b>settings/equipe</b>.
+          Stocké dans Firebase: <b>settings/equipe</b> &amp; <b>settings/plannings</b>.
         </p>
       </div>
 
@@ -260,12 +265,12 @@
         <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
 
-      <!-- Suppression -->
+      <!-- Sortie datée / Suppression -->
       <div class="rounded-2xl border p-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.20)">
         <div class="flex items-center gap-2 mb-3">
           <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]"
             style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.20)">✕</div>
-          <div class="smallCaps">Supprimer collaborateur</div>
+          <div class="smallCaps">Sortie d'effectif ou suppression</div>
         </div>
         <select id="delPosteSelect" class="inpt">
           <option value="">-- Choisir poste --</option>
@@ -280,16 +285,60 @@
         <select id="delEmpSelect" class="inpt mt-2">
           <option value="">Choisir poste d'abord</option>
         </select>
-        <button id="btnDeleteStaff" class="btn-action btn-danger mt-3 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]"
-          style="background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.30);color:#dc2626">
-          SUPPRIMER
-        </button>
+        <div class="mt-2">
+          <label class="text-[10px] font-bold" style="color:var(--muted2)">Date de sortie (conserve l'historique des mois passés) :</label>
+          <input id="delDateSortie" class="inpt mt-1" type="date" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+          <button id="btnArchiveStaff" type="button" class="btn-action px-4 py-3 rounded-2xl font-extrabold text-[11.5px]"
+            style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
+            📦 Archiver sortie (garder historique)
+          </button>
+          <button id="btnDeleteStaff" type="button" class="btn-action btn-danger px-4 py-3 rounded-2xl font-extrabold text-[11.5px]"
+            style="background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.30);color:#dc2626">
+            🗑️ Supprimer définitivement
+          </button>
+        </div>
         <div id="delAnyMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
 
-      <p class="mt-4 text-[10px] font-semibold leading-relaxed" style="color:var(--muted3)">
-        Si tu vois <b style="color:var(--crit)">PERMISSION_DENIED</b> à l'ajout/suppression, vérifie tes <b>rules Firebase</b> pour autoriser l'écriture sur <b>settings/equipe</b>.
-      </p>
+      <!-- Synchronisation des règles Firebase -->
+      <div class="rounded-2xl border p-3.5 mt-4 flex items-center justify-between gap-3 flex-wrap" style="border-color:var(--stroke-med);background:rgba(255,255,255,.30)">
+        <div>
+          <div class="smallCaps" style="font-size:10px">Sécurité Firebase Realtime Database</div>
+          <div id="rulesCopyMsg" class="text-[10px] font-semibold mt-0.5" style="color:var(--muted3)">
+            Copie <b>database.rules.json</b> en 1 clic pour le coller dans l'onglet Règles de Firebase.
+          </div>
+        </div>
+        <button type="button" onclick="window.copyFirebaseRulesJSON()" class="btn-action px-3 py-2 rounded-xl text-[10.5px] font-extrabold"
+          style="background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.35);color:#065f46">
+          🛡️ Copier Règles Firebase
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ MODAL PLANNINGS (Amélioration #3) ══════════════════════════════════ -->
+  <div id="planningAdminModal" class="fixed inset-0 z-50 hidden modal-overlay items-end sm:items-center justify-center p-0 sm:p-4" onclick="closePlanningAdminModal()">
+    <div class="modal-sheet w-full max-w-3xl rounded-t-[36px] sm:rounded-[32px] p-6 pb-10 shadow-2xl max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="handle sm:hidden"></div>
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <div class="smallCaps">Administration des Horaires</div>
+          <h2 class="hTitle text-2xl leading-tight mt-0.5">Éditer les Plannings</h2>
+          <div class="mt-0.5 text-[10.5px] font-bold" style="color:var(--accent)">Cuisine (Hebdo) &amp; Ménage (S1 / S2)</div>
+        </div>
+        <button type="button" onclick="closePlanningAdminModal()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold"
+          style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
+      </div>
+      <div id="planningAdminBody" class="overflow-y-auto pr-1 flex-1 space-y-3"></div>
+      <div class="flex items-center justify-between gap-3 mt-4 pt-3" style="border-top:1px solid var(--stroke-med)">
+        <div id="planningAdminMsg" class="text-[11px] font-extrabold" style="color:var(--muted2)"></div>
+        <button type="button" onclick="window.savePlanningAdminChanges()" class="btn-action px-4 py-2.5 rounded-2xl text-[11.5px] font-extrabold ml-auto"
+          style="background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.38);color:#065f46">
+          💾 Enregistrer les plannings
+        </button>
+      </div>
     </div>
   </div>
 

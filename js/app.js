@@ -214,6 +214,8 @@ function fillDelEmpSelectByPoste(poste) {
 async function initStaffAdminUI() {
   document.getElementById("btnOpenStaffAdmin").onclick = () => openStaffAdmin();
   document.getElementById("btnExportEquipe").onclick    = () => exportEquipeJSON();
+  const btnOpenPlanning = document.getElementById("btnOpenPlanningAdmin");
+  if (btnOpenPlanning) btnOpenPlanning.onclick = () => openPlanningAdminModal();
 
   const posteSelect = document.getElementById("delPosteSelect");
   if (posteSelect) {
@@ -254,6 +256,28 @@ async function initStaffAdminUI() {
     };
   }
 
+  const btnArchiveStaff = document.getElementById("btnArchiveStaff");
+  if (btnArchiveStaff) {
+    btnArchiveStaff.onclick = async () => {
+      const delMsg = document.getElementById("delAnyMsg");
+      delMsg.textContent = "";
+      const empId = document.getElementById("delEmpSelect").value;
+      const dateSortie = (document.getElementById("delDateSortie")?.value || todayISO()).trim();
+      if (!empId) { delMsg.textContent = "⚠️ Choisis un collaborateur."; return; }
+      delMsg.textContent = "Archivage de la sortie…";
+      const next = equipe.map(e => empIdOf(e) === empId ? { ...e, dateSortie, actif: false } : e);
+      try {
+        await saveEquipeToDB(next);
+        setEquipe(next);
+        delMsg.textContent = `✅ Sortie enregistrée au ${fmtFR(dateSortie)} (archives conservées).`;
+        fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value || "");
+        updateDashboard();
+      } catch (e) {
+        delMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
+      }
+    };
+  }
+
   const btnDeleteStaff = document.getElementById("btnDeleteStaff");
   if (btnDeleteStaff) {
     btnDeleteStaff.onclick = async () => {
@@ -261,7 +285,7 @@ async function initStaffAdminUI() {
       delMsg.textContent = "";
       const empId = document.getElementById("delEmpSelect").value;
       if (!empId) { delMsg.textContent = "⚠️ Choisis un collaborateur."; return; }
-      if (!confirm(`Confirmer suppression de ${empId} ?`)) return;
+      if (!confirm(`Confirmer suppression définitive de ${empId} ?`)) return;
       delMsg.textContent = "Suppression…";
       const next = equipe.filter(e => empIdOf(e) !== empId);
       try {
@@ -277,6 +301,24 @@ async function initStaffAdminUI() {
     };
   }
 }
+
+window.copyFirebaseRulesJSON = async function() {
+  const hint = document.getElementById("rulesCopyMsg");
+  try {
+    const res = await fetch("database.rules.json", { cache: "no-store" });
+    const txt = await res.text();
+    await navigator.clipboard.writeText(txt);
+    if (hint) {
+      hint.style.color = "var(--ok)";
+      hint.textContent = "✅ Règles copiées ! Colle-les dans Firebase Console ➔ Realtime Database ➔ Règles.";
+    }
+  } catch (e) {
+    if (hint) {
+      hint.style.color = "var(--crit)";
+      hint.textContent = "⚠️ Impossible de copier automatiquement. Ouvre database.rules.json.";
+    }
+  }
+};
 
 /* ─── Authentification & Permissions ─── */
 
@@ -403,6 +445,10 @@ async function bootDashboard() {
     const list = await loadEquipeFromDB();
     setEquipe(list);
   } catch (e) {}
+
+  if (typeof loadPlanningsFromDB === 'function') {
+    try { await loadPlanningsFromDB(); } catch (e) {}
+  }
 
   await initStaffAdminUI();
   if (typeof LateAlertService !== 'undefined') LateAlertService.updateSoundBtnUI();

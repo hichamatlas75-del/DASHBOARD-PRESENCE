@@ -23,6 +23,7 @@ const auth     = firebase.auth();
 
 // Constantes
 const EQUIPE_PATH        = "settings/equipe";
+const PLANNINGS_PATH     = "settings/plannings";
 const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzL2egvy20cb5ItNaA5P1hZHRe6L2cTyzq2mMVgN0R8pn563N9DwpFKQ5AhG2VK59y9/exec";
 // SÉCURITÉ : Authentification dynamique par Firebase ID Token (secret statique conservé en secours de transition)
 const LEGACY_SHEETS_SECRET = "GC_SECRET_2026";
@@ -200,8 +201,32 @@ function isRemovedStaff(emp) {
   return REMOVED_STAFF_IDS.has(empIdOf(emp));
 }
 
+function isEmpActiveOnDate(emp, dateISO) {
+  if (!emp || isRemovedStaff(emp)) return false;
+  const sortie = String(emp.dateSortie || "").trim();
+  if (emp.actif === false && !sortie) return false;
+  if (sortie && /^\d{4}-\d{2}-\d{2}$/.test(sortie) && dateISO && dateISO > sortie) return false;
+  return true;
+}
+
+function isEmpActiveInMonth(emp, monthKey) {
+  if (!emp || isRemovedStaff(emp)) return false;
+  const sortie = String(emp.dateSortie || "").trim();
+  if (emp.actif === false && !sortie) return false;
+  if (sortie && /^\d{4}-\d{2}-\d{2}$/.test(sortie) && monthKey && monthKey > sortie.slice(0, 7)) return false;
+  return true;
+}
+
+function getActiveEquipeForDate(dateISO) {
+  return equipe.filter(e => isEmpActiveOnDate(e, dateISO));
+}
+
+function getActiveEquipeForMonth(monthKey) {
+  return equipe.filter(e => isEmpActiveInMonth(e, monthKey));
+}
+
 function getEmpById(empId) {
-  return equipe.find(e => empIdOf(e) === empId) || { nom: empId, prenom: "", poste: "", dateDebut: "" };
+  return equipe.find(e => empIdOf(e) === empId) || { nom: empId, prenom: "", poste: "", dateDebut: "", dateSortie: "" };
 }
 
 function setEquipe(next) {

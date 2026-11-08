@@ -518,6 +518,97 @@ async function getMonthRCMap(mk) {
   return out;
 }
 
+function getLocalMaladieCert(empId, dayISO) {
+  try {
+    if (typeof localStorage === "undefined") return "";
+    return localStorage.getItem(`gc_maladie_cert_${empId}_${dayISO}`) || "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function setLocalMaladieCert(empId, dayISO, dataUrl) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    const key = `gc_maladie_cert_${empId}_${dayISO}`;
+    if (dataUrl) localStorage.setItem(key, dataUrl);
+    else localStorage.removeItem(key);
+  } catch (_) {}
+}
+
+/**
+ * Évaluation unifiée d'une journée pour un collaborateur (Amélioration #2).
+ * Garantit que Bilan, Résumé mensuel, Calendrier et Historique appliquent exactement les mêmes règles métier.
+ */
+function evaluateEmployeeDay(empOrId, dayISO, mergedRec, rc, empStart) {
+  const emp = (typeof empOrId === "object" && empOrId) ? empOrId : getEmpById(String(empOrId || ""));
+  const empId = empIdOf(emp);
+  const today = todayISO();
+  const e = mergedRec || null;
+
+  const isSec = (emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ"));
+  const isCuisine = (emp && emp.poste === "CUISINE");
+  const isSoumia = typeof isSoumiaStaff === "function" && isSoumiaStaff(empId);
+  const isMenage = (emp && (emp.poste === "MENAGE" || emp.poste === "MÉNAGE")) || (typeof isMenageStaff === "function" && isMenageStaff(empId));
+  const caissePlan = (typeof isSalilStaff === "function" && (isSalilStaff(empId) || isBenkhadaStaff(empId))) ? getCaisseAlternance(empId, dayISO) : null;
+  const cuisinePlan = (isCuisine && typeof getCuisinePlanning === "function") ? getCuisinePlanning(empId, dayISO) : null;
+  const soumiaPlan = (isSoumia && typeof getSoumiaPlanning === "function") ? getSoumiaPlanning(dayISO) : null;
+  const hp = safeTime(e?.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
+
+  const isMaladie = (rc === "M") || isExplicitMaladie(e);
+  if (isMaladie) {
+    const motif = String(e?.motifMaladie || e?.motif || "").trim();
+    const certificat = e?.certificat || getLocalMaladieCert(empId, dayISO) || "";
+    return { type: "maladie", rc: "M", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif, certificat };
+  }
+
+  if (dayISO > today) return { type: "future", rc: "", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (isExcluded(dayISO)) return { type: "exclu", rc: "", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (!empStart || dayISO < empStart || (typeof isEmpActiveOnDate === "function" && !isEmpActiveOnDate(emp, dayISO))) {
+    return { type: "avant", rc: "", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  }
+
+  const isExplicitOut = isExplicitOffOrOut(e);
+  const ha = isExplicitOut ? "" : (safeTime(e?.hA) || "");
+
+  if (ha) {
+    const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
+    const isLate = (diff > 0 && !isMenage);
+    const cleanMotif = isLate ? String(e?.motif || "").trim() : "";
+    return {
+      type: isLate ? "retard" : "present",
+      rc: rc || "",
+      isPresent: true,
+      isLate,
+      diff,
+      hp,
+      ha,
+      motif: cleanMotif,
+      certificat: "",
+      dist: e?.dist
+    };
+  }
+
+  if (rc === "R") return { type: "repos", rc: "R", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (rc === "C") return { type: "conge", rc: "C", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (rc === "ABSENT") return { type: "absent", rc: "ABSENT", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+
+  const [yY, mM, dD] = dayISO.split("-").map(Number);
+  const dtD = new Date(Date.UTC(yY, mM - 1, dD));
+  const isMonday = (dtD.getUTCDay() === 1);
+
+  if (isSec && isMonday) return { type: "repos", rc: "R", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (isSoumia && soumiaPlan?.off) return { type: "repos", rc: "R", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (isCuisine && cuisinePlan?.off) return { type: "repos", rc: "R", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  if (isMenage) {
+    const mPlan = typeof getMenagePlanningInfo === "function" ? getMenagePlanningInfo(empId, dayISO) : null;
+    if (mPlan?.off) return { type: "repos", rc: "R", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+    return { type: "absent", rc: "ABSENT", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  }
+  if (e && e.off) return { type: "off", rc: "OFF", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+  return { type: "absent", rc: "ABSENT", isPresent: false, isLate: false, diff: 0, hp, ha: "", motif: "", certificat: "" };
+}
+
 async function buildMonthlySummary(mk) {
   const year = mk.slice(0, 4);
   const timeline = await getYearTimeline(year);
@@ -526,7 +617,8 @@ async function buildMonthlySummary(mk) {
   const { dates, presByDay, punchByDay, motifsByDay } = md;
   const today = todayISO();
   const out = {};
-  equipe.forEach(emp => {
+  const activeList = typeof getActiveEquipeForMonth === "function" ? getActiveEquipeForMonth(mk) : equipe;
+  activeList.forEach(emp => {
     const id = empIdOf(emp);
     const solde = soldeByEmpMonth[id]?.[mk] ?? timeline.currentSoldeByEmp[id] ?? 0;
     out[id] = { empId: id, nom: emp.nom, prenom: emp.prenom, poste: emp.poste, present: 0, R: 0, C: 0, M: 0, lateMin: 0, solde };
@@ -534,25 +626,19 @@ async function buildMonthlySummary(mk) {
   dates.forEach(dayISO => {
     if (dayISO > today || isExcluded(dayISO)) return;
     const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
-    Object.keys(out).forEach(id => {
-      const start = startMap[id];
-      if (!start || dayISO < start) return;
-      const e = merged[id] || null;
-      const rc = rcByEmpDay[id]?.[dayISO];
-      if (rc === "M" || isExplicitMaladie(e)) {
+    activeList.forEach(emp => {
+      const id = empIdOf(emp);
+      const ev = evaluateEmployeeDay(emp, dayISO, merged[id] || null, rcByEmpDay[id]?.[dayISO], startMap[id]);
+      if (ev.type === "maladie") {
         out[id].M++;
-        return;
-      }
-      const hp = safeTime(e?.hP) || "";
-      const ha = safeTime(e?.hA) || "";
-      if (ha && !isExplicitOffOrOut(e)) {
+      } else if (ev.isPresent) {
         out[id].present++;
-        out[id].lateMin += diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
-        return;
+        out[id].lateMin += ev.diff;
+      } else if (ev.rc === "R") {
+        out[id].R++;
+      } else if (ev.rc === "C") {
+        out[id].C++;
       }
-      if (!rc) return;
-      if (rc === "R") out[id].R++;
-      else if (rc === "C") out[id].C++;
     });
   });
   return out;
@@ -611,7 +697,7 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
  * Écrit uniquement dans presences/{date}/{emp} : champs maladie/statut/motifMaladie,
  * réservés au rôle « gerant » par database.rules.json (publier ces règles dans la console Firebase).
  */
-async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, motifMaladie = "") {
+async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, motifMaladie = "", certificatDataUrl = "") {
   if (!empId || !startDateISO) throw new Error("Collaborateur ou date manquant.");
   if (role !== "gerant") throw new Error("Action réservée au gérant.");
   const endISO = endDateISO || startDateISO;
@@ -627,7 +713,19 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
   }
 
   const cleanMotif = String(motifMaladie || "").trim().slice(0, 200);
+  const cleanCert = (isMaladie && certificatDataUrl && String(certificatDataUrl).startsWith("data:image/"))
+    ? String(certificatDataUrl).slice(0, 88000)
+    : "";
   const nowTs = Date.now();
+
+  // Persistance locale immédiate du certificat médical (et nettoyage si retrait de M)
+  days.forEach(d => {
+    if (isMaladie) {
+      if (cleanCert) setLocalMaladieCert(empId, d, cleanCert);
+    } else {
+      setLocalMaladieCert(empId, d, "");
+    }
+  });
 
   // Un seul update multi-chemins : atomique (tout ou rien)
   const updates = {};
@@ -637,6 +735,7 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
       updates[`${base}/maladie`] = true;
       updates[`${base}/statut`] = "MALADIE";
       updates[`${base}/motifMaladie`] = cleanMotif || null;
+      if (cleanCert) updates[`${base}/certificat`] = cleanCert;
       updates[`${base}/off`] = null;
       updates[`${base}/hA`] = null;
       updates[`${base}/retard`] = null;
@@ -645,6 +744,7 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
       updates[`${base}/maladie`] = null;
       updates[`${base}/statut`] = null;
       updates[`${base}/motifMaladie`] = null;
+      updates[`${base}/certificat`] = null;
     }
     updates[`${base}/lastEditAt`] = nowTs;
     updates[`${base}/lastEditByAdmin`] = true;

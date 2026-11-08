@@ -3,9 +3,9 @@
  * Direction Hub • Grey Corner
  */
 
-// ─── PLANNING FIXE CUISINE (Hebdomadaire) ───
+// ─── PLANNING FIXE CUISINE (Hebdomadaire, surchargeable via settings/plannings) ───
 // 0 = Dimanche, 1 = Lundi, 2 = Mardi, 3 = Mercredi, 4 = Jeudi, 5 = Vendredi, 6 = Samedi
-const PLANNING_CUISINE = {
+let PLANNING_CUISINE = {
   1: { // Lundi
     NAOUAL:  { hP: "15:00", off: false, shift: "15h — F.S" },
     KHAOULA: { hP: "07:00", off: false, shift: "07h — 14h" },
@@ -160,8 +160,8 @@ function getCaisseAlternance(idOrName, dateISO) {
   }
 }
 
-// ─── PLANNING FIXE MÉNAGE (Alternance 2 semaines S1 / S2) ───
-const MENAGE_PLANNING_DATA = {
+// ─── PLANNING FIXE MÉNAGE (Alternance 2 semaines S1 / S2, surchargeable via settings/plannings) ───
+let MENAGE_PLANNING_DATA = {
   S1: {
     title: 'Semaine 01',
     schedules: [
@@ -582,4 +582,75 @@ function getStaffAvatarHtml(nom, prenom, size = 'md') {
   }
   return `<div class="staff-avatar-fallback ${dimClass} shrink-0">${esc(initials)}</div>`;
 }
+
+// ─── SYNCHRONISATION DYNAMIQUE DES PLANNINGS (Firebase settings/plannings + Secours localStorage) ───
+const LOCAL_PLANNINGS_KEY = "gc_custom_plannings_v1";
+
+function applyCustomPlannings(data) {
+  if (!data || typeof data !== "object") return;
+  if (data.cuisine && typeof data.cuisine === "object") {
+    for (const dow of [0, 1, 2, 3, 4, 5, 6]) {
+      if (data.cuisine[dow] && typeof data.cuisine[dow] === "object") {
+        PLANNING_CUISINE[dow] = { ...PLANNING_CUISINE[dow], ...data.cuisine[dow] };
+      }
+    }
+  }
+  if (data.menage && typeof data.menage === "object") {
+    if (data.menage.S1 && Array.isArray(data.menage.S1.schedules)) {
+      MENAGE_PLANNING_DATA.S1 = data.menage.S1;
+    }
+    if (data.menage.S2 && Array.isArray(data.menage.S2.schedules)) {
+      MENAGE_PLANNING_DATA.S2 = data.menage.S2;
+    }
+  }
+}
+
+async function loadPlanningsFromDB() {
+  try {
+    const rawLocal = typeof localStorage !== "undefined" ? localStorage.getItem(LOCAL_PLANNINGS_KEY) : null;
+    if (rawLocal) {
+      try { applyCustomPlannings(JSON.parse(rawLocal)); } catch (_) {}
+    }
+    if (typeof database !== "undefined" && database && typeof database.ref === "function") {
+      const path = typeof PLANNINGS_PATH !== "undefined" ? PLANNINGS_PATH : "settings/plannings";
+      const snap = await database.ref(path).once("value");
+      const val = snap && snap.val ? snap.val() : null;
+      if (val && typeof val === "object") {
+        applyCustomPlannings(val);
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem(LOCAL_PLANNINGS_KEY, JSON.stringify(val));
+        }
+      }
+    }
+  } catch (e) {
+    // Silencieux si règles pas encore publiées
+  }
+}
+
+async function savePlanningsToDB(customData) {
+  const payload = {
+    cuisine: customData?.cuisine || PLANNING_CUISINE,
+    menage: customData?.menage || MENAGE_PLANNING_DATA,
+    updatedAt: Date.now()
+  };
+  applyCustomPlannings(payload);
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(LOCAL_PLANNINGS_KEY, JSON.stringify(payload));
+  }
+  if (typeof clearMonthCache === "function") clearMonthCache();
+  if (typeof database !== "undefined" && database && typeof database.ref === "function") {
+    const path = typeof PLANNINGS_PATH !== "undefined" ? PLANNINGS_PATH : "settings/plannings";
+    try {
+      await database.ref(path).set(payload);
+      return { savedToFirebase: true };
+    } catch (e) {
+      if (e && /permission_denied/i.test(String(e.code || e.message))) {
+        return { savedToFirebase: false, localOnly: true };
+      }
+      throw e;
+    }
+  }
+  return { savedToFirebase: false, localOnly: true };
+}
+
 
