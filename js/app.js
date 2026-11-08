@@ -21,6 +21,7 @@ function detachRealtime() {
     if (activePresRef)   { activePresRef.off();   activePresRef = null; }
     if (activePunchRef)  { activePunchRef.off();  activePunchRef = null; }
     if (activeMotifsRef) { activeMotifsRef.off(); activeMotifsRef = null; }
+    if (typeof unsubscribeMonthRealtime === "function") unsubscribeMonthRealtime();
   } catch (e) {}
   presCache = {}; punchCache = {}; motifsCache = {};
 }
@@ -98,6 +99,13 @@ async function updateDashboard() {
   }
 
   detachRealtime();
+  if (typeof subscribeMonthRealtime === "function") {
+    subscribeMonthRealtime(mkSeed, () => {
+      if (currentMode === "report") renderReportView();
+      else if (currentMode === "rc") renderRCView();
+    });
+  }
+
   const dashBody = document.getElementById('dashBody');
   if (dashBody) {
     dashBody.innerHTML = loadingCard(

@@ -1,0 +1,26 @@
+{
+  "name": "dashboard-presence",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./css/tailwind-compiled.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./css/tailwind-compiled.css --watch",
+    "test": "node --test tests/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hichamatlas75-del/DASHBOARD-PRESENCE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hichamatlas75-del/DASHBOARD-PRESENCE/issues"
+  },
+  "homepage": "https://github.com/hichamatlas75-del/DASHBOARD-PRESENCE#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

@@ -88,9 +88,11 @@ function mergeDay(pres, punches, motifs) {
         if (pe && pe.hA && !isManualOverride && !isPresMaladie && !isPresExplicitOff && !isMergedExplicitOff) {
           merged[id].hA = pe.hA;
         }
-        if (pe && typeof pe.dist === 'number') {
-          merged[id].dist = pe.dist;
-          merged[id].acc = pe.acc;
+        const distVal = typeof pe.dist === 'number' ? pe.dist : (typeof pe.distanceM === 'number' ? pe.distanceM : null);
+        const accVal = typeof pe.acc === 'number' ? pe.acc : (typeof pe.accuracyM === 'number' ? pe.accuracyM : null);
+        if (distVal !== null) {
+          merged[id].dist = distVal;
+          if (accVal !== null) merged[id].acc = accVal;
           merged[id].lat = pe.lat;
           merged[id].lon = pe.lon;
         }
@@ -232,34 +234,66 @@ async function fetchRangePresPunch(startDate, endDate) {
 }
 
 /**
- * Pré-chargement de l'année entière avec présences, pointages et motifs
+ * Chargement des données à la demande par mois (optimisation facturation Firebase)
+ * et écoute en temps réel du mois actif.
  */
-async function prefetchYearData(year) {
-  if (yearPrefetchedSet.has(year)) return;
-  const startDate = `${year}-01-01`;
-  const endDate = `${year}-12-31`;
-  const res = await fetchRangePresPunch(startDate, endDate);
-  if (!res.anyFail) {
-    yearPrefetchedSet.add(year);
-    for (let i = 1; i <= 12; i++) {
-      const mk = `${year}-${String(i).padStart(2, "0")}`;
-      const dates = getDatesInMonthKey(mk);
-      const presByDay = {}, punchByDay = {}, motifsByDay = {};
-      dates.forEach(d => {
-        if (res.presByDay[d]) presByDay[d] = res.presByDay[d];
-        if (res.punchByDay[d]) punchByDay[d] = res.punchByDay[d];
-        if (res.motifsByDay && res.motifsByDay[d]) motifsByDay[d] = res.motifsByDay[d];
-      });
-      monthDataCache.set(mk, {
-        monthKey: mk,
-        dates,
-        presByDay,
-        punchByDay,
-        motifsByDay,
-        anyFail: false,
-        ts: Date.now()
-      });
+let activeMonthSub = null;
+
+function unsubscribeMonthRealtime() {
+  if (activeMonthSub) {
+    try {
+      activeMonthSub.presQuery.off('value', activeMonthSub.handler);
+      activeMonthSub.punchQuery.off('value', activeMonthSub.handler);
+      activeMonthSub.motifsQuery.off('value', activeMonthSub.handler);
+    } catch (e) {}
+    activeMonthSub = null;
+  }
+}
+
+function subscribeMonthRealtime(mk, onChange) {
+  unsubscribeMonthRealtime();
+  if (!mk || typeof database === 'undefined') return;
+  const currentMk = monthKeyFromISO(todayISO());
+  if (mk < currentMk) return; // Les mois passés sont immuables, pas d'écoute requise
+
+  const dates = getDatesInMonthKey(mk);
+  const startDate = dates[0];
+  const endDate = dates[dates.length - 1];
+
+  let debounceTimer = null;
+  const handler = () => {
+    // Invalider le cache du mois actif
+    monthDataCache.delete(mk);
+    monthRCMapCache.delete(mk);
+    yearTimelineCache.clear();
+    if (typeof onChange === 'function') {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => onChange(mk), 300);
     }
+  };
+
+  const presQuery = database.ref('presences').orderByKey().startAt(startDate).endAt(endDate);
+  const punchQuery = database.ref('punches').orderByKey().startAt(startDate).endAt(endDate);
+  const motifsQuery = database.ref('broadcast/motifs').orderByKey().startAt(startDate).endAt(endDate);
+
+  presQuery.on('value', handler);
+  punchQuery.on('value', handler);
+  motifsQuery.on('value', handler);
+
+  activeMonthSub = { presQuery, punchQuery, motifsQuery, handler };
+}
+
+/**
+ * Chargement à la demande des mois nécessaires (remplace l'ancien chargement massif 365 jours)
+ */
+async function prefetchYearData(year, upToMonth = null) {
+  const currentMk = monthKeyFromISO(todayISO());
+  const maxMk = (year === todayISO().slice(0, 4)) ? (upToMonth || currentMk) : `${year}-12`;
+  const endMonth = parseInt(maxMk.slice(5, 7), 10);
+  for (let m = 1; m <= endMonth; m++) {
+    const mk = `${year}-${String(m).padStart(2, "0")}`;
+    if (mk > currentMk) break;
+    await getMonthData(mk);
   }
 }
 
@@ -317,13 +351,20 @@ function getConfiguredEmpStart(emp) {
 
 async function getEmpStartMapForYear(year) {
   if (empStartMapCache.has(year)) return empStartMapCache.get(year);
-  await prefetchYearData(year);
   const currentMk = monthKeyFromISO(todayISO());
   const startMap = {};
   equipe.forEach(emp => {
     const configured = getConfiguredEmpStart(emp);
     startMap[empIdOf(emp)] = configured || null;
   });
+
+  // Si tous les collaborateurs ont une date configurée, aucun téléchargement n'est requis
+  const allConfigured = equipe.every(emp => !!startMap[empIdOf(emp)]);
+  if (allConfigured) {
+    empStartMapCache.set(year, startMap);
+    return startMap;
+  }
+
   for (let i = 1; i <= 12; i++) {
     const mk = `${year}-${String(i).padStart(2, "0")}`;
     if (mk > currentMk) break;
@@ -338,6 +379,8 @@ async function getEmpStartMapForYear(year) {
         if (hasAnyEmpActivity(merged[id] || null)) startMap[id] = dayISO;
       });
     }
+    // Arrêt dès que tous les collaborateurs ont une date d'activité identifiée
+    if (equipe.every(emp => !!startMap[empIdOf(emp)])) break;
   }
   empStartMapCache.set(year, startMap);
   return startMap;
@@ -348,7 +391,6 @@ async function getEmpStartMapForYear(year) {
  */
 async function getYearTimeline(year) {
   if (yearTimelineCache.has(year)) return yearTimelineCache.get(year);
-  await prefetchYearData(year);
   const startMap = await getEmpStartMapForYear(year);
   const currentMk = monthKeyFromISO(todayISO());
   const today = todayISO();
