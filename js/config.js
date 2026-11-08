@@ -41,7 +41,7 @@ const EXCL_END           = "2026-01-31";
 
 const POSTES_ORDER = ['SERVICE', 'BAR', 'CUISINE', 'CAISSE', 'MENAGE', 'SECURITE', 'ECONOMAT'];
 const haOnlyIds    = new Set([
-  "SBAI_HAKIMA", "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD", "ABOUARSA_EDDRISSIA",
+  "SBAI_HAKIMA", "ABOUARSA_EDDRISSIA",
   "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "ZHAR_FOUZIA",
   "KHALISSA_KHALISSA", "CHAOUI_KHALISSA", "KHALISSA_CHAOUI",
   "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI",
@@ -50,17 +50,27 @@ const haOnlyIds    = new Set([
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
 /* ─── Utilitaires sécurité & sanitisation ─── */
+function isMaladieMotifTag(txt) {
+  const m = String(txt || '').trim().toUpperCase();
+  return m === '[MALADIE]' || m.startsWith('[MALADIE] ') || m.startsWith('[MALADIE]:');
+}
+
+function stripMaladieMotifTag(txt) {
+  return String(txt || '').trim().replace(/^\[MALADIE\]\s*:?\s*/i, '').trim();
+}
+
 function isExplicitMaladie(rec) {
   if (!rec || typeof rec !== 'object') return false;
   const s = String(rec.statut || rec.status || '').trim().toUpperCase();
-  const m = String(rec.motif || '').trim().toUpperCase();
+  // Si le marqueur vient de motif ([MALADIE]), exiger lastEditByAdmin !== false pour bloquer toute forge "equipe"
+  const trustedMotifMaladie = isMaladieMotifTag(rec.motif) && rec.lastEditByAdmin === true;
   return rec.maladie === true ||
          s === 'MALADIE' ||
          s === 'M' ||
          s === 'ARRET_MALADIE' ||
          s === 'ARRÊT MALADIE' ||
          s === 'ARRET MALADIE' ||
-         m.startsWith('[MALADIE]');
+         trustedMotifMaladie;
 }
 
 function isExplicitOffOrOut(rec) {
@@ -162,8 +172,6 @@ let equipe = [
   { nom: 'BOURAHMA',   prenom: 'ANAS',      poste: 'CUISINE' },
   { nom: 'CHKAIRI',    prenom: 'YOUSSEF',   poste: 'BAR' },
   { nom: 'ELKOBBI',    prenom: 'MOSTAFA',   poste: 'BAR' },
-  { nom: 'ELGORRAMY',  prenom: 'ANISSA',    poste: 'MENAGE' },
-  { nom: 'ELGORRAMY',  prenom: 'SOUAD',     poste: 'MENAGE' },
   { nom: 'ENNHAILI',   prenom: 'SOUMIA',    poste: 'CAISSE' },
   { nom: 'FILALI',     prenom: 'ABDERAFI',  poste: 'BAR' },
   { nom: 'HATTAF',     prenom: 'MOHAMED',   poste: 'SERVICE' },
@@ -185,11 +193,18 @@ let equipe = [
   { nom: 'ZAIR',       prenom: 'FATIMA',    poste: 'CUISINE' }
 ];
 
+// Collaborateurs sortis de l'équipe : exclus même s'ils figurent encore dans Firebase (settings/equipe)
+const REMOVED_STAFF_IDS = new Set(["ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD"]);
+
+function isRemovedStaff(emp) {
+  return REMOVED_STAFF_IDS.has(empIdOf(emp));
+}
+
 function getEmpById(empId) {
   return equipe.find(e => empIdOf(e) === empId) || { nom: empId, prenom: "", poste: "", dateDebut: "" };
 }
 
 function setEquipe(next) {
-  equipe = Array.isArray(next) ? next.slice() : [];
+  equipe = Array.isArray(next) ? next.filter(e => e && !isRemovedStaff(e)) : [];
   if (typeof clearMonthCache === 'function') clearMonthCache();
 }

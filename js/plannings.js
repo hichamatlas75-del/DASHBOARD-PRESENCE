@@ -212,8 +212,10 @@ function getMenageStaffKey(empOrId) {
     : String(empOrId)
   ).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+  // Exclure NAJIA EL AZHARY avant la détection de FOUZIA EZHAR ("AZHARY" contient "ZHAR")
+  if (s.includes("NAJIA") || s.includes("AZHARY")) return null;
   if (s.includes("HAKIMA") || s.includes("SBAI")) return "HAKIMA";
-  if (s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR")) return "FOUZIA";
+  if (s.includes("FOUZIA") || s.includes("EZHAR") || /\bZHAR\b/.test(s)) return "FOUZIA";
   if (s.includes("KHALISSA") || s.includes("KHALISA") || s.includes("CHAOUI")) return "KHALISSA";
   if (s.includes("FATIMZAHRA") || s.includes("FATIM") || s.includes("ZAHRA") || s.includes("OUAZZANI")) return "FATIMZAHRA";
   return null;
@@ -225,7 +227,7 @@ function isStaffInMenageShift(shiftStaffStr, empOrId) {
   if (!staffKey) return false;
   const s = String(shiftStaffStr).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (staffKey === "HAKIMA") return s.includes("HAKIMA") || s.includes("SBAI");
-  if (staffKey === "FOUZIA") return s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR");
+  if (staffKey === "FOUZIA") return s.includes("FOUZIA") || s.includes("EZHAR") || /\bZHAR\b/.test(s);
   if (staffKey === "KHALISSA") return s.includes("KHALISSA") || s.includes("KHALISA") || s.includes("CHAOUI");
   if (staffKey === "FATIMZAHRA") return s.includes("FATIM") || s.includes("ZAHRA") || s.includes("OUAZZANI");
   return false;
@@ -301,7 +303,7 @@ function isMenageStaff(empOrId) {
     if (p === "MENAGE" || p === "MÉNAGE") return true;
   }
   const s = String(empOrId).toUpperCase();
-  return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA") ||
+  return s.includes("SBAI") || s.includes("ABOUARSA") ||
          s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR") ||
          s.includes("KHALISSA") || s.includes("CHAOUI") ||
          s.includes("FATIMZAHRA") || s.includes("OUAZZANI") || s.includes("AZHARY") || s.includes("NAJIA");
@@ -454,9 +456,6 @@ const StaffPhotoService = (() => {
     "EL_MOBARAKI_MOHAMED": "images/EL_MOBARAKI_MOHAMED.jpg",
     "ELMOBARAKI_MOHAMED": "images/EL_MOBARAKI_MOHAMED.jpg",
     "MOBARAKI": "images/EL_MOBARAKI_MOHAMED.jpg",
-    "ELGORRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
-    "EL_GORRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
-    "GORRAMY": "images/ELGORRAMY_SOUAD.jpg",
     "CHKAIRI_YOUSSEF": "images/CHKAIRI_YOUSSEF.jpg",
     "CH_KAIRI_YOUSSEF": "images/CHKAIRI_YOUSSEF.jpg",
     "CHKAIRI": "images/CHKAIRI_YOUSSEF.jpg",

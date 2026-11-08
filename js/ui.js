@@ -237,7 +237,8 @@ const LateAlertService = (() => {
     const items = lates.map(l => `
       <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
            style="background:rgba(220,38,38,.12);color:var(--crit);border:1px solid rgba(220,38,38,.30)"
-           onclick="openHistory('${escAttr(l.emp.nom)}','${escAttr(l.emp.prenom)}')"
+           data-nom="${escAttr(l.emp.nom)}" data-prenom="${escAttr(l.emp.prenom)}"
+           onclick="openHistory(this.dataset.nom, this.dataset.prenom)"
            title="${l.motif ? 'Motif : « ' + escAttr(l.motif) + ' »' : 'Cliquer pour inspecter l\'historique'}">
         <span class="animate-pulse">🚨</span>
         <span>${esc(l.emp.nom)} ${esc(titleCase(l.emp.prenom))}</span>
@@ -674,7 +675,7 @@ async function renderReportView() {
       const isActive = (_currentBilanWeek === w.id);
       const isCurrent = (today >= w.monday && today <= w.sunday);
       chipsHtml += `
-        <button type="button" onclick="setBilanWeekFilter('${w.id}')"
+        <button type="button" data-week-id="${escAttr(w.id)}" onclick="setBilanWeekFilter(this.dataset.weekId)"
           class="bilan-week-btn ${isActive ? 'active' : ''}"
           title="Du Lundi ${fmtShortDate(w.monday)} au Dimanche ${fmtShortDate(w.sunday)}">
           <span class="week-indicator"></span>
@@ -919,7 +920,8 @@ async function renderReportView() {
       html += `
         <div class="glass-card p-3.5 rounded-2xl cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex flex-col justify-between"
              style="background:${bgCard};border-color:${bdrCard};box-shadow:0 3px 12px rgba(0,0,0,.03)"
-             onclick="openCalendarModal('${escAttr(a.emp.nom)}','${escAttr(a.emp.prenom)}')"
+             data-nom="${escAttr(a.emp.nom)}" data-prenom="${escAttr(a.emp.prenom)}"
+             onclick="openCalendarModal(this.dataset.nom, this.dataset.prenom)"
              title="Cliquer pour inspecter le calendrier">
           <div class="flex items-start justify-between gap-2.5 mb-2">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -1269,11 +1271,11 @@ function buildModalMaladieBarHtml(empId, mk) {
       <div class="flex items-center justify-between gap-2 mt-2">
         <div id="modalMaladieMsg" class="text-[10px] font-extrabold truncate" style="color:var(--muted2)"></div>
         <div class="flex items-center gap-1.5 shrink-0 ml-auto">
-          <button type="button" onclick="window.submitModalMaladieForm('${escAttr(empId)}', true)" class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+          <button type="button" data-emp-id="${escAttr(empId)}" onclick="window.submitModalMaladieForm(this.dataset.empId, true)" class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
             style="background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.38);color:#9f1239">
             🩺 + Maladie (M)
           </button>
-          <button type="button" onclick="window.submitModalMaladieForm('${escAttr(empId)}', false)" class="btn-action btn-neutral px-2.5 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+          <button type="button" data-emp-id="${escAttr(empId)}" onclick="window.submitModalMaladieForm(this.dataset.empId, false)" class="btn-action btn-neutral px-2.5 py-1.5 rounded-xl text-[10.5px] font-extrabold"
             style="background:rgba(255,255,255,.75);border:1px solid var(--stroke-med);color:var(--text)">
             ✕ Retirer M
           </button>
@@ -1474,7 +1476,8 @@ async function openCalendarModal(nom, prenom, mk) {
           ? `${cursor} · Retard +${info.diff}m · Motif : « ${info.motif} » — Cliquer pour marquer Maladie (M)`
           : `${cursor} — Cliquer pour basculer Arrêt Maladie (M)`;
         calHtml += `<div class="cal-cell${isToday ? ' cal-today' : ''} cursor-pointer hover:scale-[1.03] transition-transform"
-          onclick="window.quickToggleMaladieDay('${escAttr(empId)}','${cursor}',${isMaladieCell})"
+          data-emp-id="${escAttr(empId)}" data-day="${escAttr(cursor)}"
+          onclick="window.quickToggleMaladieDay(this.dataset.empId, this.dataset.day, ${isMaladieCell})"
           title="${escAttr(baseTooltip)}"
           style="background:${t.bg};border-color:${isToday ? 'rgba(245,158,11,.65)' : (isMaladieCell ? 'rgba(244,63,94,.38)' : 'rgba(148,163,184,.10)')}">
           <div style="font-size:11px;font-weight:900;color:#0f2744">${d}</div>
@@ -1504,7 +1507,8 @@ async function openCalendarModal(nom, prenom, mk) {
 function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif, empId = "", isMaladie = false, dist = null) {
   const rcTxt = rc ? ` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>` : "";
   const toggleBtnHtml = empId ? `
-    <button type="button" onclick="window.quickToggleMaladieDay('${escAttr(empId)}','${escAttr(dayISO)}',${isMaladie})"
+    <button type="button" data-emp-id="${escAttr(empId)}" data-day="${escAttr(dayISO)}"
+      onclick="window.quickToggleMaladieDay(this.dataset.empId, this.dataset.day, ${isMaladie})"
       class="btn-action px-2 py-0.5 rounded-lg text-[9.5px] font-extrabold ml-2"
       style="${isMaladie ? 'background:rgba(244,63,94,.16);border:1px solid rgba(244,63,94,.38);color:#be123c' : 'background:rgba(255,255,255,.75);border:1px solid var(--stroke-med);color:var(--muted2)'}"
       title="${isMaladie ? 'Retirer Arrêt Maladie (M)' : 'Marquer en Arrêt Maladie (M)'}">

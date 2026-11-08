@@ -117,14 +117,16 @@ function mergeDay(pres, punches, motifs) {
         if (!merged[id]) merged[id] = {};
         const m = extractMotif(motifs[id]);
         if (m) {
-          if (/^\[MALADIE\]/i.test(m)) {
+          const adminSigned = !!(pres && pres[id] && pres[id].lastEditByAdmin === true);
+          if (isMaladieMotifTag(m) && adminSigned) {
             merged[id].maladie = true;
             merged[id].statut = 'MALADIE';
-            merged[id].motifMaladie = m.replace(/^\[MALADIE\]\s*/i, '').trim();
             merged[id].off = false;
             merged[id].manualOff = false;
             merged[id].hA = "";
-          } else {
+            const cleanM = stripMaladieMotifTag(m);
+            if (cleanM) merged[id].motifMaladie = cleanM;
+          } else if (!isMaladieMotifTag(m)) {
             merged[id].motif = m;
           }
         }
@@ -140,15 +142,14 @@ function mergeDay(pres, punches, motifs) {
       const presRec = pres ? findEmpRecord(pres, emp) : null;
       const moRec = motifs ? findEmpRecord(motifs, emp) : null;
       const moTxt = extractMotif(moRec);
-      if (isExplicitMaladie(presRec) || isExplicitMaladie(merged[id]) || /^\[MALADIE\]/i.test(moTxt)) {
+      const adminSigned = !!(presRec && presRec.lastEditByAdmin === true) || merged[id].lastEditByAdmin === true;
+      if (isExplicitMaladie(presRec) || isExplicitMaladie(merged[id]) || (isMaladieMotifTag(moTxt) && adminSigned)) {
         merged[id].maladie = true;
         merged[id].statut = 'MALADIE';
         merged[id].off = false;
         merged[id].manualOff = false;
         merged[id].hA = "";
-        const cleanM = /^\[MALADIE\]/i.test(moTxt)
-          ? moTxt.replace(/^\[MALADIE\]\s*/i, '').trim()
-          : (presRec?.motifMaladie || merged[id].motifMaladie || "");
+        const cleanM = stripMaladieMotifTag(moTxt) || presRec?.motifMaladie || merged[id].motifMaladie || "";
         if (cleanM) merged[id].motifMaladie = cleanM;
         return;
       }
@@ -159,7 +160,7 @@ function mergeDay(pres, punches, motifs) {
         if (presRec && presRec.statut) merged[id].statut = presRec.statut;
         return;
       }
-      if (!merged[id].motif && moTxt) {
+      if (!merged[id].motif && moTxt && !isMaladieMotifTag(moTxt)) {
         merged[id].motif = moTxt;
       }
       if (!merged[id].motif) {
@@ -254,25 +255,53 @@ async function prefetchYearData(year) {
         presByDay,
         punchByDay,
         motifsByDay,
-        anyFail: false
+        anyFail: false,
+        ts: Date.now()
       });
     }
   }
 }
 
-async function getMonthData(mk) {
-  if (monthDataCache.has(mk)) return monthDataCache.get(mk);
+const MONTH_CACHE_TTL_MS = 45000; // Fraîcheur max du mois en cours / futur
+const monthInflight = new Map();
+
+async function fetchMonthPack(mk) {
   const dates = getDatesInMonthKey(mk);
-  const startDate = dates[0];
-  const endDate = dates[dates.length - 1];
-  const pack = { monthKey: mk, dates, presByDay: {}, punchByDay: {}, motifsByDay: {}, anyFail: false };
-  const res = await fetchRangePresPunch(startDate, endDate);
-  pack.presByDay = res.presByDay || {};
-  pack.punchByDay = res.punchByDay || {};
-  pack.motifsByDay = res.motifsByDay || {};
-  pack.anyFail = !!res.anyFail;
-  monthDataCache.set(mk, pack);
-  return pack;
+  const res = await fetchRangePresPunch(dates[0], dates[dates.length - 1]);
+  return {
+    monthKey: mk,
+    dates,
+    presByDay: res.presByDay || {},
+    punchByDay: res.punchByDay || {},
+    motifsByDay: res.motifsByDay || {},
+    anyFail: !!res.anyFail,
+    ts: Date.now()
+  };
+}
+
+/**
+ * Les mois passés restent en cache (immuables) ; le mois en cours / futur est
+ * rechargé s'il a plus de MONTH_CACHE_TTL_MS, puis les calculs dérivés sont invalidés.
+ */
+async function getMonthData(mk) {
+  const cached = monthDataCache.get(mk);
+  const isLiveMonth = mk >= monthKeyFromISO(todayISO());
+  if (cached && (!isLiveMonth || (Date.now() - (cached.ts || 0)) < MONTH_CACHE_TTL_MS)) return cached;
+
+  if (monthInflight.has(mk)) return monthInflight.get(mk);
+  const job = (async () => {
+    const pack = await fetchMonthPack(mk);
+    if (pack.anyFail && cached) return cached; // en cas d'échec réseau, garder les dernières données
+    monthDataCache.set(mk, pack);
+    if (cached) {
+      monthRCMapCache.clear();
+      yearTimelineCache.clear();
+      empStartMapCache.clear();
+    }
+    return pack;
+  })().finally(() => monthInflight.delete(mk));
+  monthInflight.set(mk, job);
+  return job;
 }
 
 function hasAnyEmpActivity(e) {
@@ -578,11 +607,13 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
 }
 
 /**
- * Enregistrement manuel d'un Arrêt Maladie (M) sur une date ou une plage de dates
- * Compatible nativement avec les règles Firebase existantes via broadcast/motifs + presences
+ * Enregistrement manuel d'un Arrêt Maladie (M) sur une date ou une plage de dates.
+ * Écrit uniquement dans presences/{date}/{emp} : champs maladie/statut/motifMaladie,
+ * réservés au rôle « gerant » par database.rules.json (publier ces règles dans la console Firebase).
  */
 async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, motifMaladie = "") {
   if (!empId || !startDateISO) throw new Error("Collaborateur ou date manquant.");
+  if (role !== "gerant") throw new Error("Action réservée au gérant.");
   const endISO = endDateISO || startDateISO;
   if (startDateISO > endISO) throw new Error("La date de début doit précéder la date de fin.");
 
@@ -595,36 +626,66 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
     guard++;
   }
 
-  const cleanMotif = String(motifMaladie || "").trim().slice(0, 180);
+  const cleanMotif = String(motifMaladie || "").trim().slice(0, 200);
   const nowTs = Date.now();
 
-  await Promise.all(days.map(async (d) => {
-    const motifRef = database.ref(`broadcast/motifs/${d}/${empId}`);
-    const presRef  = database.ref(`presences/${d}/${empId}`);
+  // Un seul update multi-chemins : atomique (tout ou rien)
+  const updates = {};
+  days.forEach(d => {
+    const base = `presences/${d}/${empId}`;
     if (isMaladie) {
-      const taggedMotif = cleanMotif ? `[MALADIE] ${cleanMotif}` : `[MALADIE]`;
-      await motifRef.set({
-        empKey: empId,
-        motif: taggedMotif,
-        timestamp: nowTs
-      });
-      await presRef.update({
-        on: false,
-        off: false,
-        hA: null,
-        retard: null,
-        retardMin: null,
-        lastEditAt: nowTs,
-        lastEditByAdmin: true
-      });
+      updates[`${base}/maladie`] = true;
+      updates[`${base}/statut`] = "MALADIE";
+      updates[`${base}/motifMaladie`] = cleanMotif || null;
+      updates[`${base}/off`] = null;
+      updates[`${base}/hA`] = null;
+      updates[`${base}/retard`] = null;
+      updates[`${base}/retardMin`] = null;
     } else {
-      await motifRef.remove();
-      await presRef.update({
-        lastEditAt: nowTs,
-        lastEditByAdmin: true
-      });
+      updates[`${base}/maladie`] = null;
+      updates[`${base}/statut`] = null;
+      updates[`${base}/motifMaladie`] = null;
     }
-  }));
+    updates[`${base}/lastEditAt`] = nowTs;
+    updates[`${base}/lastEditByAdmin`] = true;
+  });
+
+  try {
+    await database.ref().update(updates);
+  } catch (e) {
+    if (e && /permission_denied/i.test(String(e.code || e.message))) {
+      // Secours atomique compatible avec les anciennes règles Firebase si database.rules.json
+      // n'a pas encore été publié dans la console : signé par lastEditByAdmin=true (interdit au rôle "equipe")
+      const fallbackUpdates = {};
+      const taggedMotif = ("[MALADIE]" + (cleanMotif ? " " + cleanMotif : "")).slice(0, 200);
+      days.forEach(d => {
+        const presBase = `presences/${d}/${empId}`;
+        const motifBase = `broadcast/motifs/${d}/${empId}`;
+        if (isMaladie) {
+          fallbackUpdates[`${presBase}/off`] = null;
+          fallbackUpdates[`${presBase}/hA`] = null;
+          fallbackUpdates[`${presBase}/retard`] = null;
+          fallbackUpdates[`${presBase}/retardMin`] = null;
+          fallbackUpdates[`${presBase}/lastEditAt`] = nowTs;
+          fallbackUpdates[`${presBase}/lastEditByAdmin`] = true;
+          fallbackUpdates[motifBase] = {
+            empKey: empId,
+            motif: taggedMotif,
+            hA: "00:00",
+            retardMin: 0,
+            timestamp: nowTs
+          };
+        } else {
+          fallbackUpdates[`${presBase}/lastEditAt`] = nowTs;
+          fallbackUpdates[`${presBase}/lastEditByAdmin`] = true;
+          fallbackUpdates[motifBase] = null;
+        }
+      });
+      await database.ref().update(fallbackUpdates);
+    } else {
+      throw e;
+    }
+  }
 
   clearMonthCache();
   return days.length;
@@ -637,7 +698,8 @@ async function loadEquipeFromDB() {
   const arr = Array.isArray(val)
     ? val.filter(Boolean)
     : Object.keys(val).sort((a, b) => Number(a) - Number(b)).map(k => val[k]).filter(Boolean);
-  return (arr && arr.length) ? arr : equipe;
+  const active = arr.filter(e => !isRemovedStaff(e));
+  return active.length ? active : equipe;
 }
 
 async function saveEquipeToDB(list) {
