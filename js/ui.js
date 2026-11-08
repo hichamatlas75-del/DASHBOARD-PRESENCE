@@ -1317,7 +1317,7 @@ window.closeCertViewerModal = function() {
   setTimeout(() => { m.classList.remove("modal-closing"); m.classList.add("hidden"); }, 200);
 };
 
-window.openMaladieCertPreview = function(empId, dayISO) {
+window.openMaladieCertPreview = function(empId, dayISO, endDayISO) {
   let cert = typeof getMaladieCertForEmpDay === "function" ? getMaladieCertForEmpDay(empId, dayISO) : "";
   if (!cert && typeof getLocalMaladieCert === "function") {
     cert = getLocalMaladieCert(empId, dayISO);
@@ -1338,13 +1338,16 @@ window.openMaladieCertPreview = function(empId, dayISO) {
   const subEl = document.getElementById("certViewerSub");
   const btnDownload = document.getElementById("btnDownloadCert");
   const btnPrint = document.getElementById("btnPrintCert");
+  const btnDelete = document.getElementById("btnDeleteCert");
 
   const emp = getEmpById(empId);
   const fullName = `${emp.nom || empId} ${titleCase(emp.prenom || "")}`.trim();
+  const endDay = endDayISO || dayISO;
+  const periodTxt = (dayISO === endDay) ? fmtFR(dayISO) : `du ${fmtFR(dayISO)} au ${fmtFR(endDay)}`;
 
   if (imgEl) imgEl.src = cert;
   if (titleEl) titleEl.textContent = fullName + (emp.poste ? ` · ${emp.poste}` : "");
-  if (subEl) subEl.textContent = `Arrêt Maladie (M) · Date : ${fmtFR(dayISO)}`;
+  if (subEl) subEl.textContent = `Arrêt Maladie (M) · Période : ${periodTxt}`;
 
   if (btnDownload) {
     btnDownload.onclick = () => {
@@ -1361,15 +1364,47 @@ window.openMaladieCertPreview = function(empId, dayISO) {
     btnPrint.onclick = () => {
       const pWin = window.open("", "_blank");
       if (pWin) {
-        pWin.document.write(`<!DOCTYPE html><html><head><title>Certificat · ${fullName}</title><style>body{margin:20px;text-align:center;font-family:sans-serif}img{max-width:100%;max-height:90vh;object-fit:contain}</style></head><body><h2>Certificat Médical · ${fullName}</h2><p>Arrêt maladie du ${fmtFR(dayISO)}</p><img src="${cert}" onload="window.print();window.close();" /></body></html>`);
+        pWin.document.write(`<!DOCTYPE html><html><head><title>Certificat · ${fullName}</title><style>body{margin:20px;text-align:center;font-family:sans-serif}img{max-width:100%;max-height:90vh;object-fit:contain}</style></head><body><h2>Certificat Médical · ${fullName}</h2><p>Arrêt maladie ${periodTxt}</p><img src="${cert}" onload="window.print();window.close();" /></body></html>`);
         pWin.document.close();
       }
     };
   }
 
+  if (btnDelete) {
+    btnDelete.onclick = () => window.confirmDeleteMaladieCert(empId, dayISO, endDay);
+  }
+
   if (modal) {
     modal.classList.remove("hidden", "modal-closing");
     modal.classList.add("modal-active");
+  }
+};
+
+window.confirmDeleteMaladieCert = async function(empId, startDay, endDay) {
+  const emp = getEmpById(empId);
+  const fullName = `${emp.nom || empId} ${titleCase(emp.prenom || "")}`.trim();
+  const periodTxt = (startDay === endDay) ? `du ${fmtFR(startDay)}` : `du ${fmtFR(startDay)} au ${fmtFR(endDay)}`;
+  if (!confirm(`Supprimer le certificat médical de ${fullName} (${periodTxt}) ?\n\nRemarque : L'arrêt maladie restera enregistré (M), seule la photo du certificat sera retirée.`)) {
+    return;
+  }
+  try {
+    if (typeof removeMaladieCert === "function") {
+      await removeMaladieCert(empId, startDay, endDay);
+    }
+    if (typeof closeCertViewerModal === "function") closeCertViewerModal();
+    const picker = document.getElementById("certRegistryMonthPicker");
+    const mk = picker?.value || monthKeyFromISO(startDay);
+    await renderCertificatesRegistry(mk);
+    if (_modalState && _modalState.nom) {
+      if (_modalState.mode === "calendar") await openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
+      else await openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+    }
+    if (typeof currentMode !== "undefined") {
+      if (currentMode === "rc") renderRCView();
+      else if (currentMode === "report") renderReportView();
+    }
+  } catch (e) {
+    alert("Erreur lors du retrait du certificat : " + (e?.message || "Erreur"));
   }
 };
 
@@ -1462,7 +1497,7 @@ window.renderCertificatesRegistry = async function(mk) {
       const hasCert = !!r.certificat;
       const certThumbHtml = hasCert
         ? `
-          <div class="relative shrink-0 cursor-pointer group" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}')">
+          <div class="relative shrink-0 cursor-pointer group" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}','${escAttr(r.endDay)}')">
             <img src="${escAttr(r.certificat)}" alt="Certificat" class="w-14 h-14 rounded-xl object-cover border border-rose-200 shadow-sm transition-transform group-hover:scale-105" />
             <div class="absolute inset-0 bg-black/30 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-black transition-opacity">
               🔍 Voir
@@ -1496,10 +1531,21 @@ window.renderCertificatesRegistry = async function(mk) {
           </div>
           <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
             ${hasCert ? `
-              <button type="button" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}')"
+              <button type="button" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}','${escAttr(r.endDay)}')"
                 class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
                 style="background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.35);color:#065f46">
                 👁️ Contrôler
+              </button>
+              <label class="btn-action px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold flex items-center gap-1 cursor-pointer"
+                style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.32);color:#1d4ed8" title="Remplacer par une autre photo">
+                <span>🔄 Remplacer</span>
+                <input type="file" accept="image/*" class="hidden" onchange="window.handleRegistryAttachCert('${escAttr(r.empId)}','${escAttr(r.startDay)}','${escAttr(r.endDay)}',this)" />
+              </label>
+              <button type="button" onclick="window.confirmDeleteMaladieCert('${escAttr(r.empId)}','${escAttr(r.startDay)}','${escAttr(r.endDay)}')"
+                class="btn-action btn-danger px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold"
+                style="background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);color:#dc2626"
+                title="Supprimer la photo du certificat">
+                🗑️ Retirer
               </button>
             ` : `
               <label class="btn-action px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold flex items-center gap-1 cursor-pointer"

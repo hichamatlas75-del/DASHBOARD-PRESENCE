@@ -859,6 +859,47 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
   return days.length;
 }
 
+/**
+ * Supprime uniquement la pièce jointe / photo du certificat médical
+ * tout en conservant l'arrêt maladie (M).
+ */
+async function removeMaladieCert(empId, startDateISO, endDateISO) {
+  if (!empId || !startDateISO) throw new Error("Collaborateur ou date manquant.");
+  if (role !== "gerant") throw new Error("Action réservée au gérant.");
+  const endISO = endDateISO || startDateISO;
+
+  const days = [];
+  let cur = startDateISO;
+  let guard = 0;
+  while (cur <= endISO && guard < 90) {
+    days.push(cur);
+    cur = addDaysISO(cur, 1);
+    guard++;
+  }
+
+  days.forEach(d => {
+    setLocalMaladieCert(empId, d, "");
+  });
+
+  const updates = {};
+  const nowTs = Date.now();
+  days.forEach(d => {
+    const base = `presences/${d}/${empId}`;
+    updates[`${base}/certificat`] = null;
+    updates[`${base}/lastEditAt`] = nowTs;
+    updates[`${base}/lastEditByAdmin`] = true;
+  });
+
+  try {
+    await database.ref().update(updates);
+  } catch (e) {
+    // Si permission_denied sur les anciennes règles, le retrait local est déjà actif
+  }
+
+  clearMonthCache();
+  return days.length;
+}
+
 async function loadEquipeFromDB() {
   const snap = await database.ref(EQUIPE_PATH).once("value");
   const val = snap.val();
