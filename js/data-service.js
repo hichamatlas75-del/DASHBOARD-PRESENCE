@@ -570,8 +570,9 @@ async function scanAllMaladieRecords(mk) {
       if (ev.type === "maladie") {
         const cert = ev.certificat || getMaladieCertForEmpDay(id, dayISO) || "";
         const motif = ev.motif || "";
+        const sameCert = (!cert || !currentBlock?.certificat || cert === currentBlock?.certificat);
 
-        if (currentBlock && addDaysISO(currentBlock.endDay, 1) === dayISO && currentBlock.motif === motif) {
+        if (currentBlock && addDaysISO(currentBlock.endDay, 1) === dayISO && currentBlock.motif === motif && sameCert) {
           currentBlock.endDay = dayISO;
           currentBlock.days.push(dayISO);
           if (!currentBlock.certificat && cert) currentBlock.certificat = cert;
