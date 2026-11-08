@@ -53,12 +53,14 @@ const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 function isExplicitMaladie(rec) {
   if (!rec || typeof rec !== 'object') return false;
   const s = String(rec.statut || rec.status || '').trim().toUpperCase();
+  const m = String(rec.motif || '').trim().toUpperCase();
   return rec.maladie === true ||
          s === 'MALADIE' ||
          s === 'M' ||
          s === 'ARRET_MALADIE' ||
          s === 'ARRÊT MALADIE' ||
-         s === 'ARRET MALADIE';
+         s === 'ARRET MALADIE' ||
+         m.startsWith('[MALADIE]');
 }
 
 function isExplicitOffOrOut(rec) {

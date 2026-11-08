@@ -747,10 +747,10 @@ async function renderReportView() {
     }
     const dMk = monthKeyFromISO(dayISO);
     const dYr = dayISO.slice(0, 4);
-    const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {} };
+    const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {}, motifsByDay: {} };
     const curTimeline = yearTimelinePacks[dYr] || { rcByEmpDay: {}, startMap: {} };
 
-    const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO]);
+    const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO], curPack.motifsByDay?.[dayISO]);
     let tL = 0, tP = 0;
 
     Object.keys(stats).forEach(id => {
@@ -803,13 +803,13 @@ async function renderReportView() {
       if (dayISO > today || isExcluded(dayISO)) return;
       const dMk = monthKeyFromISO(dayISO);
       const dYr = dayISO.slice(0, 4);
-      const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {} };
+      const curPack = monthDataPacks[dMk] || { presByDay: {}, punchByDay: {}, motifsByDay: {} };
       const curTimeline = yearTimelinePacks[dYr] || { rcByEmpDay: {}, startMap: {} };
 
       const start = curTimeline.startMap?.[id];
       if (!start || dayISO < start) return;
 
-      const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO]);
+      const merged = mergeDay(curPack.presByDay?.[dayISO], curPack.punchByDay?.[dayISO], curPack.motifsByDay?.[dayISO]);
       const e = merged[id] || null;
       const hp = safeTime(e?.hP) || "";
       const ha = safeTime(e?.hA) || "";

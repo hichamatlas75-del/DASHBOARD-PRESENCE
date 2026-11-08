@@ -117,7 +117,16 @@ function mergeDay(pres, punches, motifs) {
         if (!merged[id]) merged[id] = {};
         const m = extractMotif(motifs[id]);
         if (m) {
-          merged[id].motif = m;
+          if (/^\[MALADIE\]/i.test(m)) {
+            merged[id].maladie = true;
+            merged[id].statut = 'MALADIE';
+            merged[id].motifMaladie = m.replace(/^\[MALADIE\]\s*/i, '').trim();
+            merged[id].off = false;
+            merged[id].manualOff = false;
+            merged[id].hA = "";
+          } else {
+            merged[id].motif = m;
+          }
         }
       }
     }
@@ -129,12 +138,18 @@ function mergeDay(pres, punches, motifs) {
       const id = empIdOf(emp);
       if (!merged[id]) merged[id] = {};
       const presRec = pres ? findEmpRecord(pres, emp) : null;
-      if (isExplicitMaladie(presRec) || isExplicitMaladie(merged[id])) {
+      const moRec = motifs ? findEmpRecord(motifs, emp) : null;
+      const moTxt = extractMotif(moRec);
+      if (isExplicitMaladie(presRec) || isExplicitMaladie(merged[id]) || /^\[MALADIE\]/i.test(moTxt)) {
         merged[id].maladie = true;
         merged[id].statut = 'MALADIE';
         merged[id].off = false;
+        merged[id].manualOff = false;
         merged[id].hA = "";
-        if (presRec && presRec.motifMaladie) merged[id].motifMaladie = presRec.motifMaladie;
+        const cleanM = /^\[MALADIE\]/i.test(moTxt)
+          ? moTxt.replace(/^\[MALADIE\]\s*/i, '').trim()
+          : (presRec?.motifMaladie || merged[id].motifMaladie || "");
+        if (cleanM) merged[id].motifMaladie = cleanM;
         return;
       }
       if (isExplicitOffOrOut(presRec) || isExplicitOffOrOut(merged[id])) {
@@ -144,10 +159,8 @@ function mergeDay(pres, punches, motifs) {
         if (presRec && presRec.statut) merged[id].statut = presRec.statut;
         return;
       }
-      if (!merged[id].motif) {
-        const moRec = findEmpRecord(motifs, emp);
-        const m = extractMotif(moRec);
-        if (m) merged[id].motif = m;
+      if (!merged[id].motif && moTxt) {
+        merged[id].motif = moTxt;
       }
       if (!merged[id].motif) {
         const puRec = findEmpRecord(punches, emp);
@@ -285,10 +298,10 @@ async function getEmpStartMapForYear(year) {
     const mk = `${year}-${String(i).padStart(2, "0")}`;
     if (mk > currentMk) break;
     const md = await getMonthData(mk);
-    const { dates, presByDay, punchByDay } = md;
+    const { dates, presByDay, punchByDay, motifsByDay } = md;
     for (const dayISO of dates) {
       if (dayISO > todayISO()) continue;
-      const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+      const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
       equipe.forEach(emp => {
         const id = empIdOf(emp);
         if (startMap[id]) return;
@@ -351,7 +364,7 @@ async function getYearTimeline(year) {
       if (!dayMergedMap[d] && d <= today) {
         const mk = monthKeyFromISO(d);
         const md = monthDataCache.get(mk);
-        dayMergedMap[d] = md ? mergeDay(md.presByDay[d] || {}, md.punchByDay[d] || {}) : {};
+        dayMergedMap[d] = md ? mergeDay(md.presByDay[d] || {}, md.punchByDay[d] || {}, md.motifsByDay?.[d] || {}) : {};
       }
     }
 
@@ -481,7 +494,7 @@ async function buildMonthlySummary(mk) {
   const timeline = await getYearTimeline(year);
   const { rcByEmpDay, soldeByEmpMonth, startMap } = timeline;
   const md = await getMonthData(mk);
-  const { dates, presByDay, punchByDay } = md;
+  const { dates, presByDay, punchByDay, motifsByDay } = md;
   const today = todayISO();
   const out = {};
   equipe.forEach(emp => {
@@ -491,7 +504,7 @@ async function buildMonthlySummary(mk) {
   });
   dates.forEach(dayISO => {
     if (dayISO > today || isExcluded(dayISO)) return;
-    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO]);
+    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
     Object.keys(out).forEach(id => {
       const start = startMap[id];
       if (!start || dayISO < start) return;
@@ -566,6 +579,7 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
 
 /**
  * Enregistrement manuel d'un Arrêt Maladie (M) sur une date ou une plage de dates
+ * Compatible nativement avec les règles Firebase existantes via broadcast/motifs + presences
  */
 async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, motifMaladie = "") {
   if (!empId || !startDateISO) throw new Error("Collaborateur ou date manquant.");
@@ -581,17 +595,22 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
     guard++;
   }
 
-  const cleanMotif = String(motifMaladie || "").trim().slice(0, 200);
+  const cleanMotif = String(motifMaladie || "").trim().slice(0, 180);
   const nowTs = Date.now();
 
-  await Promise.all(days.map(d => {
-    const ref = database.ref(`presences/${d}/${empId}`);
+  await Promise.all(days.map(async (d) => {
+    const motifRef = database.ref(`broadcast/motifs/${d}/${empId}`);
+    const presRef  = database.ref(`presences/${d}/${empId}`);
     if (isMaladie) {
-      return ref.update({
-        maladie: true,
-        statut: "MALADIE",
-        motifMaladie: cleanMotif || null,
-        off: null,
+      const taggedMotif = cleanMotif ? `[MALADIE] ${cleanMotif}` : `[MALADIE]`;
+      await motifRef.set({
+        empKey: empId,
+        motif: taggedMotif,
+        timestamp: nowTs
+      });
+      await presRef.update({
+        on: false,
+        off: false,
         hA: null,
         retard: null,
         retardMin: null,
@@ -599,10 +618,8 @@ async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, mo
         lastEditByAdmin: true
       });
     } else {
-      return ref.update({
-        maladie: null,
-        statut: null,
-        motifMaladie: null,
+      await motifRef.remove();
+      await presRef.update({
         lastEditAt: nowTs,
         lastEditByAdmin: true
       });
