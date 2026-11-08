@@ -63,7 +63,12 @@ function mergeDay(pres, punches, motifs) {
     for (const id in pres) {
       if (Object.prototype.hasOwnProperty.call(pres, id)) {
         merged[id] = { ...pres[id] };
-        if (isExplicitOffOrOut(pres[id])) {
+        if (isExplicitMaladie(pres[id])) {
+          merged[id].maladie = true;
+          merged[id].statut = 'MALADIE';
+          merged[id].off = false;
+          merged[id].hA = "";
+        } else if (isExplicitOffOrOut(pres[id])) {
           merged[id].off = true;
           merged[id].manualOff = true;
           merged[id].hA = "";
@@ -77,16 +82,28 @@ function mergeDay(pres, punches, motifs) {
         if (!merged[id]) merged[id] = {};
         const pe = punches[id];
         const isManualOverride = !!(pres && pres[id] && (pres[id].manual === true || pres[id].hAManual));
+        const isPresMaladie = !!(pres && pres[id] && isExplicitMaladie(pres[id])) || isExplicitMaladie(merged[id]);
         const isPresExplicitOff = !!(pres && pres[id] && isExplicitOffOrOut(pres[id]));
         const isMergedExplicitOff = isExplicitOffOrOut(merged[id]);
-        if (pe && pe.hA && !isManualOverride && !isPresExplicitOff && !isMergedExplicitOff) {
+        if (pe && pe.hA && !isManualOverride && !isPresMaladie && !isPresExplicitOff && !isMergedExplicitOff) {
           merged[id].hA = pe.hA;
+        }
+        if (pe && typeof pe.dist === 'number') {
+          merged[id].dist = pe.dist;
+          merged[id].acc = pe.acc;
+          merged[id].lat = pe.lat;
+          merged[id].lon = pe.lon;
         }
         const m = extractMotif(pe);
         if (m && !merged[id].motif) {
           merged[id].motif = m;
         }
-        if (isPresExplicitOff || isMergedExplicitOff) {
+        if (isPresMaladie) {
+          merged[id].maladie = true;
+          merged[id].statut = 'MALADIE';
+          merged[id].off = false;
+          merged[id].hA = "";
+        } else if (isPresExplicitOff || isMergedExplicitOff) {
           merged[id].off = true;
           merged[id].manualOff = true;
           merged[id].hA = "";
@@ -112,6 +129,14 @@ function mergeDay(pres, punches, motifs) {
       const id = empIdOf(emp);
       if (!merged[id]) merged[id] = {};
       const presRec = pres ? findEmpRecord(pres, emp) : null;
+      if (isExplicitMaladie(presRec) || isExplicitMaladie(merged[id])) {
+        merged[id].maladie = true;
+        merged[id].statut = 'MALADIE';
+        merged[id].off = false;
+        merged[id].hA = "";
+        if (presRec && presRec.motifMaladie) merged[id].motifMaladie = presRec.motifMaladie;
+        return;
+      }
       if (isExplicitOffOrOut(presRec) || isExplicitOffOrOut(merged[id])) {
         merged[id].off = true;
         merged[id].manualOff = true;
@@ -129,9 +154,15 @@ function mergeDay(pres, punches, motifs) {
         const m = extractMotif(puRec);
         if (m) merged[id].motif = m;
       }
-      if (!merged[id].hA && !merged[id].off) {
+      if (!merged[id].hA && !merged[id].off && !merged[id].maladie) {
         const puRec = findEmpRecord(punches, emp);
         if (puRec && puRec.hA) merged[id].hA = puRec.hA;
+        if (merged[id].dist === undefined && puRec && typeof puRec.dist === 'number') {
+          merged[id].dist = puRec.dist;
+          merged[id].acc = puRec.acc;
+          merged[id].lat = puRec.lat;
+          merged[id].lon = puRec.lon;
+        }
       }
     });
   }
@@ -233,7 +264,7 @@ async function getMonthData(mk) {
 
 function hasAnyEmpActivity(e) {
   if (!e) return false;
-  return !!(safeTime(e.hP) || safeTime(e.hA) || e.off === true);
+  return !!(safeTime(e.hP) || safeTime(e.hA) || e.off === true || isExplicitMaladie(e));
 }
 
 function getConfiguredEmpStart(emp) {
@@ -334,6 +365,7 @@ async function getYearTimeline(year) {
 
       const offDaysInWeek = [];
       let hadAnyActivity = false;
+      let hasMaladieInWeek = false;
       const isMenage = isMenageStaff(emp) || isMenageStaff(id);
 
       for (const d of weekDays) {
@@ -341,7 +373,15 @@ async function getYearTimeline(year) {
         const merged = dayMergedMap[d] || {};
         const e = merged[id] || null;
         const ha = safeTime(e?.hA);
+        const isMaladie = isExplicitMaladie(e);
         const isExplicitOff = isExplicitOffOrOut(e);
+
+        if (isMaladie) {
+          hadAnyActivity = true;
+          hasMaladieInWeek = true;
+          rcByEmpDay[id][d] = "M";
+          continue;
+        }
 
         if (ha) {
           hadAnyActivity = true;
@@ -392,7 +432,7 @@ async function getYearTimeline(year) {
 
       // Repos non pris = +1 à récupérer, 2ème repos = déduit (min 0)
       if (isWeekCompleted) {
-        if (nOffs === 0) {
+        if (nOffs === 0 && !hasMaladieInWeek) {
           if (hadAnyActivity || curWeekMonday >= start) {
             empBalances[id] += 1;
           }
@@ -447,7 +487,7 @@ async function buildMonthlySummary(mk) {
   equipe.forEach(emp => {
     const id = empIdOf(emp);
     const solde = soldeByEmpMonth[id]?.[mk] ?? timeline.currentSoldeByEmp[id] ?? 0;
-    out[id] = { empId: id, nom: emp.nom, prenom: emp.prenom, poste: emp.poste, present: 0, R: 0, C: 0, lateMin: 0, solde };
+    out[id] = { empId: id, nom: emp.nom, prenom: emp.prenom, poste: emp.poste, present: 0, R: 0, C: 0, M: 0, lateMin: 0, solde };
   });
   dates.forEach(dayISO => {
     if (dayISO > today || isExcluded(dayISO)) return;
@@ -456,16 +496,21 @@ async function buildMonthlySummary(mk) {
       const start = startMap[id];
       if (!start || dayISO < start) return;
       const e = merged[id] || null;
+      const rc = rcByEmpDay[id]?.[dayISO];
+      if (rc === "M" || isExplicitMaladie(e)) {
+        out[id].M++;
+        return;
+      }
       const hp = safeTime(e?.hP) || "";
       const ha = safeTime(e?.hA) || "";
-      if (ha) {
+      if (ha && !isExplicitOffOrOut(e)) {
         out[id].present++;
         out[id].lateMin += diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
         return;
       }
-      const rc = rcByEmpDay[id]?.[dayISO];
       if (!rc) return;
-      if (rc === "R") out[id].R++; else out[id].C++;
+      if (rc === "R") out[id].R++;
+      else if (rc === "C") out[id].C++;
     });
   });
   return out;
@@ -485,6 +530,7 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
       present: 0,
       R: 0,
       C: 0,
+      M: 0,
       lateMin: 0,
       solde: timeline.currentSoldeByEmp[id] ?? 0
     };
@@ -503,6 +549,7 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
           present: 0,
           R: 0,
           C: 0,
+          M: 0,
           lateMin: 0,
           solde: timeline.currentSoldeByEmp[s.empId] ?? 0
         };
@@ -510,10 +557,60 @@ async function buildYearSummaryOptimized(year, monthPrefetch) {
       totalsByEmp[s.empId].present += Number(s.present) || 0;
       totalsByEmp[s.empId].R       += Number(s.R) || 0;
       totalsByEmp[s.empId].C       += Number(s.C) || 0;
+      totalsByEmp[s.empId].M       += Number(s.M) || 0;
       totalsByEmp[s.empId].lateMin += Number(s.lateMin) || 0;
     });
   }
   return totalsByEmp;
+}
+
+/**
+ * Enregistrement manuel d'un Arrêt Maladie (M) sur une date ou une plage de dates
+ */
+async function setEmpMaladieRange(empId, startDateISO, endDateISO, isMaladie, motifMaladie = "") {
+  if (!empId || !startDateISO) throw new Error("Collaborateur ou date manquant.");
+  const endISO = endDateISO || startDateISO;
+  if (startDateISO > endISO) throw new Error("La date de début doit précéder la date de fin.");
+
+  const days = [];
+  let cur = startDateISO;
+  let guard = 0;
+  while (cur <= endISO && guard < 90) {
+    days.push(cur);
+    cur = addDaysISO(cur, 1);
+    guard++;
+  }
+
+  const cleanMotif = String(motifMaladie || "").trim().slice(0, 200);
+  const nowTs = Date.now();
+
+  await Promise.all(days.map(d => {
+    const ref = database.ref(`presences/${d}/${empId}`);
+    if (isMaladie) {
+      return ref.update({
+        maladie: true,
+        statut: "MALADIE",
+        motifMaladie: cleanMotif || null,
+        off: null,
+        hA: null,
+        retard: null,
+        retardMin: null,
+        lastEditAt: nowTs,
+        lastEditByAdmin: true
+      });
+    } else {
+      return ref.update({
+        maladie: null,
+        statut: null,
+        motifMaladie: null,
+        lastEditAt: nowTs,
+        lastEditByAdmin: true
+      });
+    }
+  }));
+
+  clearMonthCache();
+  return days.length;
 }
 
 async function loadEquipeFromDB() {

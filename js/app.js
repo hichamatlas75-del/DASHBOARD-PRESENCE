@@ -129,6 +129,7 @@ async function exportYear_ToSheets() {
         presents: t.present,
         repos: t.R,
         conge: t.C,
+        maladie: t.M ?? 0,
         solde: t.solde ?? 0,
         retard: t.lateMin
       }));
@@ -161,10 +162,10 @@ async function exportCSV_RC_Month() {
   const dateInput = document.getElementById('dashDate');
   const mk = monthKeyFromISO(dateInput.value);
   const summary = await buildMonthlySummary(mk);
-  const header = ["Mois", "Employe", "Poste", "Presents", "ReposTotal", "CongeTotal", "SoldeRecup", "RetardMin"];
+  const header = ["Mois", "Employe", "Poste", "Presents", "ReposTotal", "CongeTotal", "MaladieTotal", "SoldeRecup", "RetardMin"];
   const lines = [header.join(",")];
   Object.values(summary).sort((a, b) => (a.nom + a.prenom).localeCompare(b.nom + b.prenom)).forEach(s => {
-    lines.push([mk, escapeCSV(`${s.nom} ${titleCase(s.prenom)}`), escapeCSV(s.poste), s.present, s.R, s.C, s.solde ?? 0, s.lateMin].join(","));
+    lines.push([mk, escapeCSV(`${s.nom} ${titleCase(s.prenom)}`), escapeCSV(s.poste), s.present, s.R, s.C, s.M ?? 0, s.solde ?? 0, s.lateMin].join(","));
   });
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -176,10 +177,10 @@ async function exportCSV_RC_Year() {
   const dateInput = document.getElementById('dashDate');
   const year = dateInput.value.slice(0, 4);
   const totalsByEmp = await buildYearSummaryOptimized(year);
-  const header = ["Annee", "Employe", "Poste", "PresentsTotal", "ReposTotal", "CongeCumuleAnnee", "SoldeRecupActuel", "RetardTotalMin"];
+  const header = ["Annee", "Employe", "Poste", "PresentsTotal", "ReposTotal", "CongeCumuleAnnee", "MaladieCumuleAnnee", "SoldeRecupActuel", "RetardTotalMin"];
   const lines = [header.join(",")];
   Object.values(totalsByEmp).sort((a, b) => (a.nom + a.prenom).localeCompare(b.nom + b.prenom)).forEach(t => {
-    lines.push([year, escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()), escapeCSV(t.poste), t.present, t.R, t.C, t.solde ?? 0, t.lateMin].join(","));
+    lines.push([year, escapeCSV(`${t.nom} ${titleCase(t.prenom)}`.trim()), escapeCSV(t.poste), t.present, t.R, t.C, t.M ?? 0, t.solde ?? 0, t.lateMin].join(","));
   });
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);

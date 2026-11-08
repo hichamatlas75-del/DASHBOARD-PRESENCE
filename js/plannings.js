@@ -87,6 +87,7 @@ function matchCuisineStaffKey(nameOrKey) {
   if (s.includes("JIHANE") || s.includes("MAJDOUB")) return "JIHANE";
   if (s.includes("IMANE") || s.includes("MOUJAHID")) return "IMANE";
   if (s.includes("ANAS") || s.includes("BOURAHMA")) return "ANAS";
+  if (s.includes("JAWAD") || s.includes("JAOUAD") || s.includes("LEMSSIEH") || s.includes("LAMSSIAH")) return "JAWAD";
   if (s.includes("SAAD") || (s.includes("IDRISSI") && !s.includes("KARIMA") && !s.includes("SERGINI") && (s.includes("OUDGHRI") || s.includes("OUDGHIRI") || s.includes("SAAD")))) return "SAAD";
   return null;
 }
@@ -303,7 +304,7 @@ function isMenageStaff(empOrId) {
   return s.includes("SBAI") || s.includes("ELGORRAMY") || s.includes("ABOUARSA") ||
          s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR") ||
          s.includes("KHALISSA") || s.includes("CHAOUI") ||
-         s.includes("FATIMZAHRA") || s.includes("OUAZZANI");
+         s.includes("FATIMZAHRA") || s.includes("OUAZZANI") || s.includes("AZHARY") || s.includes("NAJIA");
 }
 
 function getEffectiveHP(hp, empId, dateISO) {
@@ -477,7 +478,15 @@ const StaffPhotoService = (() => {
     "FOUZIA6ZHAR": "images/FOUZIA6ZHAR.jpg",
     "FOUZIA_ZHAR": "images/FOUZIA6ZHAR.jpg",
     "FOUZIA_EZHAR": "images/FOUZIA6ZHAR.jpg",
-    "EZHAR_FOUZIA": "images/FOUZIA.jpg"
+    "EZHAR_FOUZIA": "images/FOUZIA.jpg",
+    "EL_AZHARY_NAJIA": "images/EL_AZHARY.jpg",
+    "ELAZHARY_NAJIA": "images/EL_AZHARY.jpg",
+    "AZHARY_NAJIA": "images/EL_AZHARY.jpg",
+    "EL_AZHARY": "images/EL_AZHARY.jpg",
+    "ELAZHARY": "images/EL_AZHARY.jpg",
+    "AZHARY": "images/EL_AZHARY.jpg",
+    "NAJIA_EL_AZHARY": "images/EL_AZHARY.jpg",
+    "NAJIA": "images/EL_AZHARY.jpg"
   };
 
   function normalize(str) {
@@ -520,6 +529,9 @@ const StaffPhotoService = (() => {
     }
     if (clean.includes("SAAD") || clean.includes("OUDGHRI") || clean.includes("OUDGHRISSAAD")) {
       return "images/IDRISSI_OUDGHRI_SAAD.jpg";
+    }
+    if (clean.includes("AZHARY") || clean.includes("NAJIA")) {
+      return "images/EL_AZHARY.jpg";
     }
 
     if (PHOTO_MAP[clean]) return PHOTO_MAP[clean];

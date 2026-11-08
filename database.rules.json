@@ -15,9 +15,12 @@
       ".read": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
       "$date": {
         "$emp": {
-          ".write": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || (root.child('users').child(auth.uid).val() == 'equipe' && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA'))",
+          ".write": "auth != null && (root.child('users').child(auth.uid).val() == 'gerant' || root.child('users').child(auth.uid).val() == 'equipe')",
           "on": { ".validate": "newData.val() === null || newData.isBoolean()" },
           "off": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "maladie": { ".validate": "newData.val() === null || newData.isBoolean()" },
+          "statut": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 40)" },
+          "motifMaladie": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
           "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "hA": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "retard": { ".validate": "newData.val() === null || newData.isBoolean()" },
@@ -26,7 +29,7 @@
           "lastEditAt": { ".validate": "newData.val() === null || newData.isNumber()" },
           "lastEditByAdmin": { ".validate": "newData.val() === null || newData.isBoolean()" },
           "$other": { ".validate": false },
-          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && ((!newData.child('hA').exists() && !newData.child('retard').exists() && !newData.child('retardMin').exists() && !newData.child('timestamp').exists() && !newData.child('lastEditAt').exists() && !newData.child('lastEditByAdmin').exists()) || (($emp == 'ELMCHAOURI_SOUAD' || $emp == 'SBAI_HAKIMA') && (!data.child('hA').exists() || data.child('hA').val() == null || newData.child('hA').val() == null) && newData.child('hA').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists() && newData.child('lastEditAt').exists() && newData.child('lastEditByAdmin').exists() && newData.child('lastEditByAdmin').val() == false))))"
+          ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && !newData.child('maladie').exists() && !newData.child('motifMaladie').exists() && !newData.child('statut').exists() && ((!newData.child('hA').exists() && !newData.child('retard').exists() && !newData.child('retardMin').exists() && !newData.child('timestamp').exists() && !newData.child('lastEditAt').exists() && !newData.child('lastEditByAdmin').exists() && $emp != 'ELMCHAOURI_SOUAD' && $emp != 'SBAI_HAKIMA') || (($emp == 'ELMCHAOURI_SOUAD' || $emp == 'SBAI_HAKIMA') && (!data.child('hA').exists() || data.child('hA').val() == null || newData.child('hA').val() == null) && newData.child('hA').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists() && newData.child('lastEditAt').exists() && newData.child('lastEditByAdmin').exists() && newData.child('lastEditByAdmin').val() == false))))"
         }
       }
     },
@@ -43,6 +46,10 @@
           "timestamp": { ".validate": "newData.isNumber()" },
           "hP": { ".validate": "newData.val() === null || (newData.isString() && newData.val().matches(/^([01]\\d|2[0-3]):[0-5]\\d$/))" },
           "motif": { ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 200)" },
+          "lat": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "lon": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "dist": { ".validate": "newData.val() === null || newData.isNumber()" },
+          "acc": { ".validate": "newData.val() === null || newData.isNumber()" },
           "$other": { ".validate": false },
           ".validate": "((root.child('users').child(auth.uid).val() == 'gerant') || (root.child('users').child(auth.uid).val() == 'equipe' && (!data.child('hA').exists() || data.child('hA').val() == null) && newData.child('hA').exists() && newData.child('empKey').exists() && newData.child('retard').exists() && newData.child('retardMin').exists() && newData.child('timestamp').exists()))"
         }

@@ -303,13 +303,18 @@ function renderDayView(data) {
       }).forEach(emp => {
         const id = empIdOf(emp);
         const cardProps = calculateEmpCardProps(emp, id, data[id] || {}, selectedDay, isPastDay);
-        const motifBadgeHtml = (cardProps.diff > 0 && cardProps.motif)
+        const motifBadgeHtml = (cardProps.isMaladie && cardProps.motifMaladie)
+          ? `<div class="motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-rose-50/90 border border-rose-200/80 text-rose-900 truncate" title="Motif : « ${escAttr(cardProps.motifMaladie)} »">🩺 « ${esc(cardProps.motifMaladie)} »</div>`
+          : (cardProps.diff > 0 && cardProps.motif)
           ? `<div class="motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate" title="Motif : « ${escAttr(cardProps.motif)} »">💬 « ${esc(cardProps.motif)} »</div>`
           : (cardProps.diff >= 15 ? `<div class="motif-badge text-[9px] font-semibold mt-1 px-1.5 py-0.5 rounded text-amber-700/70 italic">⚠️ Sans motif saisi</div>` : `<div class="motif-badge hidden"></div>`);
         html += `
           <button id="card-${escAttr(id)}" data-empid="${escAttr(id)}" class="staff-card ${escAttr(cardProps.finalSClass)} glass-card p-3.5 rounded-2xl text-left flex flex-col justify-between" style="min-height:7.5rem">
             <span class="status-dot" style="background:${escAttr(cardProps.finalDot)}"></span>
-            <div class="arrive-time">${esc(cardProps.ha)}</div>
+            <div class="arrive-time flex items-center justify-end gap-1">
+              <span>${esc(cardProps.ha)}</span>
+              ${(cardProps.ha && !cardProps.isMaladie && cardProps.dist !== null) ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 border border-emerald-300/80 px-1 py-0.2 rounded" title="GPS certifié à ${cardProps.dist}m (±${cardProps.acc || 0}m)">📍${cardProps.dist}m</span>` : ""}
+            </div>
             <div class="flex items-center gap-2.5 min-w-0 pr-4">
               ${getStaffAvatarHtml(emp.nom, emp.prenom, 'md')}
               <div class="min-w-0">
@@ -345,7 +350,9 @@ function renderDayView(data) {
       if (dot) dot.style.background = cardProps.finalDot;
 
       const arriveTime = card.querySelector('.arrive-time');
-      if (arriveTime) arriveTime.textContent = cardProps.ha;
+      if (arriveTime) {
+        arriveTime.innerHTML = `<span>${esc(cardProps.ha)}</span>${(cardProps.ha && !cardProps.isMaladie && cardProps.dist !== null) ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 border border-emerald-300/80 px-1 py-0.2 rounded" title="GPS certifié à ${cardProps.dist}m (±${cardProps.acc || 0}m)">📍${cardProps.dist}m</span>` : ""}`;
+      }
 
       const statusText = card.querySelector('.status-text');
       if (statusText) {
@@ -355,7 +362,11 @@ function renderDayView(data) {
 
       const motifEl = card.querySelector('.motif-badge');
       if (motifEl) {
-        if (cardProps.diff > 0 && cardProps.motif) {
+        if (cardProps.isMaladie && cardProps.motifMaladie) {
+          motifEl.className = 'motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-rose-50/90 border border-rose-200/80 text-rose-900 truncate';
+          motifEl.setAttribute('title', `Motif : « ${cardProps.motifMaladie} »`);
+          motifEl.textContent = `🩺 « ${cardProps.motifMaladie} »`;
+        } else if (cardProps.diff > 0 && cardProps.motif) {
           motifEl.className = 'motif-badge text-[9.5px] font-bold mt-1.5 p-1 px-2 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-900 truncate';
           motifEl.setAttribute('title', `Motif : « ${cardProps.motif} »`);
           motifEl.textContent = `💬 « ${cardProps.motif} »`;
@@ -381,6 +392,24 @@ function renderDayView(data) {
 }
 
 function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
+  const isMaladie = isExplicitMaladie(d);
+  if (isMaladie) {
+    const motifMaladie = String(d.motifMaladie || d.motif || "").trim();
+    return {
+      ha: "M",
+      diff: 0,
+      finalSClass: "status-maladie",
+      finalDot: "#e11d48",
+      statusText: "🩺 Arrêt Maladie",
+      statusColor: "color:#be123c",
+      motif: "",
+      isMaladie: true,
+      motifMaladie,
+      dist: null,
+      acc: null
+    };
+  }
+
   const isSec = (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ");
   const isCuisine = (emp.poste === "CUISINE");
   const isSoumia = isSoumiaStaff(id);
@@ -494,8 +523,10 @@ function calculateEmpCardProps(emp, id, d, selectedDay, isPastDay) {
   }
 
   const motif = (diff > 0 && !isMenage) ? String(d.motif || "").trim() : "";
+  const dist = (typeof d.dist === "number") ? d.dist : null;
+  const acc = (typeof d.acc === "number") ? d.acc : null;
 
-  return { ha, diff, finalSClass, finalDot, statusText, statusColor, motif };
+  return { ha, diff, finalSClass, finalDot, statusText, statusColor, motif, dist, acc };
 }
 
 let _currentBilanWeek = 'all';
@@ -705,7 +736,7 @@ async function renderReportView() {
   }
 
   const stats = {};
-  equipe.forEach(e => { const id = empIdOf(e); stats[id] = { info: e, present: 0, lateMin: 0, R: 0, C: 0 }; });
+  equipe.forEach(e => { const id = empIdOf(e); stats[id] = { info: e, present: 0, lateMin: 0, R: 0, C: 0, M: 0, ABSENT: 0 }; });
   const dailyLates = [], dailyPresence = [];
 
   targetDays.forEach(dayISO => {
@@ -726,9 +757,14 @@ async function renderReportView() {
       const start = curTimeline.startMap?.[id];
       if (!start || dayISO < start) return;
       const e = merged[id] || null;
+      const rc = curTimeline.rcByEmpDay?.[id]?.[dayISO];
+      if (rc === "M" || isExplicitMaladie(e)) {
+        stats[id].M++;
+        return;
+      }
       const hp = safeTime(e?.hP) || "";
       const ha = safeTime(e?.hA) || "";
-      if (ha) {
+      if (ha && !isExplicitOffOrOut(e)) {
         const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
         stats[id].present++;
         stats[id].lateMin += diff;
@@ -736,8 +772,7 @@ async function renderReportView() {
         tP++;
         return;
       }
-      const rc = curTimeline.rcByEmpDay?.[id]?.[dayISO];
-      if (rc) stats[id][rc]++;
+      if (rc && stats[id][rc] !== undefined) stats[id][rc]++;
     });
 
     dailyLates.push(tL);
@@ -780,6 +815,7 @@ async function renderReportView() {
       const ha = safeTime(e?.hA) || "";
       const isOff = e?.off === true;
       const rc = curTimeline.rcByEmpDay?.[id]?.[dayISO];
+      const isMaladie = (rc === "M") || isExplicitMaladie(e);
 
       // Cas Sécurité Lundi repos
       const [yY, mM, dD] = dayISO.split('-').map(Number);
@@ -791,7 +827,7 @@ async function renderReportView() {
       const isMenagePlannedOff = isMenage && mPlan?.off;
       const isMenageWeeklyRest = isMenage && (rc === "R" || isMenagePlannedOff);
 
-      if (ha && !isExplicitOut) {
+      if (ha && !isExplicitOut && !isMaladie) {
         presentCount++;
         consecutiveAbsent = 0;
         const diff = diffFromEntry({ hA: ha, hP: hp }, id, dayISO);
@@ -799,8 +835,8 @@ async function renderReportView() {
           lateCount++;
           totalLateMin += diff;
         }
-      } else if (rc === "R" || rc === "C" || isSecMonday || isMenageWeeklyRest) {
-        // Le jour de repos OFF de la semaine réinitialise les absences consécutives
+      } else if (rc === "R" || rc === "C" || isMaladie || isSecMonday || isMenageWeeklyRest) {
+        // Le jour de repos OFF, congé ou arrêt maladie réinitialise les absences consécutives
         consecutiveAbsent = 0;
       } else {
         consecutiveAbsent++;
@@ -987,28 +1023,31 @@ async function renderReportView() {
   document.getElementById('dashBody').innerHTML = html;
 }
 
-function makeTable(rows, colR, colC) {
+function makeTable(rows, colR, colC, colM = 'M') {
   return `<div class="mt-4 overflow-x-auto">
     <table class="rc-table">
       <colgroup>
-        <col style="width:38%" class="sm:!w-[42%] md:!w-[45%]">
-        <col style="width:12%" class="sm:!w-[11%] md:!w-[11%]">
+        <col style="width:34%" class="sm:!w-[38%] md:!w-[40%]">
         <col style="width:11%" class="sm:!w-[10%] md:!w-[10%]">
+        <col style="width:10%" class="sm:!w-[10%] md:!w-[10%]">
+        <col style="width:10%" class="sm:!w-[10%] md:!w-[10%]">
         <col style="width:11%" class="sm:!w-[10%] md:!w-[10%]">
-        <col style="width:14%" class="sm:!w-[14%] md:!w-[12%]">
-        <col style="width:14%" class="sm:!w-[13%] md:!w-[12%]">
+        <col style="width:12%" class="sm:!w-[11%] md:!w-[10%]">
+        <col style="width:12%" class="sm:!w-[11%] md:!w-[10%]">
       </colgroup>
       <thead><tr>
         <th style="text-align:left">Employé</th>
         <th style="text-align:center">Prés.</th>
         <th style="text-align:center">${esc(colR)}</th>
         <th style="text-align:center">${esc(colC)}</th>
+        <th style="text-align:center" title="Arrêt Maladie (saisie manuelle)">${esc(colM)}</th>
         <th style="text-align:center" title="Repos non pris à récupérer (dû au salarié)">Solde</th>
         <th style="text-align:center">Retard</th>
       </tr></thead>
       <tbody>
         ${rows.map(r => {
           const late = Number(r.lateMin) || 0;
+          const mal = Number(r.M) || 0;
           const solde = Math.max(0, Number(r.solde) || 0);
           const isNoRepos = noReposIds.has(r.empId);
 
@@ -1021,7 +1060,11 @@ function makeTable(rows, colR, colC) {
             }
           }
 
-          return `<tr data-nom="${escAttr(r.nom)}" data-prenom="${escAttr(r.prenom)}" title="Cliquer pour voir le calendrier">
+          const malHtml = mal > 0
+            ? `<span class="maladie-badge" title="${mal} jour(s) d'arrêt maladie">${esc(mal)}</span>`
+            : `<span class="muted-dash">0</span>`;
+
+          return `<tr data-nom="${escAttr(r.nom)}" data-prenom="${escAttr(r.prenom)}" title="Cliquer pour voir le calendrier et gérer les arrêts maladie">
             <td class="col-emp">
               <div class="flex items-center gap-2.5 sm:gap-3.5">
                 ${getStaffAvatarHtml(r.nom, r.prenom, 'table')}
@@ -1037,6 +1080,7 @@ function makeTable(rows, colR, colC) {
             <td style="text-align:center;font-weight:900;color:var(--ok)">${esc(r.present)}</td>
             <td style="text-align:center;font-weight:900;color:var(--chip-r-fg)">${esc(r.R)}</td>
             <td style="text-align:center;font-weight:900;color:var(--amber)">${esc(r.C)}</td>
+            <td style="text-align:center;font-weight:900;color:#be123c">${malHtml}</td>
             <td style="text-align:center;font-weight:900">${soldeHtml}</td>
             <td style="text-align:center;font-weight:900;color:var(--crit)">
               ${late ? `<span>${esc(late)}m</span>` : '<span class="muted-dash">—</span>'}
@@ -1066,27 +1110,67 @@ async function renderRCView() {
   };
 
   const monthRows = Object.values(monthSummary).sort(sortFn);
-  let mP = 0, mR = 0, mC = 0, mL = 0;
-  monthRows.forEach(r => { mP += r.present; mR += r.R; mC += r.C; mL += r.lateMin; });
+  let mP = 0, mR = 0, mC = 0, mM = 0, mL = 0;
+  monthRows.forEach(r => { mP += r.present; mR += r.R; mC += r.C; mM += (r.M || 0); mL += r.lateMin; });
 
   const yearRows = Object.values(yearSummary).sort(sortFn);
-  let yP = 0, yR = 0, yC = 0, yL = 0;
-  yearRows.forEach(r => { yP += r.present; yR += r.R; yC += r.C; yL += r.lateMin; });
+  let yP = 0, yR = 0, yC = 0, yM = 0, yL = 0;
+  yearRows.forEach(r => { yP += r.present; yR += r.R; yC += r.C; yM += (r.M || 0); yL += r.lateMin; });
+
+  const sortedEquipe = equipe.slice().sort(sortFn);
+  const defaultDay = (mk === monthKeyFromISO(todayISO())) ? todayISO() : (mk + "-01");
 
   const html = `<div class="space-y-4">
+    <!-- ─── Panneau de saisie manuelle Arrêt Maladie (M) ─── -->
+    <div class="glass-card rounded-2xl p-4" style="border-color:rgba(244,63,94,.28);background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,241,242,.75))">
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">🩺</span>
+          <span class="smallCaps" style="color:#be123c">Saisie manuelle · Arrêt Maladie (M)</span>
+        </div>
+        <span class="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full" style="background:rgba(244,63,94,.12);color:#be123c">
+          Suivi exact RH
+        </span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <select id="rcMaladieEmp" class="inpt" style="font-size:11px;padding:9px 11px">
+          <option value="">-- Collaborateur --</option>
+          ${sortedEquipe.map(e => `<option value="${escAttr(empIdOf(e))}">${esc(e.nom)} ${esc(titleCase(e.prenom))} (${esc(e.poste)})</option>`).join("")}
+        </select>
+        <input type="date" id="rcMaladieStart" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:9px 11px" title="Date de début" onchange="const endEl=document.getElementById('rcMaladieEnd');if(endEl&&(!endEl.value||endEl.value<this.value))endEl.value=this.value;" />
+        <input type="date" id="rcMaladieEnd" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:9px 11px" title="Date de fin (incluse)" />
+        <input type="text" id="rcMaladieMotif" class="inpt" placeholder="Certificat / note (optionnel)" maxlength="120" style="font-size:11px;padding:9px 11px" />
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5">
+        <div id="rcMaladieMsg" class="text-[10.5px] font-extrabold" style="color:var(--muted2)">
+          Astuce : tu peux aussi cliquer sur un employé puis sur les jours de son calendrier 📅
+        </div>
+        <div class="flex items-center gap-2 ml-auto">
+          <button type="button" onclick="window.submitRCMaladieForm(true)" class="btn-action px-3.5 py-2 rounded-xl text-[11px] font-extrabold"
+            style="background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.38);color:#9f1239">
+            🩺 + Marquer Maladie (M)
+          </button>
+          <button type="button" onclick="window.submitRCMaladieForm(false)" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold"
+            style="background:rgba(255,255,255,.70);border:1px solid var(--stroke-med);color:var(--text)">
+            ✕ Retirer M
+          </button>
+        </div>
+      </div>
+    </div>
+
     <details class="drawer" open>
       <summary>
         <div>
           <div class="smallCaps">Tableau Mois</div>
           <div class="hTitle text-xl mt-1">${esc(mk)}
             <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">
-              · ${esc(mP)} présents · R ${esc(mR)} · C ${esc(mC)} · ${esc(mL)} min
+              · ${esc(mP)} présents · R ${esc(mR)} · C ${esc(mC)} · M ${esc(mM)} · ${esc(mL)} min
             </span>
           </div>
         </div>
         <div class="chev">▾</div>
       </summary>
-      <div class="body">${makeTable(monthRows, 'R', 'C')}</div>
+      <div class="body">${makeTable(monthRows, 'R', 'C', 'M')}</div>
     </details>
 
     <details class="drawer">
@@ -1095,14 +1179,14 @@ async function renderRCView() {
           <div class="smallCaps">Tableau Année (cumul)</div>
           <div class="hTitle text-xl mt-1">${esc(year)}
             <span style="opacity:.55;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700">
-              · ${esc(yP)} présents · Repos ${esc(yR)} · Congé ${esc(yC)} · ${esc(yL)} min
+              · ${esc(yP)} présents · Repos ${esc(yR)} · Congé ${esc(yC)} · Maladie ${esc(yM)} · ${esc(yL)} min
             </span>
           </div>
         </div>
         <div class="chev">▾</div>
       </summary>
       <div class="body">
-        ${makeTable(yearRows, 'Repos', 'Congé')}
+        ${makeTable(yearRows, 'Repos', 'Congé', 'Maladie')}
         <p class="mt-3 text-[10px] font-semibold" style="color:var(--muted3)">
           Année = cumul des mois · Solde = repos non pris dus au salarié (+)
         </p>
@@ -1110,7 +1194,7 @@ async function renderRCView() {
     </details>
 
     <p class="text-[10px] font-semibold" style="color:var(--muted3)">
-      R = Repos hebdo · C = Congé pris / 2ᵉ repos · Solde = Repos non pris à récupérer · 📅 cliquer sur un employé pour le calendrier
+      R = Repos hebdo · C = Congé pris / 2ᵉ repos · M = Arrêt Maladie (manuel) · Solde = Repos non pris à récupérer · 📅 cliquer sur un employé pour le calendrier
     </p>
   </div>`;
 
@@ -1119,6 +1203,36 @@ async function renderRCView() {
     tr.addEventListener('click', () => openCalendarModal(tr.dataset.nom, tr.dataset.prenom));
   });
 }
+
+window.submitRCMaladieForm = async function(isMaladie) {
+  const empId = document.getElementById('rcMaladieEmp')?.value || "";
+  const startISO = document.getElementById('rcMaladieStart')?.value || "";
+  const endISO = document.getElementById('rcMaladieEnd')?.value || startISO;
+  const motif = document.getElementById('rcMaladieMotif')?.value || "";
+  const msgEl = document.getElementById('rcMaladieMsg');
+
+  if (!empId) {
+    if (msgEl) { msgEl.style.color = 'var(--crit)'; msgEl.textContent = "⚠️ Sélectionne un collaborateur."; }
+    return;
+  }
+  if (!startISO) {
+    if (msgEl) { msgEl.style.color = 'var(--crit)'; msgEl.textContent = "⚠️ Sélectionne une date."; }
+    return;
+  }
+  try {
+    if (msgEl) { msgEl.style.color = 'var(--muted2)'; msgEl.textContent = "Enregistrement…"; }
+    const count = await setEmpMaladieRange(empId, startISO, endISO, isMaladie, motif);
+    if (msgEl) {
+      msgEl.style.color = 'var(--ok)';
+      msgEl.textContent = isMaladie
+        ? `✅ Arrêt maladie (M) enregistré sur ${count} jour(s).`
+        : `✅ Statut maladie retiré sur ${count} jour(s).`;
+    }
+    await renderRCView();
+  } catch (e) {
+    if (msgEl) { msgEl.style.color = 'var(--crit)'; msgEl.textContent = "⚠️ Erreur : " + (e?.message || "Permission refusée"); }
+  }
+};
 
 function _modalMonthChange(newMk) {
   if (!_modalState) return;
@@ -1133,6 +1247,81 @@ window.switchModalTab = function(newMode) {
     openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
   } else {
     openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+  }
+};
+
+function buildModalMaladieBarHtml(empId, mk) {
+  const defaultDay = (mk === monthKeyFromISO(todayISO())) ? todayISO() : (mk + "-01");
+  return `
+    <div class="p-3 rounded-2xl mb-3" style="background:rgba(255,241,242,.75);border:1px solid rgba(244,63,94,.28)">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs">🩺</span>
+          <span class="smallCaps" style="color:#be123c;font-size:9.5px">Saisie manuelle Arrêt Maladie (M)</span>
+        </div>
+        <span class="text-[9px] font-bold" style="color:#9f1239">Clique aussi sur un jour ci-dessous</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+        <input type="date" id="modalMaladieStart" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:7px 10px;border-radius:10px" title="Date début" onchange="const endEl=document.getElementById('modalMaladieEnd');if(endEl&&(!endEl.value||endEl.value<this.value))endEl.value=this.value;" />
+        <input type="date" id="modalMaladieEnd" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:7px 10px;border-radius:10px" title="Date fin" />
+        <input type="text" id="modalMaladieMotif" class="inpt" placeholder="Certificat / motif (optionnel)" maxlength="120" style="font-size:11px;padding:7px 10px;border-radius:10px" />
+      </div>
+      <div class="flex items-center justify-between gap-2 mt-2">
+        <div id="modalMaladieMsg" class="text-[10px] font-extrabold truncate" style="color:var(--muted2)"></div>
+        <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+          <button type="button" onclick="window.submitModalMaladieForm('${escAttr(empId)}', true)" class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+            style="background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.38);color:#9f1239">
+            🩺 + Maladie (M)
+          </button>
+          <button type="button" onclick="window.submitModalMaladieForm('${escAttr(empId)}', false)" class="btn-action btn-neutral px-2.5 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+            style="background:rgba(255,255,255,.75);border:1px solid var(--stroke-med);color:var(--text)">
+            ✕ Retirer M
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.submitModalMaladieForm = async function(empId, isMaladie) {
+  const startISO = document.getElementById('modalMaladieStart')?.value || "";
+  const endISO = document.getElementById('modalMaladieEnd')?.value || startISO;
+  const motif = document.getElementById('modalMaladieMotif')?.value || "";
+  const msgEl = document.getElementById('modalMaladieMsg');
+  if (!startISO) {
+    if (msgEl) { msgEl.style.color = 'var(--crit)'; msgEl.textContent = "⚠️ Choisis une date."; }
+    return;
+  }
+  try {
+    if (msgEl) { msgEl.style.color = 'var(--muted2)'; msgEl.textContent = "Enregistrement…"; }
+    await setEmpMaladieRange(empId, startISO, endISO, isMaladie, motif);
+    if (_modalState) {
+      if (_modalState.mode === 'calendar') await openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
+      else await openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+    }
+    if (typeof currentMode !== 'undefined') {
+      if (currentMode === 'rc') renderRCView();
+      else if (currentMode === 'report') renderReportView();
+    }
+  } catch (e) {
+    if (msgEl) { msgEl.style.color = 'var(--crit)'; msgEl.textContent = "⚠️ " + (e?.message || "Erreur"); }
+  }
+};
+
+window.quickToggleMaladieDay = async function(empId, dayISO, currentlyMaladie) {
+  if (!empId || !dayISO) return;
+  try {
+    await setEmpMaladieRange(empId, dayISO, dayISO, !currentlyMaladie, "");
+    if (_modalState) {
+      if (_modalState.mode === 'calendar') await openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
+      else await openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+    }
+    if (typeof currentMode !== 'undefined') {
+      if (currentMode === 'rc') renderRCView();
+      else if (currentMode === 'report') renderReportView();
+    }
+  } catch (e) {
+    alert("Erreur lors de la mise à jour de l'arrêt maladie : " + (e?.message || "Permission refusée"));
   }
 };
 
@@ -1177,19 +1366,26 @@ async function openCalendarModal(nom, prenom, mk) {
     retard:  { bg: 'rgba(220,38,38,.08)',   color: '#991b1b',               label: '⚡' },
     repos:   { bg: 'rgba(99,102,241,.12)',  color: '#3730a3',               label: 'R' },
     conge:   { bg: 'rgba(245,158,11,.13)',  color: '#92400e',               label: 'C' },
+    maladie: { bg: 'rgba(244,63,94,.14)',   color: '#be123c',               label: 'M' },
     off:     { bg: 'rgba(148,163,184,.11)', color: 'rgba(100,116,139,.75)', label: 'OFF' },
     absent:  { bg: 'rgba(234,88,12,.09)',   color: '#9a3412',               label: '⚠' }
   };
 
-  let nPresent = 0, nR = 0, nC = 0, nOff = 0, nAbsent = 0;
+  let nPresent = 0, nR = 0, nC = 0, nM = 0, nOff = 0, nAbsent = 0;
   const dayMap = {};
 
   dates.forEach(dayISO => {
+    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], md.motifsByDay?.[dayISO]);
+    const e = merged[empId] || null;
+    const rc = rcByEmpDay[empId]?.[dayISO];
+    if (rc === 'M' || isExplicitMaladie(e)) {
+      dayMap[dayISO] = { type: 'maladie', motif: String(e?.motifMaladie || e?.motif || "").trim() };
+      nM++;
+      return;
+    }
     if (dayISO > today) { dayMap[dayISO] = { type: 'future' }; return; }
     if (isExcluded(dayISO)) { dayMap[dayISO] = { type: 'exclu' }; return; }
     if (!empStart || dayISO < empStart) { dayMap[dayISO] = { type: 'avant' }; return; }
-    const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], md.motifsByDay?.[dayISO]);
-    const e = merged[empId] || null;
     const isSec = (emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ"));
     const isMenage = (emp && (emp.poste === "MENAGE" || emp.poste === "MÉNAGE")) || isMenageStaff(empId);
     const [yY, mM, dD] = dayISO.split('-').map(Number);
@@ -1197,7 +1393,6 @@ async function openCalendarModal(nom, prenom, mk) {
     const isMonday = (dtD.getUTCDay() === 1);
 
     const isExplicitOut = isExplicitOffOrOut(e);
-    const rc = rcByEmpDay[empId]?.[dayISO];
     if (rc === 'R') { dayMap[dayISO] = { type: 'repos' }; nR++; return; }
     if (rc === 'C') { dayMap[dayISO] = { type: 'conge' }; nC++; return; }
     if (rc === 'ABSENT') { dayMap[dayISO] = { type: 'absent' }; nAbsent++; return; }
@@ -1236,6 +1431,7 @@ async function openCalendarModal(nom, prenom, mk) {
   if (nPresent) recapHtml += badge('rgba(5,150,105,.11)', 'rgba(5,150,105,.28)', '#065f46', `✓ ${nPresent} présents`);
   if (nR)       recapHtml += badge('rgba(99,102,241,.12)', 'rgba(99,102,241,.25)', '#3730a3', `R ${nR} repos`);
   if (nC)       recapHtml += badge('rgba(245,158,11,.13)', 'rgba(245,158,11,.28)', '#92400e', `C ${nC} congés`);
+  if (nM)       recapHtml += badge('rgba(244,63,94,.13)', 'rgba(244,63,94,.30)', '#be123c', `🩺 M ${nM} maladie`);
   if (!isNoRepos) {
     if (curSolde > 0) {
       recapHtml += badge('rgba(16,185,129,.14)', 'rgba(16,185,129,.35)', '#065f46', `📌 Solde : +${curSolde} à récupérer`);
@@ -1266,17 +1462,24 @@ async function openCalendarModal(nom, prenom, mk) {
         const info = dayMap[cursor] || { type: 'avant' };
         const t = TYPES[info.type] || TYPES.avant;
         const isToday = (cursor === today);
+        const isMaladieCell = (info.type === 'maladie');
         const { d } = parseISO(cursor);
         let sub = t.label;
         if (info.type === 'present') sub = info.ha || '✓';
         if (info.type === 'retard')  sub = `+${info.diff}m`;
-        const cellTitle = (info.type === 'retard' && info.motif)
-          ? `title="${cursor} · Retard +${info.diff}m · Motif : « ${escAttr(info.motif)} »"`
-          : (info.motif ? `title="${cursor} · Motif : « ${escAttr(info.motif)} »"` : '');
-        calHtml += `<div class="cal-cell${isToday ? ' cal-today' : ''}" ${cellTitle} style="background:${t.bg};border-color:${isToday ? 'rgba(245,158,11,.65)' : 'rgba(148,163,184,.10)'}">
+        if (isMaladieCell)           sub = '🩺 M';
+        const baseTooltip = isMaladieCell
+          ? `${cursor} · Arrêt Maladie (M)${info.motif ? ' · « ' + info.motif + ' »' : ''} — Cliquer pour retirer M`
+          : (info.type === 'retard' && info.motif)
+          ? `${cursor} · Retard +${info.diff}m · Motif : « ${info.motif} » — Cliquer pour marquer Maladie (M)`
+          : `${cursor} — Cliquer pour basculer Arrêt Maladie (M)`;
+        calHtml += `<div class="cal-cell${isToday ? ' cal-today' : ''} cursor-pointer hover:scale-[1.03] transition-transform"
+          onclick="window.quickToggleMaladieDay('${escAttr(empId)}','${cursor}',${isMaladieCell})"
+          title="${escAttr(baseTooltip)}"
+          style="background:${t.bg};border-color:${isToday ? 'rgba(245,158,11,.65)' : (isMaladieCell ? 'rgba(244,63,94,.38)' : 'rgba(148,163,184,.10)')}">
           <div style="font-size:11px;font-weight:900;color:#0f2744">${d}</div>
           <div style="font-size:9px;font-weight:800;color:${t.color};text-align:center;line-height:1.1">${sub}</div>
-          ${info.motif ? `<div style="font-size:7.5px;line-height:1;margin-top:1px;color:#b45309" title="Motif : « ${escAttr(info.motif)} »">💬</div>` : ''}
+          ${info.motif ? `<div style="font-size:7.5px;line-height:1;margin-top:1px;color:${isMaladieCell ? '#be123c' : '#b45309'}" title="Motif : « ${escAttr(info.motif)} »">💬</div>` : ''}
         </div>`;
       }
       cursor = addDaysISO(cursor, 1);
@@ -1290,29 +1493,41 @@ async function openCalendarModal(nom, prenom, mk) {
     <span style="font-size:9px;font-weight:700;color:var(--muted3)">⚡ Retard</span>
     <span style="font-size:9px;font-weight:700;color:var(--muted3)">R Repos</span>
     <span style="font-size:9px;font-weight:700;color:var(--muted3)">C Congé</span>
+    <span style="font-size:9px;font-weight:700;color:#be123c">🩺 M Arrêt Maladie (clic sur un jour)</span>
     <span style="font-size:9px;font-weight:700;color:var(--muted3)">OFF jour de repos</span>
     <span style="font-size:9px;font-weight:700;color:var(--muted3)">⚠ Absent non justifié</span>
   </div>`;
 
-  document.getElementById('modalList').innerHTML = recapHtml + calHtml + legHtml;
+  document.getElementById('modalList').innerHTML = buildModalMaladieBarHtml(empId, mk) + recapHtml + calHtml + legHtml;
 }
 
-function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif) {
+function rowHistory(dayISO, statut, hp, ha, retard, cls, rc, motif, empId = "", isMaladie = false, dist = null) {
   const rcTxt = rc ? ` · <span style="font-family:'Plus Jakarta Sans';font-weight:900">${esc(rc)}</span>` : "";
+  const toggleBtnHtml = empId ? `
+    <button type="button" onclick="window.quickToggleMaladieDay('${escAttr(empId)}','${escAttr(dayISO)}',${isMaladie})"
+      class="btn-action px-2 py-0.5 rounded-lg text-[9.5px] font-extrabold ml-2"
+      style="${isMaladie ? 'background:rgba(244,63,94,.16);border:1px solid rgba(244,63,94,.38);color:#be123c' : 'background:rgba(255,255,255,.75);border:1px solid var(--stroke-med);color:var(--muted2)'}"
+      title="${isMaladie ? 'Retirer Arrêt Maladie (M)' : 'Marquer en Arrêt Maladie (M)'}">
+      ${isMaladie ? '✕ Retirer M' : '🩺 M'}
+    </button>
+  ` : "";
   const motifHtml = motif ? `
-    <div class="mt-2.5 p-2 px-3 rounded-xl text-[11px] font-bold flex items-start gap-1.5" style="background:rgba(245,158,11,.10);border-left:3px solid var(--accent);color:#78350f">
-      <span>💬</span>
+    <div class="mt-2.5 p-2 px-3 rounded-xl text-[11px] font-bold flex items-start gap-1.5" style="background:${isMaladie ? 'rgba(244,63,94,.09);border-left:3px solid #e11d48;color:#9f1239' : 'rgba(245,158,11,.10);border-left:3px solid var(--accent);color:#78350f'}">
+      <span>${isMaladie ? '🩺' : '💬'}</span>
       <span class="italic font-semibold break-words">« ${esc(motif)} »</span>
     </div>
   ` : "";
-  return `<div class="p-4 rounded-2xl" style="background:rgba(255,255,255,.50);border:1px solid var(--stroke-med)">
-    <div class="flex justify-between items-center">
+  return `<div class="p-4 rounded-2xl" style="background:${isMaladie ? 'rgba(255,241,242,.65)' : 'rgba(255,255,255,.50)'};border:1px solid ${isMaladie ? 'rgba(244,63,94,.30)' : 'var(--stroke-med)'}">
+    <div class="flex justify-between items-center gap-2">
       <span class="smallCaps" style="font-size:10px">${esc(fmtFR(dayISO))}</span>
-      <span class="text-[11px] font-extrabold" style="${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
+      <div class="flex items-center">
+        <span class="text-[11px] font-extrabold" style="${escAttr(cls)}">${esc(statut)}${rcTxt}</span>
+        ${toggleBtnHtml}
+      </div>
     </div>
     <div class="mt-3 grid grid-cols-3 gap-2">
       <div class="text-[10px] font-bold" style="color:var(--muted3)">HP <span style="color:#0f2744;font-weight:900">${esc(hp || "—")}</span></div>
-      <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha || "—")}</span></div>
+      <div class="text-[10px] font-bold" style="color:var(--muted3)">HA <span style="color:#0f2744;font-weight:900">${esc(ha || "—")}</span>${(typeof dist === "number") ? `<span class="text-[8.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded ml-1" title="Pointé à ${dist}m du café">📍${dist}m</span>` : ""}</div>
       <div class="text-[10px] font-bold" style="color:var(--muted3)">Ret <span style="color:#0f2744;font-weight:900">${esc(retard || "—")}</span></div>
     </div>
     ${motifHtml}
@@ -1352,16 +1567,10 @@ async function openHistory(nom, prenom, mk) {
   let html = "";
   let absCount = 0;
   dates.slice().reverse().forEach(dayISO => {
-    if (dayISO > today) { html += rowHistory(dayISO, "À venir", "", "", "", "color:var(--muted3)"); return; }
-    if (isExcluded(dayISO)) { html += rowHistory(dayISO, "Exclu", "", "", "", "color:var(--muted3)"); return; }
-    const empStart = startMap[empId];
-    if (!empStart || dayISO < empStart) { html += rowHistory(dayISO, "Non commencé", "", "", "", "color:var(--muted3)"); return; }
     const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
     const e = merged[empId] || null;
-    const motif = String(e?.motif || "").trim();
-    const [yY, mM, dD] = dayISO.split('-').map(Number);
-    const dtD = new Date(Date.UTC(yY, mM - 1, dD));
-    const isMonday = (dtD.getUTCDay() === 1);
+    const rc = rcByEmpDay[empId]?.[dayISO];
+    const isMaladie = (rc === "M") || isExplicitMaladie(e);
 
     const isSec = (emp && (emp.poste === "SECURITE" || emp.poste === "SÉCURITÉ"));
     const isCuisine = (emp && (emp.poste === "CUISINE"));
@@ -1370,60 +1579,74 @@ async function openHistory(nom, prenom, mk) {
     const caissePlan = (isSalilStaff(empId) || isBenkhadaStaff(empId)) ? getCaisseAlternance(empId, dayISO) : null;
     const cuisinePlan = isCuisine ? getCuisinePlanning(empId, dayISO) : null;
     const soumiaPlan = isSoumia ? getSoumiaPlanning(dayISO) : null;
+    const hp = safeTime(e?.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
+
+    if (isMaladie) {
+      const mMotif = String(e?.motifMaladie || e?.motif || "").trim();
+      html += rowHistory(dayISO, "🩺 Arrêt Maladie", hp, "", "", "color:#be123c", "M", mMotif, empId, true);
+      return;
+    }
+    if (dayISO > today) { html += rowHistory(dayISO, "À venir", "", "", "", "color:var(--muted3)", "", "", empId, false); return; }
+    if (isExcluded(dayISO)) { html += rowHistory(dayISO, "Exclu", "", "", "", "color:var(--muted3)"); return; }
+    const empStart = startMap[empId];
+    if (!empStart || dayISO < empStart) { html += rowHistory(dayISO, "Non commencé", "", "", "", "color:var(--muted3)", "", "", empId, false); return; }
+
+    const motif = String(e?.motif || "").trim();
+    const [yY, mM, dD] = dayISO.split('-').map(Number);
+    const dtD = new Date(Date.UTC(yY, mM - 1, dD));
+    const isMonday = (dtD.getUTCDay() === 1);
 
     const isExplicitOut = isExplicitOffOrOut(e);
-    const rc = rcByEmpDay[empId]?.[dayISO];
     if (rc === "R") {
-      html += rowHistory(dayISO, "Repos", hp, "", "", "color:var(--chip-r-fg)", "R", "");
+      html += rowHistory(dayISO, "Repos", hp, "", "", "color:var(--chip-r-fg)", "R", "", empId, false);
       return;
     }
     if (rc === "C") {
-      html += rowHistory(dayISO, "Congé", hp, "", "", "color:var(--amber)", "C", "");
+      html += rowHistory(dayISO, "Congé", hp, "", "", "color:var(--amber)", "C", "", empId, false);
       return;
     }
     if (rc === "ABSENT") {
       absCount++;
-      html += rowHistory(dayISO, "⚠ Absent (OUT)", hp, "", "", "color:rgba(234,88,12,.90)", "", "");
+      html += rowHistory(dayISO, "⚠ Absent (OUT)", hp, "", "", "color:rgba(234,88,12,.90)", "", "", empId, false);
       return;
     }
 
-    const hp = safeTime(e?.hP) || (soumiaPlan && !soumiaPlan.off ? soumiaPlan.hP : (caissePlan ? caissePlan.hP : (isSec ? "09:00" : (cuisinePlan && !cuisinePlan.off ? cuisinePlan.hP : ""))));
     const ha = isExplicitOut ? "" : (safeTime(e?.hA) || "");
     if (ha) {
       const diff = diffFromEntry({ hA: ha, hP: hp }, empId, dayISO);
       const isLate = (diff > 0 && !isMenage);
       const cleanMotif = isLate ? motif : "";
-      if (isLate) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)", "", cleanMotif);
-      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)", "", "");
+      if (isLate) html += rowHistory(dayISO, "Retard", hp, ha, `+${diff} min`, "color:var(--crit)", "", cleanMotif, empId, false, e?.dist);
+      else html += rowHistory(dayISO, "À l'heure", hp, ha, "0", "color:var(--ok)", "", "", empId, false, e?.dist);
       return;
     }
     if (isSoumia && soumiaPlan?.off) {
-      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
+      html += rowHistory(dayISO, "Repos Mardi", hp, ha, "", "color:var(--chip-r-fg)", "R", "", empId, false);
       return;
     }
     if (isSec && isMonday) {
-      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
+      html += rowHistory(dayISO, "Repos Lundi", hp, ha, "", "color:var(--chip-r-fg)", "R", "", empId, false);
       return;
     }
     if (isCuisine && cuisinePlan?.off) {
-      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
+      html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "", empId, false);
       return;
     }
     if (isMenage) {
       const mPlan = getMenagePlanningInfo(empId, dayISO);
       if (mPlan?.off) {
-        html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "");
+        html += rowHistory(dayISO, "Repos (Plan)", hp, ha, "", "color:var(--chip-r-fg)", "R", "", empId, false);
       } else {
         absCount++;
-        html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "");
+        html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "", empId, false);
       }
       return;
     }
     if (e && e.off) {
-      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", "");
+      html += rowHistory(dayISO, "OFF", hp, ha, "", "color:var(--muted2)", "OFF", "", empId, false);
     } else {
       absCount++;
-      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "");
+      html += rowHistory(dayISO, "⚠ Absent", hp, ha, "", "color:rgba(234,88,12,.90)", "", "", empId, false);
     }
   });
 
@@ -1436,8 +1659,7 @@ async function openHistory(nom, prenom, mk) {
         </div>
       </div>`
     : '';
-  document.getElementById('modalList').innerHTML = (absBanner + html) ||
-    `<p class="text-center py-10 text-[12px] font-extrabold" style="color:var(--muted3)">Aucune donnée ce mois</p>`;
+  document.getElementById('modalList').innerHTML = buildModalMaladieBarHtml(empId, mk) + (absBanner + html);
 }
 
 function openStaffAdmin() {
