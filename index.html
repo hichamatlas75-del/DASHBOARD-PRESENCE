@@ -107,6 +107,10 @@
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+            <button onclick="openCertificatesRegistryModal()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1.5"
+              style="background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.38);color:#9f1239" title="Registre et contrôle de tous les certificats médicaux">
+              <span>🩺</span> Contrôle Certificats
+            </button>
             <button onclick="exportCSV_RC_Month()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold"
               style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#78350f">
               Export Mois
@@ -338,6 +342,56 @@
           style="background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.38);color:#065f46">
           💾 Enregistrer les plannings
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ MODAL REGISTRE CERTIFICATS MÉDICAUX ══════════════════════════════════ -->
+  <div id="certRegistryModal" class="fixed inset-0 z-50 hidden modal-overlay items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeCertificatesRegistryModal()">
+    <div class="modal-sheet w-full max-w-3xl rounded-t-[36px] sm:rounded-[32px] p-6 pb-10 shadow-2xl max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="handle sm:hidden"></div>
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <div class="smallCaps">Contrôle &amp; Audit RH</div>
+          <h2 class="hTitle text-2xl leading-tight mt-0.5">Registre des Certificats Médicaux</h2>
+          <div class="mt-0.5 text-[10.5px] font-bold" style="color:var(--accent)">Vérification des arrêts maladie et justificatifs téléversés</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="month" id="certRegistryMonthPicker" class="inpt"
+            style="width:auto;min-width:0;font-size:11px;padding:7px 9px;border-radius:12px"
+            onchange="renderCertificatesRegistry(this.value)" />
+          <button type="button" onclick="closeCertificatesRegistryModal()" class="btn-action btn-neutral px-3 py-2 rounded-xl text-[11px] font-extrabold"
+            style="background:rgba(255,255,255,.55);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
+        </div>
+      </div>
+      <div id="certRegistryBody" class="overflow-y-auto pr-1 flex-1 space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ MODAL VISUALISEUR DE CERTIFICAT (In-App) ══════════════════════════════════ -->
+  <div id="certViewerModal" class="fixed inset-0 z-[60] hidden modal-overlay items-center justify-center p-3 sm:p-6" onclick="closeCertViewerModal()">
+    <div class="modal-sheet w-full max-w-2xl rounded-[28px] p-5 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden" onclick="event.stopPropagation()" style="background:#ffffff">
+      <div class="flex items-center justify-between gap-3 mb-3 pb-2.5" style="border-bottom:1px solid var(--stroke-med)">
+        <div class="min-w-0">
+          <div class="smallCaps" style="color:#be123c">🩺 Certificat Médical Justificatif</div>
+          <h3 id="certViewerTitle" class="hTitle text-lg truncate mt-0.5">—</h3>
+          <p id="certViewerSub" class="text-[10px] font-bold text-slate-500 truncate mt-0.5">—</p>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="btnDownloadCert" type="button" class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+            style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.32);color:#1d4ed8" title="Télécharger l'image du certificat">
+            💾 Télécharger
+          </button>
+          <button id="btnPrintCert" type="button" class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+            style="background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.35);color:#065f46" title="Imprimer le certificat">
+            🖨️ Imprimer
+          </button>
+          <button type="button" onclick="closeCertViewerModal()" class="btn-action btn-neutral px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+            style="background:rgba(255,255,255,.75);border:1px solid var(--stroke-med);color:var(--text)">✕</button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-auto flex items-center justify-center rounded-2xl p-2" style="background:#0f172a;min-height:300px">
+        <img id="certViewerImg" src="" alt="Certificat médical" class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" />
       </div>
     </div>
   </div>

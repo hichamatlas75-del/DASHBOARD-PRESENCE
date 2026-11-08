@@ -151,6 +151,7 @@ function mergeDay(pres, punches, motifs) {
         merged[id].hA = "";
         const cleanM = stripMaladieMotifTag(moTxt) || presRec?.motifMaladie || merged[id].motifMaladie || "";
         if (cleanM) merged[id].motifMaladie = cleanM;
+        if (presRec?.certificat) merged[id].certificat = presRec.certificat;
         return;
       }
       if (isExplicitOffOrOut(presRec) || isExplicitOffOrOut(merged[id])) {
@@ -534,6 +535,73 @@ function setLocalMaladieCert(empId, dayISO, dataUrl) {
     if (dataUrl) localStorage.setItem(key, dataUrl);
     else localStorage.removeItem(key);
   } catch (_) {}
+}
+
+function getMaladieCertForEmpDay(empId, dayISO) {
+  const local = getLocalMaladieCert(empId, dayISO);
+  if (local) return local;
+  const mk = monthKeyFromISO(dayISO);
+  const md = monthDataCache.get(mk);
+  if (md && md.presByDay && md.presByDay[dayISO] && md.presByDay[dayISO][empId]) {
+    return md.presByDay[dayISO][empId].certificat || "";
+  }
+  return "";
+}
+
+/**
+ * Récupère tous les arrêts maladie (M) d'un mois avec leur certificat médical
+ * pour le contrôle et l'audit RH.
+ */
+async function scanAllMaladieRecords(mk) {
+  const md = await getMonthData(mk);
+  const { rcByEmpDay, startMap } = await getMonthRCMap(mk);
+  const { dates, presByDay, punchByDay, motifsByDay } = md;
+  const results = [];
+
+  equipe.forEach(emp => {
+    const id = empIdOf(emp);
+    const empStart = startMap?.[id];
+    let currentBlock = null;
+
+    dates.forEach(dayISO => {
+      const merged = mergeDay(presByDay[dayISO], punchByDay[dayISO], motifsByDay?.[dayISO]);
+      const ev = evaluateEmployeeDay(emp, dayISO, merged[id] || null, rcByEmpDay?.[id]?.[dayISO], empStart);
+
+      if (ev.type === "maladie") {
+        const cert = ev.certificat || getMaladieCertForEmpDay(id, dayISO) || "";
+        const motif = ev.motif || "";
+
+        if (currentBlock && addDaysISO(currentBlock.endDay, 1) === dayISO && currentBlock.motif === motif) {
+          currentBlock.endDay = dayISO;
+          currentBlock.days.push(dayISO);
+          if (!currentBlock.certificat && cert) currentBlock.certificat = cert;
+        } else {
+          if (currentBlock) results.push(currentBlock);
+          currentBlock = {
+            emp,
+            empId: id,
+            startDay: dayISO,
+            endDay: dayISO,
+            days: [dayISO],
+            motif,
+            certificat: cert
+          };
+        }
+      } else {
+        if (currentBlock) {
+          results.push(currentBlock);
+          currentBlock = null;
+        }
+      }
+    });
+
+    if (currentBlock) {
+      results.push(currentBlock);
+      currentBlock = null;
+    }
+  });
+
+  return results.sort((a, b) => b.startDay.localeCompare(a.startDay));
 }
 
 /**

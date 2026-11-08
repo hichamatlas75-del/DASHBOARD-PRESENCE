@@ -1110,7 +1110,7 @@ async function renderRCView() {
           Suivi exact RH
         </span>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
         <select id="rcMaladieEmp" class="inpt" style="font-size:11px;padding:9px 11px">
           <option value="">-- Collaborateur --</option>
           ${sortedEquipe.map(e => `<option value="${escAttr(empIdOf(e))}">${esc(e.nom)} ${esc(titleCase(e.prenom))} (${esc(e.poste)})</option>`).join("")}
@@ -1118,12 +1118,21 @@ async function renderRCView() {
         <input type="date" id="rcMaladieStart" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:9px 11px" title="Date de début" onchange="const endEl=document.getElementById('rcMaladieEnd');if(endEl&&(!endEl.value||endEl.value<this.value))endEl.value=this.value;" />
         <input type="date" id="rcMaladieEnd" class="inpt" value="${escAttr(defaultDay)}" style="font-size:11px;padding:9px 11px" title="Date de fin (incluse)" />
         <input type="text" id="rcMaladieMotif" class="inpt" placeholder="Certificat / note (optionnel)" maxlength="120" style="font-size:11px;padding:9px 11px" />
+        <label class="btn-action px-2.5 py-1.5 rounded-xl text-[10.5px] font-extrabold flex items-center justify-center gap-1 cursor-pointer"
+          style="background:rgba(255,255,255,.85);border:1px dashed rgba(244,63,94,.45);color:#9f1239" title="Joindre une photo du certificat médical">
+          <span id="rcMaladieCertLabel">📷 Certificat</span>
+          <input type="file" id="rcMaladieCertInput" accept="image/*" class="hidden" onchange="window.handleRCMaladieCertFileChange(this)" />
+        </label>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5">
         <div id="rcMaladieMsg" class="text-[10.5px] font-extrabold" style="color:var(--muted2)">
           Astuce : tu peux aussi cliquer sur un employé puis sur les jours de son calendrier 📅
         </div>
         <div class="flex items-center gap-2 ml-auto">
+          <button type="button" onclick="openCertificatesRegistryModal()" class="btn-action px-3 py-2 rounded-xl text-[11px] font-extrabold flex items-center gap-1"
+            style="background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.30);color:#9f1239" title="Ouvrir le registre de tous les arrêts et certificats médicaux">
+            <span>📂</span> Registre Certificats
+          </button>
           <button type="button" onclick="window.submitRCMaladieForm(true)" class="btn-action px-3.5 py-2 rounded-xl text-[11px] font-extrabold"
             style="background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.38);color:#9f1239">
             🩺 + Marquer Maladie (M)
@@ -1182,6 +1191,26 @@ async function renderRCView() {
   });
 }
 
+let _pendingRCMaladieCertDataUrl = "";
+
+window.handleRCMaladieCertFileChange = async function(inputEl) {
+  const file = inputEl?.files?.[0];
+  const labelEl = document.getElementById("rcMaladieCertLabel");
+  if (!file) {
+    _pendingRCMaladieCertDataUrl = "";
+    if (labelEl) labelEl.textContent = "📷 Certificat";
+    return;
+  }
+  try {
+    if (labelEl) labelEl.textContent = "⏳ Compression…";
+    _pendingRCMaladieCertDataUrl = await compressCertImageFile(file);
+    if (labelEl) labelEl.textContent = "📎 Certificat prêt ✓";
+  } catch (e) {
+    _pendingRCMaladieCertDataUrl = "";
+    if (labelEl) labelEl.textContent = "⚠️ Image invalide";
+  }
+};
+
 window.submitRCMaladieForm = async function(isMaladie) {
   const empId = document.getElementById('rcMaladieEmp')?.value || "";
   const startISO = document.getElementById('rcMaladieStart')?.value || "";
@@ -1199,7 +1228,10 @@ window.submitRCMaladieForm = async function(isMaladie) {
   }
   try {
     if (msgEl) { msgEl.style.color = 'var(--muted2)'; msgEl.textContent = "Enregistrement…"; }
-    const count = await setEmpMaladieRange(empId, startISO, endISO, isMaladie, motif);
+    const count = await setEmpMaladieRange(empId, startISO, endISO, isMaladie, motif, _pendingRCMaladieCertDataUrl);
+    _pendingRCMaladieCertDataUrl = "";
+    const certLbl = document.getElementById("rcMaladieCertLabel");
+    if (certLbl) certLbl.textContent = "📷 Certificat";
     if (msgEl) {
       msgEl.style.color = 'var(--ok)';
       msgEl.textContent = isMaladie
@@ -1277,18 +1309,214 @@ window.handleMaladieCertFileChange = async function(inputEl) {
   }
 };
 
+window.closeCertViewerModal = function() {
+  const m = document.getElementById("certViewerModal");
+  if (!m) return;
+  m.classList.remove("modal-active");
+  m.classList.add("modal-closing");
+  setTimeout(() => { m.classList.remove("modal-closing"); m.classList.add("hidden"); }, 200);
+};
+
 window.openMaladieCertPreview = function(empId, dayISO) {
-  let cert = typeof getLocalMaladieCert === "function" ? getLocalMaladieCert(empId, dayISO) : "";
+  let cert = typeof getMaladieCertForEmpDay === "function" ? getMaladieCertForEmpDay(empId, dayISO) : "";
+  if (!cert && typeof getLocalMaladieCert === "function") {
+    cert = getLocalMaladieCert(empId, dayISO);
+  }
   if (!cert && _modalState?.mk) {
     const md = monthDataCache.get(_modalState.mk);
     const merged = md ? mergeDay(md.presByDay?.[dayISO], md.punchByDay?.[dayISO], md.motifsByDay?.[dayISO]) : {};
     cert = merged?.[empId]?.certificat || "";
   }
-  if (!cert) return;
-  const win = window.open("", "_blank");
-  if (win) {
-    win.document.write(`<!DOCTYPE html><html><head><title>Certificat Médical · ${esc(empId)} (${esc(dayISO)})</title><style>body{margin:0;background:#0f172a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#fff}img{max-width:95vw;max-height:88vh;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}</style></head><body><div style="margin-bottom:10px;font-size:13px;font-weight:bold">🩺 Certificat médical · ${esc(empId)} · ${esc(dayISO)}</div><img src="${escAttr(cert)}" alt="Certificat médical" /></body></html>`);
-    win.document.close();
+  if (!cert) {
+    alert("Aucune image de certificat trouvée pour ce jour.");
+    return;
+  }
+
+  const modal = document.getElementById("certViewerModal");
+  const imgEl = document.getElementById("certViewerImg");
+  const titleEl = document.getElementById("certViewerTitle");
+  const subEl = document.getElementById("certViewerSub");
+  const btnDownload = document.getElementById("btnDownloadCert");
+  const btnPrint = document.getElementById("btnPrintCert");
+
+  const emp = getEmpById(empId);
+  const fullName = `${emp.nom || empId} ${titleCase(emp.prenom || "")}`.trim();
+
+  if (imgEl) imgEl.src = cert;
+  if (titleEl) titleEl.textContent = fullName + (emp.poste ? ` · ${emp.poste}` : "");
+  if (subEl) subEl.textContent = `Arrêt Maladie (M) · Date : ${fmtFR(dayISO)}`;
+
+  if (btnDownload) {
+    btnDownload.onclick = () => {
+      const a = document.createElement("a");
+      a.href = cert;
+      a.download = `Certificat_${empId}_${dayISO}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+  }
+
+  if (btnPrint) {
+    btnPrint.onclick = () => {
+      const pWin = window.open("", "_blank");
+      if (pWin) {
+        pWin.document.write(`<!DOCTYPE html><html><head><title>Certificat · ${fullName}</title><style>body{margin:20px;text-align:center;font-family:sans-serif}img{max-width:100%;max-height:90vh;object-fit:contain}</style></head><body><h2>Certificat Médical · ${fullName}</h2><p>Arrêt maladie du ${fmtFR(dayISO)}</p><img src="${cert}" onload="window.print();window.close();" /></body></html>`);
+        pWin.document.close();
+      }
+    };
+  }
+
+  if (modal) {
+    modal.classList.remove("hidden", "modal-closing");
+    modal.classList.add("modal-active");
+  }
+};
+
+window.openCertificatesRegistryModal = async function(mk) {
+  const dateInput = document.getElementById("dashDate");
+  mk = mk || (dateInput?.value ? monthKeyFromISO(dateInput.value) : monthKeyFromISO(todayISO()));
+  const m = document.getElementById("certRegistryModal");
+  if (!m) return;
+  m.classList.remove("hidden", "modal-closing");
+  m.classList.add("modal-active");
+  const picker = document.getElementById("certRegistryMonthPicker");
+  if (picker) picker.value = mk;
+  await renderCertificatesRegistry(mk);
+};
+
+window.closeCertificatesRegistryModal = function() {
+  const m = document.getElementById("certRegistryModal");
+  if (!m) return;
+  m.classList.remove("modal-active");
+  m.classList.add("modal-closing");
+  setTimeout(() => { m.classList.remove("modal-closing"); m.classList.add("hidden"); }, 240);
+};
+
+window.handleRegistryAttachCert = async function(empId, startDay, endDay, inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  try {
+    const parentBtn = inputEl.closest("label");
+    if (parentBtn) parentBtn.innerHTML = "⏳ Compression…";
+    const certDataUrl = await compressCertImageFile(file);
+    await setEmpMaladieRange(empId, startDay, endDay, true, "", certDataUrl);
+    const picker = document.getElementById("certRegistryMonthPicker");
+    const mk = picker?.value || monthKeyFromISO(startDay);
+    await renderCertificatesRegistry(mk);
+    if (_modalState && _modalState.nom) {
+      if (_modalState.mode === "calendar") await openCalendarModal(_modalState.nom, _modalState.prenom, _modalState.mk);
+      else await openHistory(_modalState.nom, _modalState.prenom, _modalState.mk);
+    }
+  } catch (e) {
+    alert("Erreur lors de l'ajout du certificat : " + (e?.message || "Erreur"));
+  }
+};
+
+window.renderCertificatesRegistry = async function(mk) {
+  const body = document.getElementById("certRegistryBody");
+  if (!body) return;
+  body.innerHTML = loadingCard("Recherche des certificats médicaux…");
+
+  try {
+    const records = await scanAllMaladieRecords(mk);
+    if (!records.length) {
+      body.innerHTML = `
+        <div class="glass-card p-6 rounded-2xl text-center" style="background:rgba(244,63,94,.04);border-color:rgba(244,63,94,.18)">
+          <div class="text-3xl mb-2">✨</div>
+          <div class="hTitle text-lg">Aucun arrêt maladie enregistré</div>
+          <p class="text-[11px] font-semibold text-slate-500 mt-1">
+            Aucun collaborateur n'a d'arrêt maladie (M) posé pour le mois <b>${esc(mk)}</b>.
+          </p>
+        </div>`;
+      return;
+    }
+
+    const nWithCert = records.filter(r => !!r.certificat).length;
+    const nMissing = records.length - nWithCert;
+
+    let html = `
+      <div class="flex items-center justify-between gap-2 p-3 rounded-2xl mb-3" style="background:rgba(255,241,242,.70);border:1px solid rgba(244,63,94,.25)">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📋</span>
+          <div>
+            <div class="text-[11px] font-black" style="color:#9f1239">${records.length} arrêt(s) maladie répertorié(s) en ${esc(mk)}</div>
+            <div class="text-[9.5px] font-bold text-slate-500">Contrôle des justificatifs et conformité RH</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,.14);color:#065f46">✓ ${nWithCert} avec certificat</span>
+          ${nMissing > 0 ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(245,158,11,.15);color:#b45309">⚠️ ${nMissing} sans pièce</span>` : ""}
+        </div>
+      </div>
+      <div class="space-y-2.5">
+    `;
+
+    records.forEach(r => {
+      const emp = r.emp || getEmpById(r.empId);
+      const isPeriod = (r.startDay !== r.endDay);
+      const periodLabel = isPeriod
+        ? `Du ${fmtFR(r.startDay)} au ${fmtFR(r.endDay)} (${r.days.length} jours)`
+        : `${fmtFR(r.startDay)} (1 jour)`;
+
+      const hasCert = !!r.certificat;
+      const certThumbHtml = hasCert
+        ? `
+          <div class="relative shrink-0 cursor-pointer group" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}')">
+            <img src="${escAttr(r.certificat)}" alt="Certificat" class="w-14 h-14 rounded-xl object-cover border border-rose-200 shadow-sm transition-transform group-hover:scale-105" />
+            <div class="absolute inset-0 bg-black/30 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-black transition-opacity">
+              🔍 Voir
+            </div>
+          </div>
+        `
+        : `
+          <div class="w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 text-center p-1"
+               style="background:rgba(245,158,11,.10);border:1px dashed rgba(245,158,11,.35);color:#b45309">
+            <span class="text-base">📄</span>
+            <span class="text-[8px] font-extrabold uppercase">Sans photo</span>
+          </div>
+        `;
+
+      html += `
+        <div class="glass-card p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all hover:shadow-md"
+             style="background:rgba(255,255,255,.85);border-color:${hasCert ? 'rgba(16,185,129,.30)' : 'rgba(245,158,11,.30)'}">
+          <div class="flex items-center gap-3 min-w-0">
+            ${certThumbHtml}
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11.5px] font-black uppercase text-slate-900">${esc(emp.nom)}</span>
+                <span class="text-[11px] font-bold text-slate-600">${esc(titleCase(emp.prenom))}</span>
+                <span class="px-1.5 py-0.2 rounded text-[8.5px] font-black uppercase" style="background:rgba(59,130,246,.10);color:#2563eb">${esc(emp.poste || "—")}</span>
+              </div>
+              <div class="text-[10.5px] font-extrabold mt-0.5" style="color:#0f2744">
+                🗓️ ${esc(periodLabel)}
+              </div>
+              ${r.motif ? `<div class="text-[10px] font-bold text-slate-500 italic mt-0.5 truncate">« ${esc(r.motif)} »</div>` : `<div class="text-[9.5px] text-slate-400 italic mt-0.5">Aucun motif texte saisi</div>`}
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+            ${hasCert ? `
+              <button type="button" onclick="openMaladieCertPreview('${escAttr(r.empId)}','${escAttr(r.startDay)}')"
+                class="btn-action px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold"
+                style="background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.35);color:#065f46">
+                👁️ Contrôler
+              </button>
+            ` : `
+              <label class="btn-action px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold flex items-center gap-1 cursor-pointer"
+                style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#b45309" title="Joindre une photo du certificat médical">
+                <span>📎 Joindre justificatif</span>
+                <input type="file" accept="image/*" class="hidden" onchange="window.handleRegistryAttachCert('${escAttr(r.empId)}','${escAttr(r.startDay)}','${escAttr(r.endDay)}',this)" />
+              </label>
+            `}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = errorCard("Erreur chargement registre : " + (e?.message || "inconnue"));
   }
 };
 
