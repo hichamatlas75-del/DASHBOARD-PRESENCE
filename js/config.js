@@ -154,6 +154,16 @@ function normName(s) {
   return (s || "").trim().toUpperCase().replace(/\s+/g, ' ').replace(/['']/g, "'");
 }
 
+function normalizePhotoPath(p) {
+  if (!p) return "";
+  let s = String(p).trim().replace(/\\/g, "/");
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:") || s.startsWith("/") || s.startsWith("images/")) {
+    return s;
+  }
+  return "images/" + s;
+}
+
 function makeEmpId(nom, prenom) {
   return `${normName(nom)}_${normName(prenom)}`.replace(/\s+/g, '_');
 }
@@ -240,4 +250,8 @@ function getEmpById(empId) {
 function setEquipe(next) {
   equipe = Array.isArray(next) ? next.filter(e => e && !isRemovedStaff(e)) : [];
   if (typeof clearMonthCache === 'function') clearMonthCache();
+}
+
+if (typeof window !== "undefined") {
+  window.normalizePhotoPath = normalizePhotoPath;
 }

@@ -239,6 +239,27 @@ function fillEditEmpSelect(filterPoste = "") {
     }).join("");
 }
 
+function updateStaffPhotoPreview(inputElem, previewElem) {
+  if (!previewElem) return;
+  const raw = (inputElem?.value || "").trim();
+  const normalized = (typeof normalizePhotoPath === "function") ? normalizePhotoPath(raw) : raw;
+  if (!normalized) {
+    previewElem.innerHTML = `<span>📷</span>`;
+    return;
+  }
+  const img = document.createElement("img");
+  img.src = normalized;
+  img.alt = "Aperçu";
+  img.className = "w-full h-full object-cover rounded-full";
+  img.onload = () => {
+    previewElem.innerHTML = "";
+    previewElem.appendChild(img);
+  };
+  img.onerror = () => {
+    previewElem.innerHTML = `<span title="Image non trouvée (${escAttr(normalized)})" style="color:var(--crit);font-size:11px">⚠️</span>`;
+  };
+}
+
 function selectEmpForEdit(empId) {
   const wrap = document.getElementById("editFieldsWrap");
   const editMsg = document.getElementById("editMsg");
@@ -260,6 +281,8 @@ function selectEmpForEdit(empId) {
   const debutInput = document.getElementById("editDateDebut");
   const sortieInput = document.getElementById("editDateSortie");
   const actifInput = document.getElementById("editActif");
+  const photoInput = document.getElementById("editPhoto");
+  const editPreview = document.getElementById("editPhotoPreview");
 
   if (nomInput) nomInput.value = emp.nom || "";
   if (prenomInput) prenomInput.value = emp.prenom || "";
@@ -268,11 +291,18 @@ function selectEmpForEdit(empId) {
   if (sortieInput) sortieInput.value = emp.dateSortie || "";
   if (actifInput) actifInput.checked = (emp.actif !== false);
 
+  if (photoInput) {
+    const existingPhoto = emp.photo || emp.image || (typeof StaffPhotoService !== "undefined" ? StaffPhotoService.getPhotoUrl(empId) : "") || "";
+    photoInput.value = existingPhoto;
+    updateStaffPhotoPreview(photoInput, editPreview);
+  }
+
   if (wrap) wrap.classList.remove("hidden");
 }
 
 window.fillEditEmpSelect = fillEditEmpSelect;
 window.selectEmpForEdit = selectEmpForEdit;
+window.updateStaffPhotoPreview = updateStaffPhotoPreview;
 
 async function initStaffAdminUI() {
   document.getElementById("btnOpenStaffAdmin").onclick = () => openStaffAdmin();
@@ -299,6 +329,20 @@ async function initStaffAdminUI() {
     fillEditEmpSelect("");
   }
 
+  const addPhotoInput = document.getElementById("addPhoto");
+  const addPhotoPreview = document.getElementById("addPhotoPreview");
+  if (addPhotoInput && addPhotoPreview) {
+    addPhotoInput.oninput = () => updateStaffPhotoPreview(addPhotoInput, addPhotoPreview);
+    addPhotoInput.onchange = () => updateStaffPhotoPreview(addPhotoInput, addPhotoPreview);
+  }
+
+  const editPhotoInput = document.getElementById("editPhoto");
+  const editPhotoPreview = document.getElementById("editPhotoPreview");
+  if (editPhotoInput && editPhotoPreview) {
+    editPhotoInput.oninput = () => updateStaffPhotoPreview(editPhotoInput, editPhotoPreview);
+    editPhotoInput.onchange = () => updateStaffPhotoPreview(editPhotoInput, editPhotoPreview);
+  }
+
   const btnSaveEditStaff = document.getElementById("btnSaveEditStaff");
   if (btnSaveEditStaff) {
     btnSaveEditStaff.onclick = async () => {
@@ -323,6 +367,8 @@ async function initStaffAdminUI() {
       const dateDebut = (document.getElementById("editDateDebut").value || "").trim();
       const dateSortie = (document.getElementById("editDateSortie").value || "").trim();
       const actif = document.getElementById("editActif").checked;
+      const photoRaw = (document.getElementById("editPhoto")?.value || "").trim();
+      const photo = photoRaw ? ((typeof normalizePhotoPath === "function") ? normalizePhotoPath(photoRaw) : photoRaw) : "";
 
       if (!nom || !prenom || !poste) {
         if (editMsg) {
@@ -355,7 +401,8 @@ async function initStaffAdminUI() {
             poste,
             dateDebut: dateDebut || "",
             dateSortie: dateSortie || "",
-            actif
+            actif,
+            photo
           };
         }
         return e;
@@ -398,6 +445,8 @@ async function initStaffAdminUI() {
       const prenom    = normName(document.getElementById("addPrenom").value);
       const poste     = (document.getElementById("addPoste").value || "").trim().toUpperCase();
       const dateDebut = (document.getElementById("addDateDebut").value || "").trim();
+      const photoRaw  = (document.getElementById("addPhoto")?.value || "").trim();
+      const photo     = photoRaw ? ((typeof normalizePhotoPath === "function") ? normalizePhotoPath(photoRaw) : photoRaw) : "";
 
       if (!nom || !prenom || !poste) { addMsg.textContent = "⚠️ Remplis NOM, Prénom et Poste."; return; }
       const id = makeEmpId(nom, prenom);
@@ -405,7 +454,9 @@ async function initStaffAdminUI() {
 
       addMsg.textContent = "Ajout…";
       const next = equipe.slice();
-      next.push({ nom, prenom, poste, dateDebut: dateDebut || "" });
+      const newStaff = { nom, prenom, poste, dateDebut: dateDebut || "", actif: true };
+      if (photo) newStaff.photo = photo;
+      next.push(newStaff);
 
       try {
         await saveEquipeToDB(next);
@@ -414,6 +465,8 @@ async function initStaffAdminUI() {
         document.getElementById("addNom").value = "";
         document.getElementById("addPrenom").value = "";
         document.getElementById("addDateDebut").value = "";
+        if (document.getElementById("addPhoto")) document.getElementById("addPhoto").value = "";
+        updateStaffPhotoPreview(document.getElementById("addPhoto"), document.getElementById("addPhotoPreview"));
         fillEditEmpSelect(document.getElementById("editPosteFilter")?.value || "");
         closeStaffAdmin();
         updateDashboard();

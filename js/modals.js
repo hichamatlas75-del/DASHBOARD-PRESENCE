@@ -666,6 +666,10 @@ function openStaffAdmin() {
   if (typeof selectEmpForEdit === "function") selectEmpForEdit("");
   const editMsg = document.getElementById("editMsg");
   if (editMsg) editMsg.textContent = "";
+  const addPhoto = document.getElementById("addPhoto");
+  const addPhotoPreview = document.getElementById("addPhotoPreview");
+  if (addPhoto) addPhoto.value = "";
+  if (typeof updateStaffPhotoPreview === "function") updateStaffPhotoPreview(addPhoto, addPhotoPreview);
 }
 
 function closeStaffAdmin() {

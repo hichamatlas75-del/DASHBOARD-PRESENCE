@@ -522,6 +522,27 @@ const StaffPhotoService = (() => {
     if (!name) return null;
     const clean = normalize(name);
 
+    // 0. Si un collaborateur dans equipe a une photo personnalisée définie
+    if (typeof equipe !== "undefined" && Array.isArray(equipe)) {
+      const matchEmp = equipe.find(e => {
+        if (!e) return false;
+        if (!e.photo && !e.image) return false;
+        const id1 = (typeof empIdOf === "function") ? empIdOf(e) : `${normalize(e.nom)}_${normalize(e.prenom)}`;
+        const id2 = (typeof makeEmpId === "function") ? makeEmpId(e.prenom, e.nom) : `${normalize(e.prenom)}_${normalize(e.nom)}`;
+        if (id1 === clean || id2 === clean) return true;
+        const nNom = normalize(e.nom);
+        const nPre = normalize(e.prenom);
+        if (clean === nNom) return true;
+        if (nNom && nPre && clean.includes(nNom) && clean.includes(nPre)) return true;
+        return false;
+      });
+      if (matchEmp && (matchEmp.photo || matchEmp.image)) {
+        return (typeof normalizePhotoPath === "function")
+          ? normalizePhotoPath(matchEmp.photo || matchEmp.image)
+          : (matchEmp.photo || matchEmp.image);
+      }
+    }
+
     // 1. Détection prioritaire explicite pour Karima et Saad
     if (clean.includes("KARIMA") || clean.includes("SERGINI")) {
       return "images/SERGINI_IDRISSI_KARIMA.jpg";
@@ -566,7 +587,18 @@ const StaffPhotoService = (() => {
 
 function getStaffAvatarHtml(nom, prenom, size = 'md') {
   const fullName = `${nom || ''} ${prenom || ''}`.trim();
-  const photoUrl = StaffPhotoService.getPhotoUrl(fullName) || StaffPhotoService.getPhotoUrl(nom);
+  let photoUrl = null;
+  if (typeof getEmpById === 'function' && typeof makeEmpId === 'function') {
+    const emp = getEmpById(makeEmpId(nom, prenom));
+    if (emp && (emp.photo || emp.image)) {
+      photoUrl = (typeof normalizePhotoPath === 'function')
+        ? normalizePhotoPath(emp.photo || emp.image)
+        : (emp.photo || emp.image);
+    }
+  }
+  if (!photoUrl) {
+    photoUrl = StaffPhotoService.getPhotoUrl(fullName) || StaffPhotoService.getPhotoUrl(nom);
+  }
   const initials = StaffPhotoService.getInitials(fullName || nom);
 
   let dimClass = 'w-9 h-9 text-[11px]';

@@ -258,6 +258,16 @@
           <option value="ECONOMAT">ECONOMAT</option>
         </select>
         <input id="addDateDebut" class="inpt mt-2" type="date" />
+        <div class="mt-2">
+          <label class="text-[10px] font-bold" style="color:var(--muted2)">Photo / Image (nom exact ex: images/Mokhtar.jpg ou BAJJOU.jpeg) :</label>
+          <div class="flex items-center gap-2 mt-0.5">
+            <input id="addPhoto" class="inpt grow" list="staffImagesDatalist" placeholder="images/NOM_IMAGE.jpg (optionnel)" />
+            <div id="addPhotoPreview" class="w-9 h-9 rounded-full shrink-0 border flex items-center justify-center overflow-hidden text-[11px] font-bold"
+              style="border-color:var(--stroke-med);background:rgba(255,255,255,.5);color:var(--muted2)" title="Aperçu photo">
+              <span>📷</span>
+            </div>
+          </div>
+        </div>
         <p class="mt-2 text-[10px] font-semibold" style="color:var(--muted3)">
           Date de début optionnelle. Si vide, première activité détectée automatiquement.
         </p>
@@ -336,6 +346,17 @@
             </div>
           </div>
 
+          <div>
+            <label class="text-[10px] font-bold" style="color:var(--muted2)">Photo / Image (nom exact ex: images/Mokhtar.jpg ou BAJJOU.jpeg) :</label>
+            <div class="flex items-center gap-2 mt-0.5">
+              <input id="editPhoto" class="inpt grow" list="staffImagesDatalist" placeholder="images/NOM_IMAGE.jpg" />
+              <div id="editPhotoPreview" class="w-9 h-9 rounded-full shrink-0 border flex items-center justify-center overflow-hidden text-[11px] font-bold"
+                style="border-color:var(--stroke-med);background:rgba(255,255,255,.5);color:var(--muted2)" title="Aperçu photo">
+                <span>📷</span>
+              </div>
+            </div>
+          </div>
+
           <button id="btnSaveEditStaff" type="button" class="btn-action btn-login mt-2 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]">
             💾 ENREGISTRER LES MODIFICATIONS
           </button>
@@ -343,6 +364,39 @@
 
         <div id="editMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
+
+      <!-- Liste de suggestions d'images existantes -->
+      <datalist id="staffImagesDatalist">
+        <option value="images/BAJJOU.jpeg">BAJJOU NASSIM</option>
+        <option value="images/BELQASIM_KHAOULA.jpg">BELQASSE KHAOULA</option>
+        <option value="images/BENKHADA_ABDESSLAM.jpg">BENKHADA ABDESLAM</option>
+        <option value="images/BOUCHNAK_NAOUAL.jpg">BOUCHNAK NAOUAL</option>
+        <option value="images/BOURAHMA_ANAS.jpg">BOURAHMA ANAS</option>
+        <option value="images/CHKAIRI_YOUSSEF.jpg">CHKAIRI YOUSSEF</option>
+        <option value="images/EL_KOBBI_MOSTAFA.jpg">ELKOBBI MOSTAFA</option>
+        <option value="images/EL_MOBARAKI_MOHAMED.jpg">EL MOBARAKI MOHAMED</option>
+        <option value="images/EN-NHAILI_SOUMIA.jpg">ENNHAILI SOUMIA</option>
+        <option value="images/FOUZIA.jpg">EZHAR FOUZIA</option>
+        <option value="images/FOUZIA6ZHAR.jpg">FOUZIA ZHAR</option>
+        <option value="images/HAMID_ALAOUI_ABDELAZIZ.jpg">ALAOUI LAZIZ</option>
+        <option value="images/HATTAF_MOHAMMED.jpg">HATTAF MOHAMED</option>
+        <option value="images/HIDARA-LACHKAR_YOUSSEF.jpg">HIDARA YOUSSEF</option>
+        <option value="images/IDRISSI_OUDGHRI_SAAD.jpg">IDRISSI SAAD</option>
+        <option value="images/JIRA_MOHAMED.jpg">JIRA MOHAMED</option>
+        <option value="images/KAFOUNI_ZAKARIAE.jpg">KAFOUNI ZAKARIAE</option>
+        <option value="images/KHALOUQ_RACHID.jpg">KHALOUQ RACHID</option>
+        <option value="images/LAMSSIAH_JAOUAD.jpg">LEMSSIEH JAWAD</option>
+        <option value="images/MAJDOUB_JIHANE.jpg">MAJDOUB JIHANE</option>
+        <option value="images/MOHSSINE_YOUNESS.jpg">MOHSINE YOUNESS</option>
+        <option value="images/Mokhtar.jpg">KTAMI EL MOKHTAR</option>
+        <option value="images/MOUJAHID_IMANE.jpg">MOUJAHID IMANE</option>
+        <option value="images/QUASSIR_HICHAM.jpg">QUASSIR HICHAM</option>
+        <option value="images/SALIL_HOUDA.jpg">SALIL HOUDA</option>
+        <option value="images/SBAI_HAKIMA.jpg">SBAI HAKIMA</option>
+        <option value="images/SERGINI_IDRISSI_KARIMA.jpg">SERGINI KARIMA</option>
+        <option value="images/WALID.jpg">WALID</option>
+        <option value="images/ZAIR_FATIMA.jpg">ZAIR FATIMA</option>
+      </datalist>
 
       <!-- Sortie datée / Suppression -->
       <div class="rounded-2xl border p-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.20)">
