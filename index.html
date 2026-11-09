@@ -268,6 +268,82 @@
         <div id="addMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
       </div>
 
+      <!-- Modification d'un collaborateur -->
+      <div class="rounded-2xl border p-4 mb-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.30)">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-5 h-5 rounded-lg flex items-center justify-center text-[11px]"
+            style="background:rgba(59,130,246,.10);border:1px solid rgba(59,130,246,.25);color:#1d4ed8">✎</div>
+          <div class="smallCaps">Modifier un collaborateur</div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+          <select id="editPosteFilter" class="inpt">
+            <option value="">-- Tous les postes --</option>
+            <option value="SERVICE">SERVICE</option>
+            <option value="BAR">BAR</option>
+            <option value="CUISINE">CUISINE</option>
+            <option value="CAISSE">CAISSE</option>
+            <option value="MENAGE">MENAGE</option>
+            <option value="SECURITE">SECURITE</option>
+            <option value="ECONOMAT">ECONOMAT</option>
+          </select>
+          <select id="editEmpSelect" class="inpt">
+            <option value="">-- Choisir un collaborateur --</option>
+          </select>
+        </div>
+
+        <div id="editFieldsWrap" class="hidden space-y-2.5 pt-2.5 border-t" style="border-color:var(--stroke-med)">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold" style="color:var(--muted2)">NOM :</label>
+              <input id="editNom" class="inpt mt-0.5" placeholder="NOM (ex: BOURAHMA)" />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold" style="color:var(--muted2)">Prénom :</label>
+              <input id="editPrenom" class="inpt mt-0.5" placeholder="Prénom (ex: ANAS)" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold" style="color:var(--muted2)">Poste :</label>
+              <select id="editPoste" class="inpt mt-0.5">
+                <option value="SERVICE">SERVICE</option>
+                <option value="BAR">BAR</option>
+                <option value="CUISINE">CUISINE</option>
+                <option value="CAISSE">CAISSE</option>
+                <option value="MENAGE">MENAGE</option>
+                <option value="SECURITE">SECURITE</option>
+                <option value="ECONOMAT">ECONOMAT</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold" style="color:var(--muted2)">Date de début :</label>
+              <input id="editDateDebut" class="inpt mt-0.5" type="date" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold" style="color:var(--muted2)">Date de sortie (si archivé) :</label>
+              <input id="editDateSortie" class="inpt mt-0.5" type="date" />
+            </div>
+            <div class="flex items-center pt-4">
+              <label class="flex items-center gap-2 cursor-pointer text-[11px] font-bold select-none" style="color:var(--text)">
+                <input id="editActif" type="checkbox" class="w-4 h-4 rounded accent-[color:var(--accent)]" checked />
+                <span>Collaborateur actif</span>
+              </label>
+            </div>
+          </div>
+
+          <button id="btnSaveEditStaff" type="button" class="btn-action btn-login mt-2 w-full px-4 py-3 rounded-2xl font-extrabold text-[12px]">
+            💾 ENREGISTRER LES MODIFICATIONS
+          </button>
+        </div>
+
+        <div id="editMsg" class="mt-2 text-[11px] font-extrabold" style="color:var(--muted2)"></div>
+      </div>
+
       <!-- Sortie datée / Suppression -->
       <div class="rounded-2xl border p-4" style="border-color:var(--stroke-med);background:rgba(255,255,255,.20)">
         <div class="flex items-center gap-2 mb-3">

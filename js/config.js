@@ -45,8 +45,7 @@ const haOnlyIds    = new Set([
   "SBAI_HAKIMA", "ABOUARSA_EDDRISSIA",
   "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "ZHAR_FOUZIA",
   "KHALISSA_KHALISSA", "CHAOUI_KHALISSA", "KHALISSA_CHAOUI",
-  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI",
-  "EL_AZHARY_NAJIA", "ELAZHARY_NAJIA", "AZHARY_NAJIA", "EL_AZHARY", "AZHARY", "NAJIA"
+  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI"
 ]);
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
@@ -190,15 +189,24 @@ let equipe = [
   { nom: 'EZHAR',      prenom: 'FOUZIA',    poste: 'MENAGE' },
   { nom: 'KHALISSA',   prenom: 'KHALISSA',  poste: 'MENAGE' },
   { nom: 'FATIMZAHRA', prenom: 'FATIMA',    poste: 'MENAGE' },
-  { nom: 'EL AZHARY',  prenom: 'NAJIA',     poste: 'MENAGE' },
   { nom: 'ZAIR',       prenom: 'FATIMA',    poste: 'CUISINE' }
 ];
 
 // Collaborateurs sortis de l'équipe : exclus même s'ils figurent encore dans Firebase (settings/equipe)
-const REMOVED_STAFF_IDS = new Set(["ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD"]);
+const REMOVED_STAFF_IDS = new Set([
+  "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD",
+  "EL_AZHARY_NAJIA", "ELAZHARY_NAJIA", "AZHARY_NAJIA", "EL_AZHARY", "AZHARY", "NAJIA"
+]);
 
 function isRemovedStaff(emp) {
-  return REMOVED_STAFF_IDS.has(empIdOf(emp));
+  if (!emp) return true;
+  const id = empIdOf(emp);
+  if (REMOVED_STAFF_IDS.has(id)) return true;
+  const nom = String(emp.nom || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const prenom = String(emp.prenom || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (nom.includes("AZHARY") || prenom.includes("NAJIA")) return true;
+  if (nom.includes("ELGORRAMY") || prenom.includes("ANISSA") || prenom.includes("SOUAD")) return true;
+  return false;
 }
 
 function isEmpActiveOnDate(emp, dateISO) {

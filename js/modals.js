@@ -662,6 +662,10 @@ function openStaffAdmin() {
   const m = document.getElementById("staffAdminModal");
   m.classList.remove("hidden", "modal-closing");
   m.classList.add("modal-active");
+  if (typeof fillEditEmpSelect === "function") fillEditEmpSelect(document.getElementById("editPosteFilter")?.value || "");
+  if (typeof selectEmpForEdit === "function") selectEmpForEdit("");
+  const editMsg = document.getElementById("editMsg");
+  if (editMsg) editMsg.textContent = "";
 }
 
 function closeStaffAdmin() {

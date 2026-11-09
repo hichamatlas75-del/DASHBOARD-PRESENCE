@@ -219,6 +219,61 @@ function fillDelEmpSelectByPoste(poste) {
     : `<option value="">Aucun collaborateur</option>`;
 }
 
+function fillEditEmpSelect(filterPoste = "") {
+  const sel = document.getElementById("editEmpSelect");
+  if (!sel) return;
+  const list = equipe.filter(e => !filterPoste || e.poste === filterPoste)
+    .sort((a, b) => (a.nom + a.prenom).localeCompare(b.nom + b.prenom));
+
+  if (!list.length) {
+    sel.innerHTML = `<option value="">Aucun collaborateur trouvé</option>`;
+    return;
+  }
+
+  sel.innerHTML = `<option value="">-- Choisir un collaborateur (${list.length}) --</option>` +
+    list.map(e => {
+      const id = empIdOf(e);
+      const postTag = filterPoste ? "" : ` (${e.poste})`;
+      const actifTag = e.actif === false ? " [Archivé/Sorti]" : "";
+      return `<option value="${escAttr(id)}">${esc(e.nom)} ${esc(titleCase(e.prenom))}${postTag}${actifTag}</option>`;
+    }).join("");
+}
+
+function selectEmpForEdit(empId) {
+  const wrap = document.getElementById("editFieldsWrap");
+  const editMsg = document.getElementById("editMsg");
+  if (editMsg) editMsg.textContent = "";
+  if (!empId) {
+    if (wrap) wrap.classList.add("hidden");
+    return;
+  }
+
+  const emp = equipe.find(e => empIdOf(e) === empId);
+  if (!emp) {
+    if (wrap) wrap.classList.add("hidden");
+    return;
+  }
+
+  const nomInput = document.getElementById("editNom");
+  const prenomInput = document.getElementById("editPrenom");
+  const posteInput = document.getElementById("editPoste");
+  const debutInput = document.getElementById("editDateDebut");
+  const sortieInput = document.getElementById("editDateSortie");
+  const actifInput = document.getElementById("editActif");
+
+  if (nomInput) nomInput.value = emp.nom || "";
+  if (prenomInput) prenomInput.value = emp.prenom || "";
+  if (posteInput) posteInput.value = emp.poste || "SERVICE";
+  if (debutInput) debutInput.value = emp.dateDebut || "";
+  if (sortieInput) sortieInput.value = emp.dateSortie || "";
+  if (actifInput) actifInput.checked = (emp.actif !== false);
+
+  if (wrap) wrap.classList.remove("hidden");
+}
+
+window.fillEditEmpSelect = fillEditEmpSelect;
+window.selectEmpForEdit = selectEmpForEdit;
+
 async function initStaffAdminUI() {
   document.getElementById("btnOpenStaffAdmin").onclick = () => openStaffAdmin();
   document.getElementById("btnExportEquipe").onclick    = () => exportEquipeJSON();
@@ -229,6 +284,109 @@ async function initStaffAdminUI() {
   if (posteSelect) {
     posteSelect.onchange = () => fillDelEmpSelectByPoste(posteSelect.value);
     fillDelEmpSelectByPoste("");
+  }
+
+  const editPosteFilter = document.getElementById("editPosteFilter");
+  const editEmpSelect = document.getElementById("editEmpSelect");
+  if (editPosteFilter && editEmpSelect) {
+    editPosteFilter.onchange = () => {
+      fillEditEmpSelect(editPosteFilter.value);
+      selectEmpForEdit("");
+    };
+    editEmpSelect.onchange = () => {
+      selectEmpForEdit(editEmpSelect.value);
+    };
+    fillEditEmpSelect("");
+  }
+
+  const btnSaveEditStaff = document.getElementById("btnSaveEditStaff");
+  if (btnSaveEditStaff) {
+    btnSaveEditStaff.onclick = async () => {
+      const editMsg = document.getElementById("editMsg");
+      if (editMsg) {
+        editMsg.style.color = "var(--muted2)";
+        editMsg.textContent = "";
+      }
+
+      const currentId = (document.getElementById("editEmpSelect")?.value || "").trim();
+      if (!currentId) {
+        if (editMsg) {
+          editMsg.style.color = "var(--crit)";
+          editMsg.textContent = "⚠️ Veuillez sélectionner un collaborateur.";
+        }
+        return;
+      }
+
+      const nom = normName(document.getElementById("editNom").value);
+      const prenom = normName(document.getElementById("editPrenom").value);
+      const poste = (document.getElementById("editPoste").value || "").trim().toUpperCase();
+      const dateDebut = (document.getElementById("editDateDebut").value || "").trim();
+      const dateSortie = (document.getElementById("editDateSortie").value || "").trim();
+      const actif = document.getElementById("editActif").checked;
+
+      if (!nom || !prenom || !poste) {
+        if (editMsg) {
+          editMsg.style.color = "var(--crit)";
+          editMsg.textContent = "⚠️ Remplis NOM, Prénom et Poste.";
+        }
+        return;
+      }
+
+      const newId = makeEmpId(nom, prenom);
+      if (newId !== currentId && equipe.some(e => empIdOf(e) === newId)) {
+        if (editMsg) {
+          editMsg.style.color = "var(--crit)";
+          editMsg.textContent = "⚠️ Un autre collaborateur existe déjà avec ce NOM et Prénom.";
+        }
+        return;
+      }
+
+      if (editMsg) {
+        editMsg.style.color = "var(--accent)";
+        editMsg.textContent = "Enregistrement des modifications…";
+      }
+
+      const next = equipe.map(e => {
+        if (empIdOf(e) === currentId) {
+          return {
+            ...e,
+            nom,
+            prenom,
+            poste,
+            dateDebut: dateDebut || "",
+            dateSortie: dateSortie || "",
+            actif
+          };
+        }
+        return e;
+      });
+
+      try {
+        await saveEquipeToDB(next);
+        setEquipe(next);
+        clearMonthCache();
+        if (typeof yearTimelineCache !== "undefined") yearTimelineCache.clear();
+        if (typeof empStartMapCache !== "undefined") empStartMapCache.clear();
+
+        if (editMsg) {
+          editMsg.style.color = "var(--ok)";
+          editMsg.textContent = `✅ Modifications enregistrées pour ${nom} ${titleCase(prenom)}.`;
+        }
+
+        // Rafraîchir les listes déroulantes
+        fillEditEmpSelect(editPosteFilter?.value || "");
+        if (document.getElementById("editEmpSelect")) {
+          document.getElementById("editEmpSelect").value = newId;
+        }
+        fillDelEmpSelectByPoste(posteSelect?.value || "");
+        updateDashboard();
+      } catch (e) {
+        if (editMsg) {
+          editMsg.style.color = "var(--crit)";
+          editMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission refusée");
+        }
+      }
+    };
   }
 
   const btnAddStaff = document.getElementById("btnAddStaff");
@@ -256,6 +414,7 @@ async function initStaffAdminUI() {
         document.getElementById("addNom").value = "";
         document.getElementById("addPrenom").value = "";
         document.getElementById("addDateDebut").value = "";
+        fillEditEmpSelect(document.getElementById("editPosteFilter")?.value || "");
         closeStaffAdmin();
         updateDashboard();
       } catch (e) {
@@ -279,6 +438,7 @@ async function initStaffAdminUI() {
         setEquipe(next);
         delMsg.textContent = `✅ Sortie enregistrée au ${fmtFR(dateSortie)} (archives conservées).`;
         fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value || "");
+        fillEditEmpSelect(document.getElementById("editPosteFilter")?.value || "");
         updateDashboard();
       } catch (e) {
         delMsg.textContent = "⚠️ Erreur : " + (e?.message || "Permission denied");
@@ -301,6 +461,7 @@ async function initStaffAdminUI() {
         setEquipe(next);
         delMsg.textContent = "✅ Supprimé.";
         fillDelEmpSelectByPoste(document.getElementById("delPosteSelect").value || "");
+        fillEditEmpSelect(document.getElementById("editPosteFilter")?.value || "");
         closeStaffAdmin();
         updateDashboard();
       } catch (e) {

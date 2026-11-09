@@ -306,7 +306,7 @@ function isMenageStaff(empOrId) {
   return s.includes("SBAI") || s.includes("ABOUARSA") ||
          s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR") ||
          s.includes("KHALISSA") || s.includes("CHAOUI") ||
-         s.includes("FATIMZAHRA") || s.includes("OUAZZANI") || s.includes("AZHARY") || s.includes("NAJIA");
+         s.includes("FATIMZAHRA") || s.includes("OUAZZANI");
 }
 
 function getEffectiveHP(hp, empId, dateISO) {
