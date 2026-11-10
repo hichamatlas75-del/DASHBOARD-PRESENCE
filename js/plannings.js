@@ -306,7 +306,8 @@ function isMenageStaff(empOrId) {
   return s.includes("SBAI") || s.includes("ABOUARSA") ||
          s.includes("FOUZIA") || s.includes("EZHAR") || s.includes("ZHAR") ||
          s.includes("KHALISSA") || s.includes("CHAOUI") ||
-         s.includes("FATIMZAHRA") || s.includes("OUAZZANI");
+         s.includes("FATIMZAHRA") || s.includes("OUAZZANI") ||
+         s.includes("GOURRAMY") || s.includes("GORRAMY");
 }
 
 function getEffectiveHP(hp, empId, dateISO) {
@@ -473,6 +474,19 @@ const StaffPhotoService = (() => {
     "SBAI": "images/SBAI_HAKIMA.jpg",
     "WALID": "images/WALID.jpg",
     "BAJJOU": "images/BAJJOU.jpeg",
+    "EL_GOURRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "ELGOURRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "EL_GORRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "ELGORRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "GOURRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "GORRAMY_SOUAD": "images/ELGORRAMY_SOUAD.jpg",
+    "EL_GOURRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "ELGOURRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "ELGORRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "GOURRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "SOUAD_EL_GOURRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "SOUAD_ELGOURRAMY": "images/ELGORRAMY_SOUAD.jpg",
+    "SOUAD_ELGORRAMY": "images/ELGORRAMY_SOUAD.jpg",
     "FOUZIA": "images/FOUZIA.jpg",
     "FOUZIA6ZHAR": "images/FOUZIA6ZHAR.jpg",
     "FOUZIA_ZHAR": "images/FOUZIA6ZHAR.jpg",

@@ -65,3 +65,34 @@ test('Purge EL AZHARY NAJIA - config.js', () => {
   assert.strictEqual(haOnlyIds.has('EL_AZHARY_NAJIA'), false);
   assert.strictEqual(haOnlyIds.has('NAJIA'), false);
 });
+
+test('Réintégration EL GOURRAMY SOUAD - active et autorisée', () => {
+  const ctx = createCtx();
+  const equipe = vm.runInContext('equipe', ctx);
+  const isRemovedStaff = ctx.isRemovedStaff;
+  const isEmpActiveOnDate = ctx.isEmpActiveOnDate;
+  const haOnlyIds = vm.runInContext('haOnlyIds', ctx);
+
+  // 1. Souad ne doit PAS être dans isRemovedStaff
+  assert.strictEqual(isRemovedStaff({ nom: 'EL GOURRAMY', prenom: 'SOUAD' }), false);
+  assert.strictEqual(isRemovedStaff({ nom: 'ELGORRAMY', prenom: 'SOUAD' }), false);
+  assert.strictEqual(isRemovedStaff({ nom: 'EL_GOURRAMY', prenom: 'SOUAD' }), false);
+
+  // 2. Anissa reste quant à elle purgée
+  assert.strictEqual(isRemovedStaff({ nom: 'ELGORRAMY', prenom: 'ANISSA' }), true);
+  assert.strictEqual(isRemovedStaff({ nom: 'EL GOURRAMY', prenom: 'ANISSA' }), true);
+
+  // 3. Souad est présente dans l'équipe initiale avec dateDebut = 2026-11-11
+  const souad = equipe.find(e => ctx.empIdOf(e).includes('GOURRAMY') && e.prenom === 'SOUAD');
+  assert.ok(souad, 'EL GOURRAMY SOUAD doit être dans equipe');
+  assert.strictEqual(souad.dateDebut, '2026-11-11');
+  assert.strictEqual(souad.poste, 'MENAGE');
+
+  // 4. Activité par date selon dateDebut
+  assert.strictEqual(isEmpActiveOnDate(souad, '2026-11-10'), false, 'Inactive avant le 11 novembre');
+  assert.strictEqual(isEmpActiveOnDate(souad, '2026-11-11'), true, 'Active à partir du 11 novembre');
+
+  // 5. haOnlyIds contient bien ses identifiants
+  assert.strictEqual(haOnlyIds.has('EL_GOURRAMY_SOUAD'), true);
+  assert.strictEqual(haOnlyIds.has('ELGORRAMY_SOUAD'), true);
+});

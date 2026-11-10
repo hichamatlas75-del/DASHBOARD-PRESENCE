@@ -45,7 +45,8 @@ const haOnlyIds    = new Set([
   "SBAI_HAKIMA", "ABOUARSA_EDDRISSIA",
   "EZHAR_FOUZIA", "FOUZIA_EZHAR", "FOUZIA_FOUZIA", "ZHAR_FOUZIA",
   "KHALISSA_KHALISSA", "CHAOUI_KHALISSA", "KHALISSA_CHAOUI",
-  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI"
+  "FATIMZAHRA_FATIMA", "FATIMA_FATIMZAHRA", "OUAZZANI_FATIMZAHRA", "FATIMZAHRA_OUAZZANI",
+  "EL_GOURRAMY_SOUAD", "ELGOURRAMY_SOUAD", "ELGORRAMY_SOUAD", "EL_GORRAMY_SOUAD", "GOURRAMY_SOUAD"
 ]);
 const noReposIds   = new Set(["SALIL_HOUDA", "BENKHADA_ABDESLAM"]);
 
@@ -151,7 +152,7 @@ function isExcluded(d) { return d >= EXCL_START && d <= EXCL_END; }
 
 /* ─── Identifiants & gestion équipe ─── */
 function normName(s) {
-  return (s || "").trim().toUpperCase().replace(/\s+/g, ' ').replace(/['']/g, "'");
+  return (s || "").trim().toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ').replace(/['']/g, "'");
 }
 
 function normalizePhotoPath(p) {
@@ -199,12 +200,13 @@ let equipe = [
   { nom: 'EZHAR',      prenom: 'FOUZIA',    poste: 'MENAGE' },
   { nom: 'KHALISSA',   prenom: 'KHALISSA',  poste: 'MENAGE' },
   { nom: 'FATIMZAHRA', prenom: 'FATIMA',    poste: 'MENAGE' },
+  { nom: 'EL GOURRAMY',prenom: 'SOUAD',     poste: 'MENAGE', dateDebut: '2026-11-11', photo: 'images/ELGORRAMY_SOUAD.jpg' },
   { nom: 'ZAIR',       prenom: 'FATIMA',    poste: 'CUISINE' }
 ];
 
-// Collaborateurs sortis de l'équipe : exclus même s'ils figurent encore dans Firebase (settings/equipe)
+// Collaborateurs définitivement purgés de l'équipe : exclus même s'ils figurent encore dans Firebase (settings/equipe)
 const REMOVED_STAFF_IDS = new Set([
-  "ELGORRAMY_ANISSA", "ELGORRAMY_SOUAD",
+  "ELGORRAMY_ANISSA",
   "EL_AZHARY_NAJIA", "ELAZHARY_NAJIA", "AZHARY_NAJIA", "EL_AZHARY", "AZHARY", "NAJIA"
 ]);
 
@@ -215,7 +217,7 @@ function isRemovedStaff(emp) {
   const nom = String(emp.nom || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const prenom = String(emp.prenom || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (nom.includes("AZHARY") || prenom.includes("NAJIA")) return true;
-  if (nom.includes("ELGORRAMY") || prenom.includes("ANISSA") || prenom.includes("SOUAD")) return true;
+  if ((nom.includes("ELGORRAMY") || nom.includes("GOURRAMY")) && prenom.includes("ANISSA")) return true;
   return false;
 }
 
@@ -224,6 +226,8 @@ function isEmpActiveOnDate(emp, dateISO) {
   const sortie = String(emp.dateSortie || "").trim();
   if (emp.actif === false && !sortie) return false;
   if (sortie && /^\d{4}-\d{2}-\d{2}$/.test(sortie) && dateISO && dateISO > sortie) return false;
+  const debut = String(emp.dateDebut || "").trim();
+  if (debut && /^\d{4}-\d{2}-\d{2}$/.test(debut) && dateISO && dateISO < debut) return false;
   return true;
 }
 
@@ -232,6 +236,8 @@ function isEmpActiveInMonth(emp, monthKey) {
   const sortie = String(emp.dateSortie || "").trim();
   if (emp.actif === false && !sortie) return false;
   if (sortie && /^\d{4}-\d{2}-\d{2}$/.test(sortie) && monthKey && monthKey > sortie.slice(0, 7)) return false;
+  const debut = String(emp.dateDebut || "").trim();
+  if (debut && /^\d{4}-\d{2}-\d{2}$/.test(debut) && monthKey && monthKey < debut.slice(0, 7)) return false;
   return true;
 }
 

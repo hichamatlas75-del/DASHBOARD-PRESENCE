@@ -951,6 +951,17 @@ async function loadEquipeFromDB() {
     ? val.filter(Boolean)
     : Object.keys(val).sort((a, b) => Number(a) - Number(b)).map(k => val[k]).filter(Boolean);
   const active = arr.filter(e => !isRemovedStaff(e));
+  const hasSouad = active.some(e => {
+    const id = (typeof empIdOf === "function") ? empIdOf(e) : `${e.nom}_${e.prenom}`;
+    return (id.includes("GOURRAMY") || id.includes("GORRAMY")) && id.includes("SOUAD");
+  });
+  if (!hasSouad) {
+    const defaultSouad = equipe.find(e => {
+      const id = (typeof empIdOf === "function") ? empIdOf(e) : `${e.nom}_${e.prenom}`;
+      return (id.includes("GOURRAMY") || id.includes("GORRAMY")) && id.includes("SOUAD");
+    });
+    if (defaultSouad) active.push(defaultSouad);
+  }
   return active.length ? active : equipe;
 }
 
